@@ -51,12 +51,12 @@ class PseudoChannelDatabase():
         self.cursor.execute('CREATE TABLE IF NOT EXISTS '
                   'app_settings(id INTEGER PRIMARY KEY AUTOINCREMENT, version TEXT)')
         #index
-        self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_episode_title ON episodes (title);')
-        self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_movie_title ON movies (title);')
-        self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_shows_title ON shows (title);')
-        self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_video_title ON videos (title);')
-        self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_music_title ON music (title);')
-        self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_commercial_title ON commercials (title);')
+        self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_episode_plexMediaID ON episodes (plexMediaID);')
+        self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_movie_plexMediaID ON movies (plexMediaID);')
+        self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_shows_plexMediaID ON shows (plexMediaID);')
+        self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_video_plexMediaID ON videos (plexMediaID);')
+        self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_music_plexMediaID ON music (plexMediaID);')
+        self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_commercial_plexMediaID ON commercials (plexMediaID);')
         self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_settings_version ON app_settings (version);')
         """Setting Basic Settings
         """
