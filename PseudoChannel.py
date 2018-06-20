@@ -144,6 +144,9 @@ class PseudoChannel():
                                 )
                             #add all episodes of each tv show to episodes table
                             episodes = self.PLEX.library.section(section.title).get(media.title).episodes()
+                            print(" Show: %s" % media.title)	
+				
+			    
                             for episode in episodes:
                                 duration = episode.duration
                                 if duration:
@@ -168,6 +171,7 @@ class PseudoChannel():
                                             episode.key,
                                             section.title
                                         )
+                            
                     elif correct_lib_name == "Commercials":
                         print "user_lib_name", section.title
                         sectionMedia = self.PLEX.library.section(section.title).all()
@@ -939,6 +943,16 @@ if __name__ == '__main__':
                                 prevItem_time = datetime.datetime.strptime(''.join(str(prevItem[8])), "%I:%M:%S %p")
                                 elapsed_timeTwo = prevItem_time - now
                                 offsetTwo = int(abs(elapsed_timeTwo.total_seconds() * 1000))
+				if prevItem_time.hour > now.hour:
+					print "we have a day skip"
+					now = now.replace(hour=23,minute=59,second=59)
+					elapsed_timeTwo = prevItem_time-now
+					mnight = now.replace(hour=0,minute=0,second=0)		
+					now = datetime.datetime.now()
+            				now = now.replace(year=1900, month=1, day=1)
+					elapsed_timeTwo = elapsed_timeTwo + (mnight-now)
+					print elapsed_timeTwo.total_seconds()
+					offsetTwo = int(abs(elapsed_timeTwo.total_seconds() * 1000))
                                 if pseudo_channel.DEBUG:
                                     print "+++++ Closest media was the next media " \
                                           "but we were in the middle of something so triggering that instead."
