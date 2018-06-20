@@ -495,11 +495,18 @@ class PseudoChannelDatabase():
     *
     '''
     def get_episode_id(self, episodeTitle):
-
         sql = "SELECT id FROM episodes WHERE ( title LIKE ?) COLLATE NOCASE"
         self.cursor.execute(sql, (episodeTitle, ))
         episode_id = self.cursor.fetchone()
         return episode_id
+    
+    ####mutto233 made this one####
+    def get_episode_id_alternate(self, plexMediaID):
+        sql = "SELECT id FROM episodes WHERE( plexMediaID LIKE ?) COLLATE NOCASE"
+        self.cursor.execute(sql, (plexMediaID, ))
+        episode_id = self.cursor.fetchone()
+        return episode_id
+    ####mutto233 made this one####
 
     def get_random_episode(self):
 
@@ -514,7 +521,6 @@ class PseudoChannelDatabase():
         return self.cursor.fetchone()
 
     def get_next_episode(self, series):
-
         '''
         *
         * As a way of storing a "queue", I am storing the *next episode title in the "shows" table so I can 
@@ -536,7 +542,7 @@ class PseudoChannelDatabase():
             *
             '''
             first_episode = self.get_first_episode(series)
-            first_episode_title = first_episode[3]
+            first_episode_title = first_episode[8]
             '''
             *
             * Add this episdoe title to the "shows" table for the queue functionality to work
@@ -556,7 +562,7 @@ class PseudoChannelDatabase():
             * If this isn't a first run, then grabbing the next episode by incrementing id
             *
             """
-            sql = ("SELECT * FROM episodes WHERE ( id > "+str(self.get_episode_id(last_title_list[0])[0])+
+            sql = ("SELECT * FROM episodes WHERE ( id > "+str(self.get_episode_id_alternate(last_title_list[0])[0])+
                    " AND showTitle LIKE ? ) ORDER BY seasonNumber LIMIT 1 COLLATE NOCASE")
             self.cursor.execute(sql, (series, ))
             '''
@@ -566,13 +572,75 @@ class PseudoChannelDatabase():
             '''
             next_episode = self.cursor.fetchone()
             if next_episode != None:
-                self.update_shows_table_with_last_episode(series, next_episode[3])
+                self.update_shows_table_with_last_episode(series, next_episode[8])
                 return next_episode
             else:
                 print("+++++ Not grabbing next episode restarting series, series must be over. Restarting from episode 1.")
                 first_episode = self.get_first_episode(series)
-                self.update_shows_table_with_last_episode(series, first_episode[3])
+                self.update_shows_table_with_last_episode(series, first_episode[8])
             return first_episode
+
+#        '''
+#        *
+#        * As a way of storing a "queue", I am storing the *next episode title in the "shows" table so I can 
+#        * determine what has been previously scheduled for each show
+#        *
+#        '''
+#        self.cursor.execute("SELECT lastEpisodeTitle FROM shows WHERE title LIKE ?  COLLATE NOCASE", (series, ))
+#        last_title_list = self.cursor.fetchone()
+#        '''
+#        *
+#        * If the last episode stored in the "shows" table is empty, then this is probably a first run...
+#        *
+#        '''
+#        if last_title_list and last_title_list[0] == '':
+#
+#            '''
+#            *
+#            * Find the first episode of the series
+#            *
+#            '''
+#            first_episode = self.get_first_episode(series)
+#            first_episode_title = first_episode[3]
+#            '''
+#            *
+#            * Add this episdoe title to the "shows" table for the queue functionality to work
+#            *
+#            '''
+#            self.update_shows_table_with_last_episode(series, first_episode_title)
+#            return first_episode
+#
+#        elif last_title_list:
+#            '''
+#            *
+#            * The last episode stored in the "shows" table was not empty... get the next episode in the series
+#            *
+#            '''
+#            """
+#            *
+#            * If this isn't a first run, then grabbing the next episode by incrementing id
+#            *
+#            """
+#            sql = ("SELECT * FROM episodes WHERE ( id > "+str(self.get_episode_id(last_title_list[0])[0])+
+#                   " AND showTitle LIKE ? ) ORDER BY seasonNumber LIMIT 1 COLLATE NOCASE")
+#            self.cursor.execute(sql, (series, ))
+#            '''
+#            *
+#            * Try and advance to the next episode in the series, if it returns None then that means it reached the end...
+#            *
+#            '''
+#            next_episode = self.cursor.fetchone()
+#            print(next_episode)
+#            print(next_episode[8])
+#            raise ValueError("WAHOO")
+#            if next_episode != None:
+#                self.update_shows_table_with_last_episode(series, next_episode[3])
+#                return next_episode
+#            else:
+#                print("+++++ Not grabbing next episode restarting series, series must be over. Restarting from episode 1.")
+#                first_episode = self.get_first_episode(series)
+#                self.update_shows_table_with_last_episode(series, first_episode[3])
+#            return first_episode
                 
     def get_commercial(self, title):
 
