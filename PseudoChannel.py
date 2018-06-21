@@ -330,13 +330,15 @@ class PseudoChannel():
         * If this doesn't apply, simply move on to the regular "checks"
         *
         '''
+        time1A=prevEndTime.strftime('%H:%M')
+        time1A_comp = datetime.datetime.strptime(time1A, '%H:%M') # there was an issue with the date changing to 1/2, so we had to do this for correct comparison
         timeset=[datetime.time(h,m).strftime("%H:%M") for h,m in itertools.product(xrange(0,24),xrange(0,60,int(self.OVERLAP_GAP)))]
         timeset_last = timeset[-1]
         theTimeSetInterval_last = datetime.datetime.strptime(timeset_last, '%H:%M')
-        print "++++ Previous End Time: ", prevEndTime
+        print "++++ Previous End Time: ", time1A_comp
         print "++++ Last Element of the Day: ", theTimeSetInterval_last
         
-        if prevEndTime > theTimeSetInterval_last:
+        if time1A_comp > theTimeSetInterval_last:
             print "++++ We are starting a show with the new day.  Using first element of the next day"
             theTimeSetInterval = datetime.datetime.strptime(timeset[0], '%H:%M') #This must be the element we are looking for
             newStartTime = theTimeSetInterval
