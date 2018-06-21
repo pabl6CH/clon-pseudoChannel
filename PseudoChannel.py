@@ -315,16 +315,37 @@ class PseudoChannel():
         timeB = datetime.datetime.strptime(intendedStartTime, '%I:%M:%S %p').strftime(self.APP_TIME_FORMAT_STR)
         print "++++ Previous End Time: ", time1, "Intended start time: ", timeB
         timeDiff = self.time_diff(time1, timeB)
-        """print("timeDiff "+ str(timeDiff))
-        print("startTimeUNIX: "+ str(intendedStartTime))"""
+        print("++++timeDiff "+ str(timeDiff))
+        # print("++++startTimeUNIX: "+ str(intendedStartTime))
         newTimeObj = timeB
         newStartTime = timeB
+        
         '''
         *
-        * If time difference is negative, then we know there is overlap
+        * ADDED PIECE 6/21/18: Need to check if we are near the day's end
+        * We will do this by checking if our previous end time is larger than ALL times
+        * Listed in the "timeset" variable. If it is, we must have hit the end of a
+        * day and can simply pick the first value of the timeset. 
+        *
+        * If this doesn't apply, simply move on to the regular "checks"
         *
         '''
-        if timeDiff < 0:
+        timeset=[datetime.time(h,m).strftime("%H:%M") for h,m in itertools.product(xrange(0,24),xrange(0,60,int(self.OVERLAP_GAP)))]
+        timeset_last = timeset[-1]
+        theTimeSetInterval_last = datetime.datetime.strptime(timeset_last, '%H:%M')
+        print "++++ Previous End Time: ", prevEndTime
+        print "++++ Last Element of the Day: ", theTimeSetInterval_last
+        
+        if prevEndTime > theTimeSetInterval_last:
+            print "++++ We are starting a show with the new day.  Using first element of the next day"
+            theTimeSetInterval = datetime.datetime.strptime(timeset[0], '%H:%M') #This must be the element we are looking for
+            newStartTime = theTimeSetInterval
+            '''
+            *
+            * If time difference is negative, then we know there is overlap
+            *
+            '''
+        elif timeDiff < 0:
             '''
             *
             * If there is an overlap, then the overlapGap var in config will determine the next increment. If it is set to "15", then the show will will bump up to the next 15 minute interval past the hour.
@@ -334,7 +355,7 @@ class PseudoChannel():
             #minuteToUse = self.DAILY_UPDATE_TIME.split(':')[1]
             #now = datetime.datetime(1900, 1, 1, int(hourToUse), int(minuteToUse))
             #timeset = [(now + datetime.timedelta(minutes=int(self.OVERLAP_GAP)*n)).strftime('%H:%M') for n in range((60*24)/int(self.OVERLAP_GAP))]
-            timeset=[datetime.time(h,m).strftime("%H:%M") for h,m in itertools.product(xrange(0,24),xrange(0,60,int(self.OVERLAP_GAP)))]
+            #timeset=[datetime.time(h,m).strftime("%H:%M") for h,m in itertools.product(xrange(0,24),xrange(0,60,int(self.OVERLAP_GAP)))]
             #print timeset
             timeSetToUse = None
             for time in timeset:
@@ -354,7 +375,7 @@ class PseudoChannel():
             #minuteToUse = self.DAILY_UPDATE_TIME.split(':')[1]
             #now = datetime.datetime(1900, 1, 1, int(hourToUse), int(minuteToUse))
             #timeset = [(now + datetime.timedelta(minutes=int(self.OVERLAP_GAP)*n)).strftime('%H:%M') for n in range((60*24)/int(self.OVERLAP_GAP))]
-            timeset=[datetime.time(h,m).strftime("%H:%M") for h,m in itertools.product(xrange(0,24),xrange(0,60,int(self.TIME_GAP)))]
+            #timeset=[datetime.time(h,m).strftime("%H:%M") for h,m in itertools.product(xrange(0,24),xrange(0,60,int(self.TIME_GAP)))]
             #print timeset
             for time in timeset:
                 theTimeSetInterval = datetime.datetime.strptime(time, '%H:%M')
