@@ -335,6 +335,8 @@ class PseudoChannel():
         timeset=[datetime.time(h,m).strftime("%H:%M") for h,m in itertools.product(xrange(0,24),xrange(0,60,int(self.OVERLAP_GAP)))]
         timeset_last = timeset[-1]
         theTimeSetInterval_last = datetime.datetime.strptime(timeset_last, '%H:%M')
+        
+        prevEndTime = time1A_comp #maybe this will change things?
         print "++++ Previous End Time: ", time1A_comp
         print "++++ Last Element of the Day: ", theTimeSetInterval_last
         
