@@ -519,7 +519,8 @@ class PseudoChannelDatabase():
         sql = "SELECT * FROM movies WHERE id IN (SELECT id FROM movies ORDER BY RANDOM() LIMIT 1)"
         self.cursor.execute(sql)
         return self.cursor.fetchone()
-
+    
+    ####mutto233 made this one####
     def get_next_episode(self, series):
         '''
         *
@@ -562,7 +563,12 @@ class PseudoChannelDatabase():
             * If this isn't a first run, then grabbing the next episode by incrementing id
             *
             """
-            sql = ("SELECT * FROM episodes WHERE ( id > "+str(self.get_episode_id_alternate(last_title_list[0])[0])+
+            try:
+                sql = ("SELECT * FROM episodes WHERE ( id > "+str(self.get_episode_id_alternate(last_title_list[0])[0])+
+                       " AND showTitle LIKE ? ) ORDER BY seasonNumber LIMIT 1 COLLATE NOCASE")
+            except TypeError:
+                print("+++++ We have an old school last episode title. Using old method, then converting to new method")
+                sql = ("SELECT * FROM episodes WHERE ( id > "+str(self.get_episode_id(last_title_list[0])[0])+
                    " AND showTitle LIKE ? ) ORDER BY seasonNumber LIMIT 1 COLLATE NOCASE")
             self.cursor.execute(sql, (series, ))
             '''
@@ -571,6 +577,13 @@ class PseudoChannelDatabase():
             *
             '''
             next_episode = self.cursor.fetchone()
+#            if next_episode != None and not last_title_list[0].startswith('/library/'):
+#                # We have a case of an old style of last episode, so call that instead
+#                print("+++++ We have an old school last episode title. Using old method, then converting to new method")
+#                sql = ("SELECT * FROM episodes WHERE ( id > "+str(self.get_episode_id(last_title_list[0])[0])+
+#                   " AND showTitle LIKE ? ) ORDER BY seasonNumber LIMIT 1 COLLATE NOCASE")
+#                self.cursor.execute(sql, (series, ))
+            
             if next_episode != None:
                 self.update_shows_table_with_last_episode(series, next_episode[8])
                 return next_episode
@@ -579,7 +592,8 @@ class PseudoChannelDatabase():
                 first_episode = self.get_first_episode(series)
                 self.update_shows_table_with_last_episode(series, first_episode[8])
             return first_episode
-
+    ####mutto233 made this one####
+    
 #        '''
 #        *
 #        * As a way of storing a "queue", I am storing the *next episode title in the "shows" table so I can 
