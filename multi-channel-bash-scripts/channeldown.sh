@@ -60,6 +60,9 @@ done < "$filename"
 for i in "${!CHANNEL_DIR_ARR[@]}"
 do
 	CHANNEL_DIR_NUMBERS[i]=$(echo ${CHANNEL_DIR_SORTED[i]} | sed "s/^pseudo-channel${CHANNEL_DIR_INCREMENT_SYMBOL}0*//")
+	if [ -z ${CHANNEL_DIR_NUMBERS[i]} ]; then
+		CHANNEL_DIR_NUMBERS[i]=0
+	fi
 done
 
 
@@ -93,7 +96,11 @@ if [ "${#CHANNEL_DIR_ARR[@]}" -gt 1 ]; then
 
 	# We are now going to do the same thing here, just with previous channel
 	PREV_CHANNEL=$(echo $(<$OUTPUT_PREV_CHANNEL_PATH/$OUTPUT_PREV_CHANNEL_FILE) | sed "s/^0*//")	
+	if [ -z $PREV_CHANNEL ]; then
+	PREV_CHANNEL=0
+	fi
 
+	
 	echo "+++++ It looks like the previous channel was: $PREV_CHANNEL"
 
 
