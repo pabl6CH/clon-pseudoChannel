@@ -40,6 +40,29 @@ FIRST_RUN=false
 # Scan the dir to see how many channels there are, store them in an arr.
 CHANNEL_DIR_ARR=( $(find . -maxdepth 1 -type d -name '*'"$CHANNEL_DIR_INCREMENT_SYMBOL"'[[:digit:]]*' -printf "%P\n" | sort -t"$CHANNEL_DIR_INCREMENT_SYMBOL" -n) )
 
+# Since leading zeros may be an issue, we need to correctly sort the channels.  The best way to do this seems to be in python
+# So a script will take in the channels as they are, then output them in the correct, sorted order in Channels_Sorted.txt.
+# We will run the script, then read in the results.
+sudo python ./Channel_Sorter.py ${CHANNEL_DIR_ARR[@]}
+
+filename="./Channels_Sorted.txt"
+i=0
+while read -r line
+do
+	name="$line"
+	CHANNEL_DIR_SORTED[i]=$name
+	i=$((i+1))
+done < "$filename"
+
+
+# We need to add on top of this a "buffer" where we remove all leading zeros to compare everything on the same level
+# This simply leaves us with the number at the end.  NOTE: We should have already sorted things, so this should not be a problem
+for i in "${!CHANNEL_DIR_ARR[@]}"
+do
+	CHANNEL_DIR_NUMBERS[i]=$(echo ${CHANNEL_DIR_SORTED[i]} | sed "s/^pseudo-channel${CHANNEL_DIR_INCREMENT_SYMBOL}0*//")
+done
+
+
 # If the previous channel txt file doesn't exist already create it (first run?)
 if [ ! -e "$OUTPUT_PREV_CHANNEL_PATH/$OUTPUT_PREV_CHANNEL_FILE" ]; then
 
@@ -56,68 +79,40 @@ fi
 # then read file, get prevchannel, increment, and trigger next channel:
 if [ "${#CHANNEL_DIR_ARR[@]}" -gt 1 ]; then
 
-	NEXT_CHANNEL=""
+	#NEXT_CHANNEL=""
 
 	NEXT_CHANNEL_NUM=1
 
 	PREV_CHANNEL_FOUND=false
 
-	PREV_CHANNEL_DIR=""
+	#PREV_CHANNEL_DIR=""
 
 	echo "+++++ There are ${#CHANNEL_DIR_ARR[@]} channels detected."
 
-	PREV_CHANNEL=$(<$OUTPUT_PREV_CHANNEL_PATH/$OUTPUT_PREV_CHANNEL_FILE)
+	#PREV_CHANNEL=$(<$OUTPUT_PREV_CHANNEL_PATH/$OUTPUT_PREV_CHANNEL_FILE)
+
+	# We are now going to do the same thing here, just with previous channel
+	PREV_CHANNEL=$(echo $(<$OUTPUT_PREV_CHANNEL_PATH/$OUTPUT_PREV_CHANNEL_FILE) | sed "s/^0*//")	
 
 	echo "+++++ It looks like the previous channel was: $PREV_CHANNEL"
 
-	# Now that the prevchannel is stored in a var, loop through channels and find prev channel & increment
-	for ((i = ${#CHANNEL_DIR_ARR[@]};i >= 1;i--)); do
-		
-    	NEXT_CHANNEL_NUM=$i
 
-    	if [ "${i}" -gt 9 ]; then
-
-	    	if [[ ${i} == *"$PREV_CHANNEL"* ]]; then
-	  			echo "+++++ Found previous channel, decreasing by 1."
-	  			PREV_CHANNEL_FOUND=true
-	  			PREV_CHANNEL_DIR="${CHANNEL_DIR_ARR[i-1]}"
-	  			continue
+	# This is our modified way of searching for the correct directory for the previous channel
+	for i in "${!CHANNEL_DIR_NUMBERS[@]}"
+	do
+		item_compare=${CHANNEL_DIR_NUMBERS[i]}
+		if [ $item_compare -eq $PREV_CHANNEL ]; then
+			echo "PREVIOUS CHANNEL MATCH: ${CHANNEL_DIR_SORTED[$i]}"
+			PREV_CHANNEL_DIR=${CHANNEL_DIR_SORTED[$i]}
+			if [ $((i-1)) -lt 0 ]; then
+				ARR_LENGTH=(${#CHANNEL_DIR_SORTED[@]})
+				NEXT_CHANNEL=${CHANNEL_DIR_SORTED[$ARR_LENGTH-1]}
+			else
+				NEXT_CHANNEL=${CHANNEL_DIR_SORTED[$((i-1))]}
 			fi
-
-		else
-
-			if [[ "0"${i} == *"$PREV_CHANNEL"* ]]; then
-	  			echo "+++++ Found previous channel, decreasing by 1."
-	  			PREV_CHANNEL_FOUND=true
-	  			PREV_CHANNEL_DIR="${CHANNEL_DIR_ARR[i-1]}"
-	  			continue
-			fi
-
-		fi
-
-		if [ "$PREV_CHANNEL_FOUND" = true ] ; then
-
-			echo "PREV_CHANNEL_FOUND"
-			echo "$PREV_CHANNEL_FOUND"
-		    
-		    NEXT_CHANNEL="${CHANNEL_DIR_ARR[i-1]}"
-
 			break
-		
 		fi
-
 	done
-
-	# If the next channel is an empty string, then we need to start the cycle over.
-	if [ -z "$NEXT_CHANNEL" ]; then
-
-		ARR_LENGTH=(${#CHANNEL_DIR_ARR[@]})
-		NEXT_CHANNEL=${CHANNEL_DIR_ARR[$ARR_LENGTH-1]}
-		echo "Starting cycle over."
-		echo "$PREV_CHANNEL_DIR"
-		echo "$NEXT_CHANNEL"
-
-	fi
 
 	echo "+++++ The next channel is: $NEXT_CHANNEL"
 

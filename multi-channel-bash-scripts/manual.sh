@@ -44,6 +44,8 @@ FIRST_RUN=false
 # Scan the dir to see how many channels there are, store them in an arr.
 CHANNEL_DIR_ARR=( $(find . -maxdepth 1 -type d -name '*'"$CHANNEL_DIR_INCREMENT_SYMBOL"'[[:digit:]]*' -printf "%P\n" | sort -t"$CHANNEL_DIR_INCREMENT_SYMBOL" -n) )
 
+echo $CHANNEL_DIR_ARR
+
 # If the previous channel txt file doesn't exist already create it (first run?)
 if [ ! -e "$OUTPUT_PREV_CHANNEL_PATH/$OUTPUT_PREV_CHANNEL_FILE" ]; then
 
@@ -72,7 +74,9 @@ if [ "${#CHANNEL_DIR_ARR[@]}" -gt 1 ]; then
 
 	PREV_CHANNEL_DIR=( $(find . -maxdepth 1 -type d -name '*'"$CHANNEL_DIR_INCREMENT_SYMBOL""$PREV_CHANNEL" -printf "%P\n") )
 
-	echo "+++++ It looks like the previous channel was: $PREV_CHANNEL"
+	PREV_CHANNEL_DISP=$(echo $PREV_CHANNEL | sed 's/^0*//')
+	
+	echo "+++++ It looks like the previous channel was: $PREV_CHANNEL_DISP"
 
 	echo "+++++ The next channel is: $NEXT_CHANNEL"
 
