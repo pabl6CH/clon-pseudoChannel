@@ -121,6 +121,10 @@ if [ "${#CHANNEL_DIR_ARR[@]}" -gt 1 ]; then
 		fi
 	done
 
+	if [ -z $NEXT_CHANNEL ]; then
+		$NEXT_CHANNEL=${CHANNEL_DIR_SORTED[0]}
+	fi
+
 	echo "+++++ The next channel is: $NEXT_CHANNEL"
 
 	# Write next channel to previous channel file to reference later
