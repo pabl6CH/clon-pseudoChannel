@@ -567,9 +567,18 @@ class PseudoChannelDatabase():
                 sql = ("SELECT * FROM episodes WHERE ( id > "+str(self.get_episode_id_alternate(last_title_list[0])[0])+
                        " AND showTitle LIKE ? ) ORDER BY seasonNumber LIMIT 1 COLLATE NOCASE")
             except TypeError:
-                print("+++++ We have an old school last episode title. Using old method, then converting to new method")
-                sql = ("SELECT * FROM episodes WHERE ( id > "+str(self.get_episode_id(last_title_list[0])[0])+
-                   " AND showTitle LIKE ? ) ORDER BY seasonNumber LIMIT 1 COLLATE NOCASE")
+                try:
+                    sql = ("SELECT * FROM episodes WHERE ( id > "+str(self.get_episode_id(last_title_list[0])[0])+
+                       " AND showTitle LIKE ? ) ORDER BY seasonNumber LIMIT 1 COLLATE NOCASE")
+                    print("+++++ We have an old school last episode title. Using old method, then converting to new method")
+                except TypeError:
+                    sql = ""
+                    print("+++++ For some reason, episode was not stored correctly.  Maybe you updated your database and lost last episode?  Reverting to first episode")
+            if sql=="":
+                first_episode = self.get_first_episode(series)
+                self.update_shows_table_with_last_episode(series, first_episode[8])
+                return first_episode
+                
             self.cursor.execute(sql, (series, ))
             '''
             *
@@ -591,7 +600,7 @@ class PseudoChannelDatabase():
                 print("+++++ Not grabbing next episode restarting series, series must be over. Restarting from episode 1.")
                 first_episode = self.get_first_episode(series)
                 self.update_shows_table_with_last_episode(series, first_episode[8])
-            return first_episode
+                return first_episode
     ####mutto233 made this one####
     
 #        '''
