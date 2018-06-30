@@ -22,7 +22,7 @@ CHANNEL_DIR_INCREMENT_SYMBOL="_"
 
 INSTALL_FOLDER="channels"
 
-FIRST_INSTALL=true
+FIRST_INSTALL=false
 
 #----END EDITABLE VARS-------
 
@@ -147,5 +147,9 @@ cp ./.pseudo-temp/plex_token.py  .
 rm -rf ./.pseudo-temp
 
 rm -rf ./github_download
+
+#### Change permissions to 777 for all files, so that things will run
+cd ..
+sudo chmod -R 777 "./$INSTALL_FOLDER"
 
 echo "Update Complete"
