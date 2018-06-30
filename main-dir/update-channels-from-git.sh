@@ -57,6 +57,7 @@ fi
 # Sanity check, are we in the install folder?  This is just to make sure we don't run into errors.
 if [ ! -d "../$INSTALL_FOLDER" ]; then
 	echo "ERROR: NOT IN '$INSTALL_FOLDER' FOLDER, PLEASE MAKE SURE WE ARE IN HERE!"
+	echo "Did you mean to set FIRST_RUN=true?"
 	exit 9999
 fi
 
@@ -66,6 +67,13 @@ fi
 mkdir github_download
 cd github_download
 $SCRIPT_TO_EXECUTE_PLUS_ARGS
+
+#### If necessary, install the required elements as defined by requirements.txt
+if [ "$FIRST_INSTALL" == "true" ]; then
+	echo "INSTALLING REQUIREMENTS because this is a FIRST RUN"
+	sudo pip install -r requirements.txt
+fi
+
 cd ..
 
 
@@ -89,11 +97,11 @@ if [ "${#CHANNEL_DIR_ARR[@]}" -gt 1 ]; then
 		# Export critical files
 		mkdir ../.pseudo-temp
 		
-		cp ./pseudo-channel.db ../.pseudo-temp
+		cp ./pseudo-channel.db ../.pseudo-temp 2>/dev/null
 
-		cp ./pseudo_schedule.xml ../.pseudo-temp
+		cp ./pseudo_schedule.xml ../.pseudo-temp 2>/dev/null
 
-		cp ./pseudo_config.py ../.pseudo-temp
+		cp ./pseudo_config.py ../.pseudo-temp 2>/dev/null
 		
 		# Copy new elements
 		
@@ -102,11 +110,11 @@ if [ "${#CHANNEL_DIR_ARR[@]}" -gt 1 ]; then
 		
 		# Replace the files originally moved
 		
-		cp ../.pseudo-temp/pseudo-channel.db .
+		cp ../.pseudo-temp/pseudo-channel.db . 2>/dev/null
 
-		cp ../.pseudo-temp/pseudo_schedule.xml .
-
-		cp ../.pseudo-temp/pseudo_config.py .
+		cp ../.pseudo-temp/pseudo_schedule.xml . 2>/dev/null
+ 
+		cp ../.pseudo-temp/pseudo_config.py . 2>/dev/null
 		
 		rm -rf ../.pseudo-temp
 		
@@ -125,11 +133,11 @@ echo "Updating channels folder"
 # Export critical files
 mkdir .pseudo-temp
 
-cp ./pseudo-channel.db .pseudo-temp
+cp ./pseudo-channel.db .pseudo-temp 2>/dev/null
 
-cp ./pseudo_config.py .pseudo-temp
+cp ./pseudo_config.py .pseudo-temp 2>/dev/null
 
-cp ./plex_token.py .pseudo-temp
+cp ./plex_token.py .pseudo-temp 2>/dev/null
 
 # Copy new elements
 
@@ -138,11 +146,11 @@ cp -r ./github_download/both-dir/* .
 
 # Replace the files originally moved
 
-cp ./.pseudo-temp/pseudo-channel.db .
+cp ./.pseudo-temp/pseudo-channel.db . 2>/dev/null
 
-cp ./.pseudo-temp/pseudo_config.py .
+cp ./.pseudo-temp/pseudo_config.py . 2>/dev/null
 
-cp ./.pseudo-temp/plex_token.py  .
+cp ./.pseudo-temp/plex_token.py  . 2>/dev/null
 
 rm -rf ./.pseudo-temp
 
