@@ -1,12 +1,12 @@
 # PseudoChannel.py - Your Home-Brewed TV Channels
 
-*Update 06/30/2018 - At last, some more updates to this great program!  Listed below are some of the fixes:
+Update 06/30/2018 - At last, some more updates to this great program!  Listed below are some of the fixes:
 - Channel naming is now flexible, feel free to use as many as you want!
 - Channel updating can now be conducted globally through the use of Global_DatabaseUpdate.  No need to run for every single channel!
 - Pesky problems regarding midnight, such as scheduling shows and starting a show after midnight, have been fixed.
 - A more "client-friendly" installer has been made in update-channels-from-git.sh
 IF THIS IS YOUR FIRST TIME: Welcome!  Simply download "update-channels-from-git.sh", place in the folder you would like to place pseudochannel, and change the variable FIRST_RUN to true.  Then run!  You'll have your first five channels ready to go.
-IF YOU'VE DONE THIS BEFORE: Same idea, but place "update-channels-from-git.sh" in your "channels" folder, then run.  It will update all necessary files. If you have made any custom files along the way, no need to fear; this installer will not delete your own files that you made. It will also preserve your databases, config files, and tolken file.*
+IF YOU'VE DONE THIS BEFORE: Same idea, but place "update-channels-from-git.sh" in your "channels" folder, then run.  It will update all necessary files. If you have made any custom files along the way, no need to fear; this installer will not delete your own files that you made. It will also preserve your databases, config files, and tolken file.
 
 *Update 12/03/2017 - Enabled Support for Custom Library Names - If already running PseudoChannel.py, the local DB must be deleted & then rebuilt running the "-u" option. The TV Shows queue can be preserved by using the "-e" & "-i" options, all together: `python PseudoChannel.py -e -u -i`*
 
