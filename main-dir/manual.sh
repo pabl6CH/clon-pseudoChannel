@@ -127,6 +127,16 @@ if [ "${#CHANNEL_DIR_ARR[@]}" -gt 1 ]; then
 			NEXT_CHANNEL_DIR=${CHANNEL_DIR_SORTED[$i]}
 			break
 		fi
+
+		#echo "TESTING"
+		#echo $i
+		#echo ${#CHANNEL_DIR_NUMBERS[@]}
+		if [ $i -eq $((${#CHANNEL_DIR_NUMBERS[@]} - 1)) ]; then
+			echo "No NEXT CHANNEL MATCH found, reverting to first element"
+			NEXT_CHANNEL_DIR=${CHANNEL_DIR_SORTED[0]}
+			NEXT_CHANNEL=${CHANNEL_DIR_NUMBERS[0]}
+		fi
+
 	done
 	
 	# This is our modified way of searching for the correct directory for the previous channel
