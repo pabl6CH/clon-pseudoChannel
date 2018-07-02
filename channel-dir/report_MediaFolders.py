@@ -7,10 +7,23 @@ Created on Thu Jun 28 22:59:57 2018
 
 from pseudo_config import plexLibraries as local_commercials
 
-commercials = local_commercials["Commercials"]
-movies = local_commercials["Movies"]
-tvs = local_commercials["TV Shows"]
+try:
+	commercials = local_commercials["Commercials"]
+except KeyError:
+	print("##### Commercials not defined on this channel, setting to blank")
+	commercials = ""
 
+try:
+	movies = local_commercials["Movies"]
+except KeyError:
+	print("##### Movies not defined on this channel, setting to blank")
+	movies = ""
+
+try:
+	tvs = local_commercials["TV Shows"]
+except KeyError:
+	print("##### TV Shows not defined on this channel, setting to blank")
+	tvs = ""
 commercials_file = open('Commercial_Libraries.txt','w')
 movies_file = open('Movie_Libraries.txt','w')
 tvs_file = open('TV_Libraries.txt','w')
