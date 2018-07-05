@@ -144,7 +144,6 @@ class PseudoChannel():
                                 )
                             #add all episodes of each tv show to episodes table
                             episodes = self.PLEX.library.section(section.title).get(media.title).episodes()
-                            print(" Show: %s" % media.title)	
 				
 			    
                             for episode in episodes:
@@ -185,7 +184,113 @@ class PseudoChannel():
                                 suffix = 'Complete', 
                                 bar_length = 40
                             )
+                            
+    def update_db_movies(self):
 
+        print("#### Updating Local Database, MOVIES ONLY")
+        self.db.create_tables()
+        libs_dict = config.plexLibraries
+        sections = self.PLEX.library.sections()
+        for section in sections:
+            for correct_lib_name, user_lib_name in libs_dict.items():
+                if section.title.lower() in [x.lower() for x in user_lib_name]:
+                    if correct_lib_name == "Movies":
+                        sectionMedia = self.PLEX.library.section(section.title).all()
+                        for i, media in enumerate(sectionMedia):
+                            self.db.add_movies_to_db(1, media.title, media.duration, media.key, section.title)
+                            self.print_progress(
+                                    i + 1, 
+                                    len(sectionMedia), 
+                                    prefix = 'Progress '+section.title+":     ", 
+                                    suffix = 'Complete', 
+                                    bar_length = 40
+                                )
+                            
+    def update_db_tv(self):
+
+        print("#### Updating Local Database, TV ONLY")
+        self.db.create_tables()
+        libs_dict = config.plexLibraries
+        sections = self.PLEX.library.sections()
+        for section in sections:
+            for correct_lib_name, user_lib_name in libs_dict.items():
+                if section.title.lower() in [x.lower() for x in user_lib_name]:
+                    if correct_lib_name == "TV Shows":
+                        sectionMedia = self.PLEX.library.section(section.title).all()
+                        for i, media in enumerate(sectionMedia):
+                            backgroundImagePath = self.PLEX.library.section(section.title).get(media.title)
+                            backgroundImgURL = ''
+                            if isinstance(backgroundImagePath.art, str):
+                                backgroundImgURL = config.baseurl+backgroundImagePath.art+"?X-Plex-Token="+config.token
+                            self.db.add_shows_to_db(
+                                2, 
+                                media.title, 
+                                media.duration if media.duration else 1, 
+                                '', 
+                                backgroundImgURL, 
+                                media.key, 
+                                section.title
+                            )
+                            self.print_progress(
+                                    i + 1, 
+                                    len(sectionMedia),
+                                    prefix = 'Progress '+section.title+":   ", 
+                                    suffix = 'Complete', 
+                                    bar_length = 40
+                                )
+                            #add all episodes of each tv show to episodes table
+                            episodes = self.PLEX.library.section(section.title).get(media.title).episodes()
+				
+			    
+                            for episode in episodes:
+                                duration = episode.duration
+                                if duration:
+                                    self.db.add_episodes_to_db(
+                                            4, 
+                                            episode.title, 
+                                            duration, 
+                                            episode.index, 
+                                            episode.parentIndex, 
+                                            media.title,
+                                            episode.key,
+                                            section.title
+                                        )
+                                else:
+                                    self.db.add_episodes_to_db(
+                                            4, 
+                                            episode.title, 
+                                            0, 
+                                            episode.index, 
+                                            episode.parentIndex, 
+                                            media.title,
+                                            episode.key,
+                                            section.title
+                                        )
+                            
+                            
+    def update_db_comm(self):
+
+        print("#### Updating Local Database, COMMERCIALS ONLY")
+        self.db.create_tables()
+        libs_dict = config.plexLibraries
+        sections = self.PLEX.library.sections()
+        for section in sections:
+            for correct_lib_name, user_lib_name in libs_dict.items():
+                if section.title.lower() in [x.lower() for x in user_lib_name]:
+                    if correct_lib_name == "Commercials":
+                        print "user_lib_name", section.title
+                        sectionMedia = self.PLEX.library.section(section.title).all()
+                        media_length = len(sectionMedia)
+                        for i, media in enumerate(sectionMedia):
+                            self.db.add_commercials_to_db(3, media.title, media.duration, media.key, section.title)
+                            self.print_progress(
+                                i + 1, 
+                                media_length, 
+                                prefix = 'Progress '+section.title+":", 
+                                suffix = 'Complete', 
+                                bar_length = 40
+                            )
+                            
     def update_schedule(self):
 
         """Changing dir to the schedules dir."""
@@ -819,6 +924,15 @@ if __name__ == '__main__':
     parser.add_argument('-u', '--update',
                          action='store_true',
                          help='Update the local database with Plex libraries.')
+    parser.add_argument('-um', '--update_movies',
+                         action='store_true',
+                         help='Update the local database with Plex MOVIE libraries ONLY.')
+    parser.add_argument('-utv', '--update_tv',
+                         action='store_true',
+                         help='Update the local database with Plex TV libraries ONLY.')
+    parser.add_argument('-uc', '--update_commercials',
+                         action='store_true',
+                         help='Update the local database with Plex COMMERCIAL libraries ONLY.')
     parser.add_argument('-xml', '--xml',
                          action='store_true', 
                          help='Update the local database with the pseudo_schedule.xml.')
@@ -888,6 +1002,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.update:
         pseudo_channel.update_db()
+    if args.update_movies:
+        pseudo_channel.update_db_movies()
+    if args.update_tv:
+        pseudo_channel.update_db_tv()
+    if args.update_commercials:
+        pseudo_channel.update_db_comm()
     if args.xml:
         pseudo_channel.update_schedule()
     if args.show_clients:
