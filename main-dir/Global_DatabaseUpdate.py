@@ -4,6 +4,7 @@ Created on Thu Jun 28 17:33:59 2018
 
 @author: Matt
 """
+import sys
 import argparse
 import sqlite3
 import os
@@ -16,15 +17,13 @@ channel_dir_increment_symbol = "_"
 
 parser = argparse.ArgumentParser(description="Global Database Update Script")
 
-
-parser.add_argument('-u','--update_all',action='store_true',help='update ALL elements (default)')
+parser.add_argument('-u','--update_all',action='store_true',help='update ALL elements')
 parser.add_argument('-um','--update_movies',action='store_true',help='update MOVIE elements')
 parser.add_argument('-utv','--update_tv',action='store_true',help='update TV elements')
 parser.add_argument('-uc','--update_comm',action='store_true',help='update COMMERCIAL elements')
 args = parser.parse_args()
 
-update_flags = '-u'
-if args.update_all:
+if args.update_all or len(sys.argv) == 1:
     update_flags = '-u'
 else:
     update_flags=''
@@ -37,6 +36,10 @@ else:
 
 
 update_call = "sudo python PseudoChannel.py %s" % update_flags
+
+
+print(update_call)
+raise ValueError("WHOPIEE")
 
 
 # Step ONE: Global database update 
