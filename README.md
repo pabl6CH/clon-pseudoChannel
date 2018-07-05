@@ -1,4 +1,8 @@
 # PseudoChannel.py - Your Home-Brewed TV Channels
+Update 7/4/2018 - Minor changes made to the updating process
+- Your daily_schedules will now be preserved across global updates, so if you update mid-day you won't lose the set of shows you were watching
+- Selective updating is now available through the use of -um, -utv, and -uc flags.  Any amount of these can be called from PseudoChannel.py OR Global_DatabaseUpdate.py.  This will only update your movies, tv, or commercial libraries respectively.
+
 
 Update 06/30/2018 - At last, some more updates to this great program!  Listed below are some of the fixes:
 - Channel naming is now flexible, feel free to use as many as you want!
@@ -54,6 +58,9 @@ You can run `% python PseudoChannel.py` with the following options. The order is
 | Flag                    | Description   | 
 | ------------------------|--------------| 
 | -u, --update            | Manually update (or create if not exists) the local db when new media is added to your Plex server. |
+| -um, --update_movies    | Manually update (or create if not exists) the MOVIES local db when new media is added to your Plex server. |
+| -utv, --update_tv       | Manually update (or create if not exists) the TV local db when new media is added to your Plex server. |
+| -uc, --update_comm      | Manually update (or create if not exists) the COMMERCIALS local db when new media is added to your Plex server. |
 | -xml, --xml             | After making any edits your .xml schedule. Run this to populate the local db. |  
 | -g, --generate_schedule | Manually generate the daily schedule. This is useful for testing / first run. |
 | -r, --run               | Run PsuedoChannel.py. |
