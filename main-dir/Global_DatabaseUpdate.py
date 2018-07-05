@@ -4,6 +4,7 @@ Created on Thu Jun 28 17:33:59 2018
 
 @author: Matt
 """
+import argparse
 import sqlite3
 import os
 from shutil import copy2
@@ -13,9 +14,34 @@ channel_dir_increment_symbol = "_"
 
 
 
+parser = argparse.ArgumentParser(description="Global Database Update Script")
+
+
+parser.add_argument('-u','--update_all',action='store_true',help='update ALL elements (default)')
+parser.add_argument('-um','--update_movies',action='store_true',help='update MOVIE elements')
+parser.add_argument('-utv','--update_tv',action='store_true',help='update TV elements')
+parser.add_argument('-uc','--update_comm',action='store_true',help='update COMMERCIAL elements')
+args = parser.parse_args()
+
+update_flags = '-u'
+if args.update_all:
+    update_flags = '-u'
+else:
+    update_flags=''
+    if args.update_movies:
+        update_flags+=' -um'
+    if args.update_tv:
+        update_flags+=' -utv'
+    if args.update_comm:
+        update_flags+=' -uc'
+
+
+update_call = "sudo python PseudoChannel.py %s" % update_flags
+
+
 # Step ONE: Global database update 
-print("+++++ Doing global update from PLEX")
-os.system('sudo python PseudoChannel.py -u')
+print("+++++ Doing global update from PLEX: %s" % update_flags)
+os.system(update_call)
 
 
 base_dirA = os.path.dirname(os.path.abspath(__file__))
