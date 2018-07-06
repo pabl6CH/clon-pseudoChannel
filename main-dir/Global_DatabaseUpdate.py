@@ -38,10 +38,6 @@ else:
 update_call = "sudo python PseudoChannel.py %s" % update_flags
 
 
-print(update_call)
-raise ValueError("WHOPIEE")
-
-
 # Step ONE: Global database update 
 print("+++++ Doing global update from PLEX: %s" % update_flags)
 os.system(update_call)
