@@ -22,10 +22,12 @@ class PseudoChannelCommercial():
     def get_random_commercial(self):
 
         random_commercial = random.choice(self.commercials)
-        random_commercial_dur_seconds = (int(random_commercial[4])/1000)%60
+#        random_commercial_dur_seconds = (int(random_commercial[4])/1000)%60
+        random_commercial_dur_seconds = (int(random_commercial[4])/1000)
         while random_commercial_dur_seconds < self.MIN_DURATION_FOR_COMMERCIAL:
              random_commercial = random.choice(self.commercials)
-             random_commercial_dur_seconds = (int(random_commercial[4])/1000)%60
+             random_commercial_dur_seconds = (int(random_commercial[4])/1000)
+#             random_commercial_dur_seconds = (int(random_commercial[4])/1000)%60
         return random_commercial
 
     def timedelta_milliseconds(self, td):
