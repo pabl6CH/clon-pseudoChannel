@@ -578,17 +578,6 @@ class PseudoDailyScheduleController():
                     row[13], 
                     row[6] if row[11] == "TV Shows" else row[3]
                 )
-
-            
-            elif (timeBStart - timeBEnd).total_seconds() >= 0 and \
-                   ((currentTime-timeBStart).total_seconds() >= 0 or (timeBEnd-currentTime).total_seconds() >= 0) :
-                 
-                print "+++++ DAY SKIP Made the conditional & found item: {}".format(row[6])
-
-                return self.get_show_photo(
-                    row[13], 
-                    row[6] if row[11] == "TV Shows" else row[3]
-                )
             
             else:
 
@@ -630,13 +619,6 @@ class PseudoDailyScheduleController():
 
                 return row[6] + " - " + row[3] if row[11] == "TV Shows" else row[3]
 
-            elif (timeBStart - timeBEnd).total_seconds() >= 0 and \
-                   ((currentTime-timeBStart).total_seconds() >= 0 or (timeBEnd-currentTime).total_seconds() >= 0) :
-                
-                print "+++++ DAY SKIP Made the conditional & found item: {}".format(row[6])
-
-                return row[6] + " - " + row[3] if row[11] == "TV Shows" else row[3]
-            
             else:
 
                 pass
