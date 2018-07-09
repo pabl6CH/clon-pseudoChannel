@@ -4,6 +4,8 @@
 #----
 # Simple script to update every channel with updates from the github repo. 
 # BACKUP EACH XML/DB IN EACH CHANNEL.
+# Code will take in one argument: To take from the master or development branch
+# For ALL installs, simply place this file in the location you would like your channels to be installed/updated
 #----
 
 #---- 
@@ -14,13 +16,21 @@
 
 #----BEGIN EDITABLE VARS----
 
-SCRIPT_TO_EXECUTE_PLUS_ARGS='git clone https://github.com/mutto233/pseudo-channel . --branch master'
+if [ $# -gt 1 ]; then
+	echo "ERROR: Please only supply one argument"
+	exit 9999
+elif [ "$1" == "develop" ]; then
+	echo "Downloading the develop branch"
+	SCRIPT_TO_EXECUTE_PLUS_ARGS='git clone https://github.com/mutto233/pseudo-channel . --branch develop'
+
+else
+	echo "Downloading the master branch"
+	SCRIPT_TO_EXECUTE_PLUS_ARGS='git clone https://github.com/mutto233/pseudo-channel . --branch master'
+fi
 
 OUTPUT_PREV_CHANNEL_PATH=.
 
 CHANNEL_DIR_INCREMENT_SYMBOL="_"
-
-INSTALL_FOLDER="channels"
 
 FIRST_INSTALL=false
 
@@ -44,23 +54,12 @@ FIRST_INSTALL=false
 
 # If this is our first install, we will now make all necessary directories to prepare for install
 if [ "$FIRST_INSTALL" == "true" ]; then
-	mkdir $INSTALL_FOLDER
-	cd $INSTALL_FOLDER
 
 	for (( num=1; num<=5; num++ ))
 	do
 		mkdir "pseudo-channel_$num"
 	done
 fi
-
-
-# Sanity check, are we in the install folder?  This is just to make sure we don't run into errors.
-if [ ! -d "../$INSTALL_FOLDER" ]; then
-	echo "ERROR: NOT IN '$INSTALL_FOLDER' FOLDER, PLEASE MAKE SURE WE ARE IN HERE!"
-	echo "Did you mean to set FIRST_RUN=true?"
-	exit 9999
-fi
-
 
 
 #### Next, let's download the latest master version of information from GitHub and store it in a temporary folder
@@ -157,7 +156,6 @@ rm -rf ./.pseudo-temp
 rm -rf ./github_download
 
 #### Change permissions to 777 for all files, so that things will run
-cd ..
-sudo chmod -R 777 "./$INSTALL_FOLDER"
+sudo chmod -R 777 .
 
 echo "Update Complete"
