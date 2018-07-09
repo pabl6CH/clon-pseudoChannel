@@ -164,9 +164,12 @@ class PseudoDailyScheduleController():
     def get_html_from_daily_schedule(self, currentTime, bgImageURL, datalist, nowPlayingTitle):
 
         now = datetime.now()
+        now = now.replace(year=1900, month=1, day=1)
+        midnight = now.replace(hour=23, minute=59, second=59)
         #mutto233 put this here, because to be honest, isn't the current time always now?
         if currentTime != None:
             currentTime=now
+            
             
         time = now.strftime("%B %d, %Y")
         doc, tag, text, line = Doc(
@@ -272,9 +275,15 @@ class PseudoDailyScheduleController():
                                     timeBStart = timeBStart.replace(year=1900, month=1, day=1)
                                     try:
                                         timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S.%f')
+                                        timeBEnd = timeBEnd.replace(day=1)
                                     except:
                                         timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S')
+                                        timeBEnd = timeBEnd.replace(day=1)
                                     #print timeBStart
+                                    #print "%s" % row[3]
+                                    #print "%s, %s, %s, %s, %s" % (currentTime, timeBStart, timeBEnd, midnight,midnight.replace(hour=0,minute=0,second=0))
+                                    #print "%s" % (timeBStart - timeBEnd).total_seconds()
+                                    #print "%s, %s, %s, %s" % ((currentTime-timeBStart).total_seconds(),(midnight-currentTime).total_seconds(),(currentTime-midnight.replace(hour=0,minute=0,second=0)).total_seconds(),(timeBEnd-currentTime).total_seconds())
                                     if currentTime == None:
                                         with tag('tr'):
                                             with tag('th', scope='row'):
@@ -287,12 +296,14 @@ class PseudoDailyScheduleController():
                                                 text(row[3])
                                             with tag('td'):
                                                 text(row[8])
-                                    elif (currentTime - timeBStart).total_seconds() >= 0 and \
-                                         (timeBEnd - currentTime).total_seconds() >= 0:
-
-                                            #if self.DEBUG:
-                                            #print "%s, %s, %s" % (currentTime, timeBStart, timeBEnd)
-                                            #print "%s, %s" % ((currentTime - timeBStart).total_seconds(), (timeBEnd - currentTime).total_seconds())
+                                    elif ((currentTime - timeBStart).total_seconds() >= 0 and \
+                                         (timeBEnd - currentTime).total_seconds() >= 0) or \
+                                         ((timeBStart - timeBEnd).total_seconds() >= 0 and \
+                                         (((currentTime-midnight.replace(hour=0,minute=0,second=0)).total_seconds() >= 0 and \
+                                          (timeBEnd-currentTime).total_seconds() >= 0) or
+                                         ((currentTime-timeBStart).total_seconds() >= 0 and \
+                                          (midnight-currentTime).total_seconds() >= 0))):          
+                                        
                                             print "+++++ Currently Playing:", row[3]
 
                                             with tag('tr', klass='bg-info'):
@@ -599,7 +610,9 @@ class PseudoDailyScheduleController():
                 self.check_for_end_time(datalist)
 
     def manually_get_now_playing_bg_image(self, currentTime, datalist):
-
+        now = datetime.now()
+        now = now.replace(year=1900, month=1, day=1)
+        midnight = now.replace(hour=23, minute=59, second=59)
         increase_var = 0
 
         for row in datalist:
@@ -611,8 +624,10 @@ class PseudoDailyScheduleController():
             timeBStart = timeBStart.replace(year=1900, month=1, day=1)
             try:
                 timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S.%f')
+                timeBEnd = timeBEnd.replace(day=1)
             except:
                 timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S')
+                timeBEnd = timeBEnd.replace(day=1)
 
             #print ((currentTime - timeBStart).total_seconds() >= 0 and \
             #       (timeBEnd - currentTime).total_seconds() >= 0)
@@ -620,8 +635,13 @@ class PseudoDailyScheduleController():
             #print currentTime.minute
             #print timeBStart.minute
 
-            if (currentTime - timeBStart).total_seconds() >= 0 and \
-                   (timeBEnd - currentTime).total_seconds() >= 0:
+            if ((currentTime - timeBStart).total_seconds() >= 0 and \
+                 (timeBEnd - currentTime).total_seconds() >= 0) or \
+                 ((timeBStart - timeBEnd).total_seconds() >= 0 and \
+                 (((currentTime-midnight.replace(hour=0,minute=0,second=0)).total_seconds() >= 0 and \
+                  (timeBEnd-currentTime).total_seconds() >= 0) or
+                 ((currentTime-timeBStart).total_seconds() >= 0 and \
+                  (midnight-currentTime).total_seconds() >= 0))): 
 
                 print "+++++ Made the conditional & found item: {}".format(row[6])
 
@@ -642,7 +662,9 @@ class PseudoDailyScheduleController():
             return None
 
     def manually_get_now_playing_title(self, currentTime, datalist):
-
+        now = datetime.now()
+        now = now.replace(year=1900, month=1, day=1)
+        midnight = now.replace(hour=23, minute=59, second=59)
         increase_var = 0
 
         for row in datalist:
@@ -654,8 +676,10 @@ class PseudoDailyScheduleController():
             timeBStart = timeBStart.replace(year=1900, month=1, day=1)
             try:
                 timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S.%f')
+                timeBEnd = timeBEnd.replace(day=1)
             except:
                 timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S')
+                timeBEnd = timeBEnd.replace(day=1)
 
             #print ((currentTime - timeBStart).total_seconds() >= 0 and \
             #       (timeBEnd - currentTime).total_seconds() >= 0)
@@ -663,8 +687,13 @@ class PseudoDailyScheduleController():
             #print currentTime.minute
             #print timeBStart.minute
 
-            if (currentTime - timeBStart).total_seconds() >= 0 and \
-                   (timeBEnd - currentTime).total_seconds() >= 0 :
+            if ((currentTime - timeBStart).total_seconds() >= 0 and \
+                 (timeBEnd - currentTime).total_seconds() >= 0) or \
+                 ((timeBStart - timeBEnd).total_seconds() >= 0 and \
+                 (((currentTime-midnight.replace(hour=0,minute=0,second=0)).total_seconds() >= 0 and \
+                  (timeBEnd-currentTime).total_seconds() >= 0) or
+                 ((currentTime-timeBStart).total_seconds() >= 0 and \
+                  (midnight-currentTime).total_seconds() >= 0))):          
 
                 print "+++++ Made the conditional & found item: {}".format(row[6])
 
