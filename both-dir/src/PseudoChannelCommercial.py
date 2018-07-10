@@ -55,7 +55,7 @@ class PseudoChannelCommercial():
         
         prev_item_end_time = prev_item_end_time.replace(day=1)
         
-        if prev_item_end_time > curr_item_start_time:
+        if prev_item_end_time.replace(second=0,microsecond=0) > curr_item_start_time:
             # NOTE: This is just for the logic of this function, I have noticed that this 
             # may cause other issues in other functions, since now the day is off.
             print "WE MUST BE SKIPPING A DAY, ADDING A DAY TO THE START TIME"
@@ -65,7 +65,7 @@ class PseudoChannelCommercial():
         print "##############################################"
         print "get_commercials_to_place_between_media DEBUG"
         print "NOW: %s" % now
-        print "prev_item_end_time: %s" % prev_item_end_time
+        print "prev_item_end_time: %s" % prev_item_end_time.replace(second=0,microsecond=0) 
         print "curr_item_start_time: %s" % curr_item_start_time
         print "time_diff: %s" % time_diff
         print "##############################################"
