@@ -413,7 +413,14 @@ class PseudoDailyScheduleController():
     *
     '''
     def play_media(self, mediaType, mediaParentTitle, mediaTitle, offset, customSectionName, durationAmount):
-
+         # Check for necessary client override, if we have a folder of "channels_<NAME>"
+        cwd = os.getcwd()
+        if "channels_" in cwd:
+            head,sep,tail = cwd.partition('channels_')
+            head,sep,tail = tail.partition('/')
+            self.PLEX_CLIENTS = [head]
+            print "CLIENT OVERRIDE: %s" % self.PLEX_CLIENTS
+            
         try: 
             if mediaType == "TV Shows":
 #                print "Here, Trying to play custom type: ", customSectionName
