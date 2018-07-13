@@ -171,7 +171,7 @@ class PseudoDailyScheduleController():
             currentTime=now
             
             
-        time = now.strftime("%B %d, %Y")
+        time = datetime.now().strftime("%B %d, %Y")
         doc, tag, text, line = Doc(
 
         ).ttl()
