@@ -719,7 +719,8 @@ class PseudoChannel():
                             if self.USING_COMMERCIAL_INJECTION:
                                 list_of_commercials = self.commercials.get_commercials_to_place_between_media(
                                     previous_episode,
-                                    entry
+                                    entry,
+                                    entry.is_strict_time.lower()
                                 )
                                 for commercial in list_of_commercials:
                                     self.db.add_media_to_daily_schedule(commercial)
@@ -746,7 +747,8 @@ class PseudoChannel():
                             if self.USING_COMMERCIAL_INJECTION:
                                 list_of_commercials = self.commercials.get_commercials_to_place_between_media(
                                     previous_episode,
-                                    entry
+                                    entry,
+                                    entry.is_strict_time.lower()
                                 )
                                 for commercial in list_of_commercials:
                                     self.db.add_media_to_daily_schedule(commercial)

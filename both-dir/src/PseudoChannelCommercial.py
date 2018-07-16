@@ -41,7 +41,7 @@ class PseudoChannelCommercial():
         commercial = tuple(commercial_as_list)
         return commercial
 
-    def get_commercials_to_place_between_media(self, last_ep, now_ep):
+    def get_commercials_to_place_between_media(self, last_ep, now_ep, strict_time):
 
         prev_item_end_time = datetime.strptime(last_ep.end_time.strftime('%Y-%m-%d %H:%M:%S.%f'), '%Y-%m-%d %H:%M:%S.%f')
         curr_item_start_time = datetime.strptime(now_ep.start_time, '%I:%M:%S %p')        
@@ -55,7 +55,7 @@ class PseudoChannelCommercial():
         
         prev_item_end_time = prev_item_end_time.replace(day=1)
         
-        if prev_item_end_time.replace(second=0,microsecond=0) > curr_item_start_time:
+        if prev_item_end_time.replace(second=0,microsecond=0) > curr_item_start_time and strict_time == "false":
             # NOTE: This is just for the logic of this function, I have noticed that this 
             # may cause other issues in other functions, since now the day is off.
             print "WE MUST BE SKIPPING A DAY, ADDING A DAY TO THE START TIME"
