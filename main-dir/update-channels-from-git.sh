@@ -16,14 +16,15 @@
 
 #----BEGIN EDITABLE VARS----
 
-if [ $# -gt 1 ]; then
+if [ $# -gt 1 ]
+	then
 	echo "ERROR: Please only supply one argument"
 	exit 9999
-elif [ "$1" == "develop" ]; then
+	elif [ "$1" == "develop" ]
+	then
 	echo "Downloading the develop branch"
 	SCRIPT_TO_EXECUTE_PLUS_ARGS='git clone https://github.com/mutto233/pseudo-channel . --branch develop'
-
-else
+	else
 	echo "Downloading the master branch"
 	SCRIPT_TO_EXECUTE_PLUS_ARGS='git clone https://github.com/mutto233/pseudo-channel . --branch master'
 fi
@@ -106,9 +107,9 @@ if [ "$FIRST_INSTALL" == "true" ]
 	then
 	echo "INSTALLING REQUIREMENTS because this is a FIRST RUN"
 	sudo pip install -r requirements.txt
-	sudo apt-get -y install libxml2-utils
+	sudo apt-get -y install libxml2-utils # NEEDED FOR XML PARSING
 	cd ..
-	echo "ENTER the IP ADDRESS of your PLEX SERVER"
+	echo "ENTER the IP ADDRESS of your PLEX SERVER" #GET PLEX SERVER IP AND PORT
 	read -p 'Plex Server IP: ' server_ip
 	echo "ENTER the PUBLIC PORT number for your PLEX SERVER"
 	read -p 'Public Port (default: 32400): ' server_port
@@ -116,13 +117,13 @@ if [ "$FIRST_INSTALL" == "true" ]
 		then
 		server_port='32400'
 	fi
-	echo "ENTER your PLEX AUTHENTICATION TOKEN"
+	echo "ENTER your PLEX AUTHENTICATION TOKEN" # GET PLEX SERVER AUTH TOKEN
 	echo "(for help finding token, check here: https://bit.ly/2p7RtOu)"
 	read -p 'Plex Auth Token: ' server_token
 	echo "PLEX SERVER is $server_ip:$server_port"
 	echo "PLEX AUTH TOKEN is $server_token"
 	echo "SELECT the PLEX CLIENT for this install or ENTER one manually"
-	# Gets a list of Plex clients connected and registered with the server
+	# DISPLAY A LIST OF CONNECTED CLIENTS AND ALLOW THE USER TO SELECT ONE OR ENTER ONE THAT ISN'T DISPLAYED
 	clientlist=$(xmllint --xpath "//Server/@name" "http://192.168.1.140:32400/clients" | sed "s|name=||g" | sed "s|^ ||g" && echo -e " Other")
 	eval set $clientlist
 	select ps_client_entry in "$@"
@@ -135,7 +136,9 @@ if [ "$FIRST_INSTALL" == "true" ]
 			ps_client="[\"$ps_client_entry\"]"
 			break
 		done
-	# Get the names of Plex libraries for the config
+	# ALLOW THE USER TO ENTER ALL PLEX LIBRARIES
+	echo "++++++SETTING UP PLEX LIBRARIES WITH PSEUDO CHANNEL++++++"
+        echo "Add ALL LIBRARIES that may be used for ANY CHANNEL here."
 	echo "ENTER the name of EACH Plex library defined as TV SHOWS"
 	enter_tv_shows=yes
 	echo -n "[" > tv-libraries.temp
@@ -143,11 +146,11 @@ if [ "$FIRST_INSTALL" == "true" ]
 		do
 			read -p 'TV Show Library Name: ' tv_library_entry
 			echo -n "\"$tv_library_entry\"" >> tv-libraries.temp
-			echo "ENTER another LIBRARY?"
+			echo "ENTER another TV SHOW LIBRARY?"
 			read -p 'Y/N: ' enter_tv_shows
 			while [[ "$enter_tv_shows" != @(Y|y|Yes|yes|YES|N|n|No|no|NO) ]]
 				do
-				echo "ENTER another LIBRARY?"
+				echo "ENTER another TV SHOW LIBRARY?"
 				read -p 'Y/N: ' enter_tv_shows
 				done
 			if [[ "$enter_tv_shows" == @(Y|y|Yes|yes|YES) ]]
@@ -163,11 +166,11 @@ if [ "$FIRST_INSTALL" == "true" ]
 		do
 			read -p 'Movie Library Name: ' movie_library_entry
 			echo -n "\"$movie_library_entry\"" >> movie-libraries.temp
-			echo "ENTER another LIBRARY?"
+			echo "ENTER another MOVIE LIBRARY?"
 			read -p 'Y/N: ' enter_movies
 			while [[ "$enter_movies" != @(Y|y|Yes|yes|YES|N|n|No|no|NO) ]]
 				do
-				echo "ENTER another LIBRARY?"
+				echo "ENTER another MOVIE LIBRARY?"
 				read -p 'Y/N: ' enter_movies
 				done
 			if [[ "$enter_movies" == @(Y|y|Yes|yes|YES) ]]
@@ -176,7 +179,7 @@ if [ "$FIRST_INSTALL" == "true" ]
 			fi
 		done
 	echo -n "]," >> movie-libraries.temp
-	echo "Use COMMERCIALS in between scheduled content?"
+	echo "Use COMMERCIALS in between scheduled content?" # ASK IF THE USER WANTS TO ADD COMMERCIAL LIBRARIES
 	read -p 'Y/N: ' enter_commercials
 	while [[ "$enter_commercials" != @(Y|y|Yes|yes|YES|N|n|No|no|NO) ]]
 		do
@@ -193,11 +196,11 @@ if [ "$FIRST_INSTALL" == "true" ]
 			do
 				read -p 'Commercial Library Name: ' commercial_library_entry
 				echo -n "\"$commercial_library_entry\", " >> commercial-libraries.temp
-				echo "ENTER another LIBRARY?"
+				echo "ENTER another COMMERCIAL LIBRARY?"
 				read -p 'Y/N: ' enter_commercials
 				while [[ "$enter_commercials" != @(Y|y|Yes|yes|YES|N|n|No|no|NO) ]]
 					do
-					echo "ENTER another LIBRARY?"
+					echo "ENTER another COMMERCIAL LIBRARY?"
 					read -p 'Y/N: ' enter_commercials
 					done
 			done
@@ -206,27 +209,40 @@ if [ "$FIRST_INSTALL" == "true" ]
 		truncate -s-2 commercial-libraries.temp
 		echo -n "]," >> commercial-libraries.temp
 	fi
+	# DEFINE THE DAILY RESET TIME
 	echo "Set the TIME for PSEUDO CHANNEL to GENERATE the DAILY SCHEDULE"
-	echo "USE either 24h FORMAT (ex: 23:00) or 12h FORMAT (11:00 PM)"
-	read -p 'Schedule Reset Time: ' reset_time
-	reset_time="\"$reset_time\""
-	echo "token = '$server_token'" > plex_token.py
-	echo "baseurl = 'http://$server_ip:$server_port'" >> plex_token.py
+	echo "USE 24H FORMAT (ex: 23:00)"
+	read -p 'Schedule Reset Time: ' reset_time_entry
+	reset_time_formatted=$(echo $reset_time_entry | sed -e "s|^[0-9]:.*|0$reset_time_entry|g")
+	reset_time_hour="${reset_time_formatted:0:2}"
+	reset_time_hour="$(echo $reset_time_hours | sed -e s|^[0]||)"
+	reset_time_minute="${reset_time_formatted: -2}"
+	reset_time_minutes="$(echo $reset_time_minutes | sed -e s|^[0]||)"
+	# SET UP CRON JOB TO RUN DAILY RESET
+	sudo echo \#\!/bin/bash > ./daily-cron.sh && echo "cd $PWD" >> ./daily-cron.sh && echo "sudo ./generate-channels-daily-schedules.sh" >> ./daily-cron.sh
+	( sudo crontab -l ; echo "$reset_time_minute $reset_time_hour * * * $PWD/daily-cron.sh" ) | sudo crontab -
+
+#### WRITE VARIABLES TO TOKEN AND CONFIG FILES ####
+	reset_time="\"$reset_time_entry\""
+	echo "token = '$server_token'" > plex_token.py # WRITE PLEX SERVER TOKEN TO FILE
+	echo "baseurl = 'http://$server_ip:$server_port'" >> plex_token.py # WRITE PLEX URL TO FILE
 	tv_libraries=$(cat tv-libraries.temp)
-	sudo sed -i "s/plexClients = .*/plexClients = $ps_client/" github_download/both-dir/pseudo_config.py
-	sudo sed -i "/.\"TV Shows\" :*./c\     \"TV Shows\" : $tv_libraries" github_download/both-dir/pseudo_config.py
+	sudo sed -i "s/plexClients = .*/plexClients = $ps_client/" github_download/both-dir/pseudo_config.py # WRITE CLIENT TO CONFIG
+	sudo sed -i "/.\"TV Shows\" :*./c\     \"TV Shows\" : $tv_libraries" github_download/both-dir/pseudo_config.py # WRITE TV LIBRARIES TO CONFIG
 	movie_libraries=$(cat movie-libraries.temp)
-	sudo sed -i "/.\"Movies\" :*./c\     \"Movies\"   : $movie_libraries" github_download/both-dir/pseudo_config.py
-	if [[ "$commercials_true" == "true" ]]
+	sudo sed -i "/.\"Movies\" :*./c\     \"Movies\"   : $movie_libraries" github_download/both-dir/pseudo_config.py # WRITE MOVIE LIBRARIES TO CONFIG
+	if [[ "$commercials_true" == "true" ]] #WRITE COMMERCIAL LIBRARIES TO CONFIG
 		then
 		commercial_libraries=$(cat commercial-libraries.temp)
 		sudo sed -i "/.\"Commercials\" :*./c\     \"Commercials\" : $commercial_libraries" github_download/both-dir/pseudo_config.py
 	fi
+	# WRITE OTHER CONFIG OPTIONS TO THE CONFIG FILE
 	sudo sed -i "s/useCommercialInjection =.*/useCommercialInjection = $commercials_true/" github_download/both-dir/pseudo_config.py
 	sudo sed -i "s/dailyUpdateTime =.*/dailyUpdateTime = $reset_time/" github_download/both-dir/pseudo_config.py
 	sudo sed -i "s/controllerServerPath =.*/controllerServerPath = \"\"/" github_download/both-dir/pseudo_config.py
 	sudo sed -i "s/controllerServerPort =.*/controllerServerPort = \"\"/" github_download/both-dir/pseudo_config.py
 	sudo sed -i "s/debug_mode =.*/debug_mode = False/" github_download/both-dir/pseudo_config.py
+	# CLEAN UP TEMP FILES AND COPY CONFIG
 	sudo rm movie-libraries.temp
 	sudo rm tv-libraries.temp
 	sudo rm commercial-libraries.temp
@@ -275,7 +291,7 @@ if [ "${#CHANNEL_DIR_ARR[@]}" -gt 1 ]; then
 		cp ../.pseudo-temp/pseudo_config.py . 2>/dev/null
 
 		rm -rf ../.pseudo-temp
-		
+
 		cd ..
 	done
 fi
@@ -318,3 +334,4 @@ rm -rf ./github_download
 sudo chmod -R 777 .
 
 echo "Update Complete"
+
