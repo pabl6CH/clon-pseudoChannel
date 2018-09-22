@@ -107,7 +107,7 @@ if [ "$FIRST_INSTALL" == "true" ]
 	then
 	echo "INSTALLING REQUIREMENTS because this is a FIRST RUN"
 	sudo pip install -r requirements.txt
-	sudo apt-get -y install libxml2-utils # NEEDED FOR XML PARSING
+	sudo apt-get -y install libxml2-utils recode # NEEDED FOR XML PARSING
 	cd ..
 	echo "ENTER the IP ADDRESS of your PLEX SERVER" #GET PLEX SERVER IP AND PORT
 	read -p 'Plex Server IP: ' server_ip
