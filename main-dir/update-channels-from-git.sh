@@ -191,6 +191,8 @@ if [ "$FIRST_INSTALL" == "true" ]
 		commercials_true=true
 		echo "ENTER the name of EACH Plex library defined as COMMERCIALS"
 		echo -n "[" > commercial-libraries.temp
+		else
+		commercials_true=false
 	fi
 		while [[ "$enter_commercials" == @(Y|y|Yes|yes|YES) ]]
 			do
@@ -222,7 +224,7 @@ if [ "$FIRST_INSTALL" == "true" ]
 	sudo echo \#\!/bin/bash > ./daily-cron.sh && echo "cd $PWD" >> ./daily-cron.sh && echo "sudo ./generate-channels-daily-schedules.sh" >> ./daily-cron.sh
 	( sudo crontab -l ; echo "$reset_time_minute $reset_time_hour * * * $PWD/daily-cron.sh" ) | sudo crontab -
 
-#### WRITE VARIABLES TO TOKEN AND CONFIG FILES ####
+	#### WRITE VARIABLES TO TOKEN AND CONFIG FILES ####
 	reset_time="\"$reset_time_entry\""
 	echo "token = '$server_token'" > plex_token.py # WRITE PLEX SERVER TOKEN TO FILE
 	echo "baseurl = 'http://$server_ip:$server_port'" >> plex_token.py # WRITE PLEX URL TO FILE
@@ -335,3 +337,7 @@ sudo chmod -R 777 .
 
 echo "Update Complete"
 
+#### Write variables to config.cache
+sudo sed -i "s/server_ip=.*/server_ip=$server_ip/" config.cache
+sudo sed -i "s/server_port=.*/server_port=$server_port/" config.cache
+sudo sed -i "s/server_token=.*/server_token=$server_token/" config.cache

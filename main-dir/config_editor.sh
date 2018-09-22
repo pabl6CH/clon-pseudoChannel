@@ -4,6 +4,7 @@
 #Allow command argument $1 to indicate channel to edit config
 #If $1 == '' Choose main config file or specific channel
 #cd into channel directory if necessary
+source config.cache
 re='^[0-9]+$'
 number_of_channels=$(ls | grep pseudo-channel_ | wc -l)
 channel_number=$1
@@ -158,6 +159,7 @@ select category in "BASIC OPTIONS" "ADVANCED OPTIONS" "QUIT" # MAIN MENU
 			echo "CHANGES to the CHANNEL $channel_number CONFIG FILE have been SAVED."
 			sleep 1
 		fi
+
 		echo "EXITING CONFIG EDITOR..."
 		sleep 1
 		clear
@@ -169,33 +171,66 @@ if [[ "$config_option" == "Plex Server URL" ]] # CHANGE THE PLEX SERVER URL AND 
 	then
 	clear
 	echo "++++++++++++++++++++PSEUDO CHANNEL CONFIG EDITOR++++++++++++++++++++"
-	echo "ENTER the IP ADDRESS of your PLEX SERVER" #GET PLEX SERVER IP AND PORT
-	read -p 'Plex Server IP: ' server_ip
-	echo "ENTER the PUBLIC PORT number for your PLEX SERVER"
-	read -p 'Public Port (default: 32400): ' server_port
-	if [ "$server_port" == '' ]
+	#GET PLEX SERVER IP AND PORT
+	if [[ $server_ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]
 		then
-		server_port='32400'
+		echo "PLEX SERVER IP detected as $server_ip"
+		echo "Press ENTER to save $server_ip as your PLEX SERVER IP address"
+		echo "or enter the new PLEX SERVER IP address below."
+		read -p "Plex Server IP ($server_ip): " server_ip_entry
+		if [[ $server_ip_entry == '' ]]
+			then
+			echo "PLEX SERVER IP is $server_ip"
+			else
+			server_ip="$server_ip_entry"
+		fi
+		else
+		echo "ENTER the IP ADDRESS of your PLEX SERVER"
+		read -p 'Plex Server IP: ' server_ip
+	fi
+	echo "ENTER the PORT number for your PLEX SERVER"
+	read -p "Public Port (default: $server_port): " server_port_entry
+	if [ "$server_port_entry" != '' ]
+		then
+		server_port="$server_port_entry"
 	fi
 	echo "PLEX SERVER is $server_ip:$server_port"
 	sudo sed -i "s/baseurl =.*/baseurl = \'http:\/\/$server_ip:$server_port\'/" plex_token.py
+	sudo sed -i "s/server_ip=.*/server_ip=$server_ip/" config.cache
+	sudo sed -i "s/server_port=.*/server_port=$server_port/" config.cache
 	sleep 1
 elif [[ "$config_option" == "Plex Token" ]] # CHANGE THE PLEX AUTH TOKEN VALUE IN THE PLEX_TOKEN.PY FILE
 	then
 	clear
 	echo "++++++++++++++++++++PSEUDO CHANNEL CONFIG EDITOR++++++++++++++++++++"
-	echo "ENTER your PLEX AUTHENTICATION TOKEN" # GET PLEX SERVER AUTH TOKEN
-	echo "(for help finding token, check here: https://bit.ly/2p7RtOu)"
-	read -p 'Plex Auth Token: ' server_token
-	echo "PLEX AUTH TOKEN is $server_token"
-	server_token="\'$server_token\'"
+        if [ "$server_token" != '' ]
+                then
+		echo "AUTH TOKEN is currently set to $server_token"
+		echo "PRESS ENTER to KEEP THIS as your AUTH TOKEN"
+		echo "or ENTER your new PLEX AUTH TOKEN."
+		echo "(for help finding token, check here: https://bit.ly/2p7RtOu)"
+		else
+		echo "ENTER your PLEX AUTHENTICATION TOKEN" # GET PLEX SERVER AUTH TOKEN
+	        echo "(for help finding token, check here: https://bit.ly/2p7RtOu)"
+        fi
+	read -p 'Plex Auth Token: ' server_token_entry
+	if [ "$server_token_entry" == '' ]
+		then
+		echo "PLEX AUTH TOKEN saved as $server_token"
+		server_token="\'$server_token\'"
+		else
+		server_token=$server_token_entry
+                echo "PLEX AUTH TOKEN saved as $server_token"
+		server_token="\'$server_token\'"
+	fi
 	sudo sed -i "s/token =.*/token = $server_token/" plex_token.py
+	sudo sed -i "s/server_token=.*/server_token=$server_token/" config.cache
 	sleep 1
 elif [[ "$config_option" == "Plex Client" ]] # CHANGE PLEX CLIENT
 	then
 	clear
 	echo "++++++++++++++++++++PSEUDO CHANNEL CONFIG EDITOR++++++++++++++++++++"
-	clientlist=$(xmllint --xpath "//Server/@name" "http://192.168.1.140:32400/clients" | sed "s|name=||g" | sed "s|^ ||g" && echo -e " Other") # GET LIST OF CLIENTS
+	clientlist=$(xmllint --xpath "//Server/@name" "http://$serverip_ip:$server_port/clients" | sed "s|name=||g" | sed "s|^ ||g" && echo -e " Other") # GET LIST OF CLIENTS
 	eval set $clientlist
 	select ps_client_entry in "$@"
 		do

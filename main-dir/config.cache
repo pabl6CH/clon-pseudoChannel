@@ -1,0 +1,6 @@
+# PLEX SERVER IP ADDRESS
+server_ip=
+# PLEX SERVER PORT (DEFAULT: 32400)
+server_port=32400
+# PLEX SERVER AUTH TOKEN
+server_token=
