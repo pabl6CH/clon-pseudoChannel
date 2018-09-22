@@ -23,10 +23,10 @@ if [ $# -gt 1 ]
 	elif [ "$1" == "develop" ]
 	then
 	echo "Downloading the develop branch"
-	SCRIPT_TO_EXECUTE_PLUS_ARGS='git clone https://github.com/mutto233/pseudo-channel . --branch develop'
+	SCRIPT_TO_EXECUTE_PLUS_ARGS='git clone https://github.com/MoeFwacky/pseudo-channel . --branch develop'
 	else
 	echo "Downloading the master branch"
-	SCRIPT_TO_EXECUTE_PLUS_ARGS='git clone https://github.com/mutto233/pseudo-channel . --branch master'
+	SCRIPT_TO_EXECUTE_PLUS_ARGS='git clone https://github.com/MoeFwacky/pseudo-channel . --branch master'
 fi
 
 OUTPUT_PREV_CHANNEL_PATH=.
@@ -217,9 +217,9 @@ if [ "$FIRST_INSTALL" == "true" ]
 	read -p 'Schedule Reset Time: ' reset_time_entry
 	reset_time_formatted=$(echo $reset_time_entry | sed -e "s|^[0-9]:.*|0$reset_time_entry|g")
 	reset_time_hour="${reset_time_formatted:0:2}"
-	reset_time_hour="$(echo $reset_time_hours | sed -e s|^[0]||)"
+	reset_time_hour=$(echo $reset_time_hour | sed -e "s|^[0]||")
 	reset_time_minute="${reset_time_formatted: -2}"
-	reset_time_minutes="$(echo $reset_time_minutes | sed -e s|^[0]||)"
+	reset_time_minute=$(echo $reset_time_minute | sed "-e s|^[0]||")
 	# SET UP CRON JOB TO RUN DAILY RESET
 	sudo echo \#\!/bin/bash > ./daily-cron.sh && echo "cd $PWD" >> ./daily-cron.sh && echo "sudo ./generate-channels-daily-schedules.sh" >> ./daily-cron.sh
 	( sudo crontab -l ; echo "$reset_time_minute $reset_time_hour * * * $PWD/daily-cron.sh" ) | sudo crontab -
