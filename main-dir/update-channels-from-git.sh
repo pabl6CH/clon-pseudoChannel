@@ -124,7 +124,7 @@ if [ "$FIRST_INSTALL" == "true" ]
 	echo "PLEX AUTH TOKEN is $server_token"
 	echo "SELECT the PLEX CLIENT for this install or ENTER one manually"
 	# DISPLAY A LIST OF CONNECTED CLIENTS AND ALLOW THE USER TO SELECT ONE OR ENTER ONE THAT ISN'T DISPLAYED
-	clientlist=$(xmllint --xpath "//Server/@name" "http://192.168.1.140:32400/clients" | sed "s|name=||g" | sed "s|^ ||g" && echo -e " Other")
+	clientlist=$(xmllint --xpath "//Server/@name" "http://$server_ip:$server_port/clients" | sed "s|name=||g" | sed "s|^ ||g" && echo -e " Other")
 	eval set $clientlist
 	select ps_client_entry in "$@"
 		do
