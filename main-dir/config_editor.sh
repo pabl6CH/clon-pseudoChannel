@@ -372,10 +372,10 @@ elif [[ "$config_option" == "Daily Reset Time" ]]
 	        if [[ "$use_commercials" == "true" ]]
 	                then
 			commercials_true=true
-			sudo sed -i "s/useCommercialInjection =.*/useCommercialInjection = true/" pseudo_config.py
+			sudo sed -i "s/useCommercialInjection =.*/useCommercialInjection = \"true\"/" pseudo_config.py
 			echo "COMMERCIAL INJECTION has been turned ON"
 			else
-			sudo sed -i "s/useCommercialInjection =.*/useCommercialInjection = false/" pseudo_config.py
+			sudo sed -i "s/useCommercialInjection =.*/useCommercialInjection = \"false\"/" pseudo_config.py
 			echo "COMMERCIAL INJECTION has been turned OFF"
 	        fi
 	elif [[ "$config_option" == "Use Daily Overlap Cache" ]]
