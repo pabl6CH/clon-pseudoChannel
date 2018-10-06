@@ -41,11 +41,35 @@ class PseudoChannelCommercial():
         commercial = tuple(commercial_as_list)
         return commercial
 
-    def get_commercials_to_place_between_media(self, last_ep, now_ep):
+    def get_commercials_to_place_between_media(self, last_ep, now_ep, strict_time):
 
         prev_item_end_time = datetime.strptime(last_ep.end_time.strftime('%Y-%m-%d %H:%M:%S.%f'), '%Y-%m-%d %H:%M:%S.%f')
-        curr_item_start_time = datetime.strptime(now_ep.start_time, '%I:%M:%S %p')
-        time_diff = (curr_item_start_time - prev_item_end_time)
+        curr_item_start_time = datetime.strptime(now_ep.start_time, '%I:%M:%S %p')        
+        time_diff = (curr_item_start_time - prev_item_end_time)        
+        # mutto233 has added some logic at this point
+        # - All dates are now changed to 1/1/90 so midnight doesn't cause issues
+        # - Issues with day skips again being adressed
+        now = datetime.now()
+        now = now.replace(year=1900, month=1, day=1)
+        midnight = now.replace(hour=0,minute=0,second=0) 
+        
+        prev_item_end_time = prev_item_end_time.replace(day=1)
+        
+        if prev_item_end_time.replace(second=0,microsecond=0) > curr_item_start_time and strict_time == "false":
+            # NOTE: This is just for the logic of this function, I have noticed that this 
+            # may cause other issues in other functions, since now the day is off.
+            print "WE MUST BE SKIPPING A DAY, ADDING A DAY TO THE START TIME"
+            curr_item_start_time  = curr_item_start_time.replace(day=2)
+
+        
+        print "##############################################"
+        print "get_commercials_to_place_between_media DEBUG"
+        print "NOW: %s" % now
+        print "prev_item_end_time: %s" % prev_item_end_time.replace(second=0,microsecond=0) 
+        print "curr_item_start_time: %s" % curr_item_start_time
+        print "time_diff: %s" % time_diff
+        print "##############################################"
+        
         count = 0
         commercial_list = []
         commercial_dur_sum = 0

@@ -144,8 +144,8 @@ class PseudoChannel():
                                 )
                             #add all episodes of each tv show to episodes table
                             episodes = self.PLEX.library.section(section.title).get(media.title).episodes()
-				
-			    
+                
+                
                             for episode in episodes:
                                 duration = episode.duration
                                 if duration:
@@ -240,8 +240,8 @@ class PseudoChannel():
                                 )
                             #add all episodes of each tv show to episodes table
                             episodes = self.PLEX.library.section(section.title).get(media.title).episodes()
-				
-			    
+                
+                
                             for episode in episodes:
                                 duration = episode.duration
                                 if duration:
@@ -312,7 +312,7 @@ class PseudoChannel():
             "everyday"
         ]
         section_dict = {
-            "TV Shows" : ["series", "shows", "tv", "episodes", "tv shows", "show"],
+            "TV Shows" : ["series", "shows", "tv", "episodes", "tv shows", "show","random"],
             "Movies"   : ["movie", "movies", "films", "film"],
             "Videos"   : ["video", "videos", "vid"],
             "Music"    : ["music", "songs", "song", "tune", "tunes"]
@@ -328,6 +328,10 @@ class PseudoChannel():
                             natural_start_time = self.translate_time(time.text)
                             natural_end_time = 0
                             section = key
+                            if section == "TV Shows" and time.attrib['type'] == "random":
+                                mediaID_place=9999
+                            else:
+                                mediaID_place=0
                             day_of_week = child.tag
                             strict_time = time.attrib['strict-time'] if 'strict-time' in time.attrib else 'false'
                             time_shift = time.attrib['time-shift'] if 'time-shift' in time.attrib else '1'
@@ -348,7 +352,7 @@ class PseudoChannel():
 
                             print "Adding: ", time.tag, section, time.text, time.attrib['title']
                             self.db.add_schedule_to_db(
-                                0, # mediaID
+                                mediaID_place, # mediaID
                                 title, # title
                                 0, # duration
                                 natural_start_time, # startTime
@@ -540,6 +544,8 @@ class PseudoChannel():
                     if section == "TV Shows":
                         if str(entry[3]).lower() == "random":
                             next_episode = self.db.get_random_episode()
+                        elif entry[2] == 9999:
+                            next_episode = self.db.get_random_episode_alternate(entry[3])
                         else:
                             next_episode = self.db.get_next_episode(entry[3])
                         if next_episode != None:
@@ -713,7 +719,8 @@ class PseudoChannel():
                             if self.USING_COMMERCIAL_INJECTION:
                                 list_of_commercials = self.commercials.get_commercials_to_place_between_media(
                                     previous_episode,
-                                    entry
+                                    entry,
+                                    entry.is_strict_time.lower()
                                 )
                                 for commercial in list_of_commercials:
                                     self.db.add_media_to_daily_schedule(commercial)
@@ -740,7 +747,8 @@ class PseudoChannel():
                             if self.USING_COMMERCIAL_INJECTION:
                                 list_of_commercials = self.commercials.get_commercials_to_place_between_media(
                                     previous_episode,
-                                    entry
+                                    entry,
+                                    entry.is_strict_time.lower()
                                 )
                                 for commercial in list_of_commercials:
                                     self.db.add_media_to_daily_schedule(commercial)
@@ -1088,16 +1096,16 @@ if __name__ == '__main__':
                                 prevItem_time = datetime.datetime.strptime(''.join(str(prevItem[8])), "%I:%M:%S %p")
                                 elapsed_timeTwo = prevItem_time - now
                                 offsetTwo = int(abs(elapsed_timeTwo.total_seconds() * 1000))
-				if prevItem_time.hour > now.hour:
-					print "we have a day skip"
-					now = now.replace(hour=23,minute=59,second=59)
-					elapsed_timeTwo = prevItem_time-now
-					mnight = now.replace(hour=0,minute=0,second=0)		
-					now = datetime.datetime.now()
-            				now = now.replace(year=1900, month=1, day=1)
-					elapsed_timeTwo = elapsed_timeTwo + (mnight-now)
-					print elapsed_timeTwo.total_seconds()
-					offsetTwo = int(abs(elapsed_timeTwo.total_seconds() * 1000))
+                                if prevItem_time.hour > now.hour:
+                                    print "we have a day skip"
+                                    now = now.replace(hour=23,minute=59,second=59)
+                                    elapsed_timeTwo = prevItem_time-now
+                                    mnight = now.replace(hour=0,minute=0,second=0)        
+                                    now = datetime.datetime.now()
+                                    now = now.replace(year=1900, month=1, day=1)
+                                    elapsed_timeTwo = elapsed_timeTwo + (mnight-now)
+                                    print elapsed_timeTwo.total_seconds()
+                                    offsetTwo = int(abs(elapsed_timeTwo.total_seconds() * 1000))
                                 if pseudo_channel.DEBUG:
                                     print "+++++ Closest media was the next media " \
                                           "but we were in the middle of something so triggering that instead."

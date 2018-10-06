@@ -10,6 +10,7 @@ import thread,SocketServer,SimpleHTTPServer
 from plexapi.server import PlexServer
 from yattag import Doc
 from yattag import indent
+import pseudo_config as config
 
 class PseudoDailyScheduleController():
 
@@ -47,14 +48,30 @@ class PseudoDailyScheduleController():
     * @return string: full path of to the show image
     *
     '''
-    def get_show_photo(self, section, title):
+    def get_show_photo(self, section, showtitle, durationAmount):
 
         backgroundImagePath = None
         backgroundImgURL = ''
+        # First, we are going to search for movies/commercials
         try:
-            backgroundImagePath = self.PLEX.library.section(section).get(title)
+             movies =  self.PLEX.library.section(section).search(title=showtitle)
+             #print "+++++ Checking Duration for a Match: "
+             for item in movies:
+#                    print item.duration
+                    if item.duration == durationAmount:
+                        #print "+++++ MATCH FOUND in %s" % item
+                        backgroundImagePath = item
+                        break
         except:
             return backgroundImgURL
+        
+        if backgroundImagePath == None:
+            # We will try the old way, for the sake of TV Shows
+            try:
+                backgroundImagePath = self.PLEX.library.section(section).get(showtitle)
+            except:
+                return backgroundImgURL
+        
         if backgroundImagePath != None and isinstance(backgroundImagePath.art, str):
             backgroundImgURL = self.BASE_URL+backgroundImagePath.art+"?X-Plex-Token="+self.TOKEN
         return backgroundImgURL
@@ -147,7 +164,14 @@ class PseudoDailyScheduleController():
     def get_html_from_daily_schedule(self, currentTime, bgImageURL, datalist, nowPlayingTitle):
 
         now = datetime.now()
-        time = now.strftime("%B %d, %Y")
+        now = now.replace(year=1900, month=1, day=1)
+        midnight = now.replace(hour=23, minute=59, second=59)
+        #mutto233 put this here, because to be honest, isn't the current time always now?
+        if currentTime != None:
+            currentTime=now
+            
+            
+        time = datetime.now().strftime("%B %d, %Y")
         doc, tag, text, line = Doc(
 
         ).ttl()
@@ -251,9 +275,15 @@ class PseudoDailyScheduleController():
                                     timeBStart = timeBStart.replace(year=1900, month=1, day=1)
                                     try:
                                         timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S.%f')
+                                        timeBEnd = timeBEnd.replace(day=1)
                                     except:
                                         timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S')
+                                        timeBEnd = timeBEnd.replace(day=1)
                                     #print timeBStart
+                                    #print "%s" % row[3]
+                                    #print "%s, %s, %s, %s, %s" % (currentTime, timeBStart, timeBEnd, midnight,midnight.replace(hour=0,minute=0,second=0))
+                                    #print "%s" % (timeBStart - timeBEnd).total_seconds()
+                                    #print "%s, %s, %s, %s" % ((currentTime-timeBStart).total_seconds(),(midnight-currentTime).total_seconds(),(currentTime-midnight.replace(hour=0,minute=0,second=0)).total_seconds(),(timeBEnd-currentTime).total_seconds())
                                     if currentTime == None:
                                         with tag('tr'):
                                             with tag('th', scope='row'):
@@ -266,10 +296,14 @@ class PseudoDailyScheduleController():
                                                 text(row[3])
                                             with tag('td'):
                                                 text(row[8])
-                                    elif (currentTime - timeBStart).total_seconds() >= 0 and \
-                                         (timeBEnd - currentTime).total_seconds() >= 0:
-
-                                            #if self.DEBUG:
+                                    elif ((currentTime - timeBStart).total_seconds() >= 0 and \
+                                         (timeBEnd - currentTime).total_seconds() >= 0) or \
+                                         ((timeBStart - timeBEnd).total_seconds() >= 0 and \
+                                         (((currentTime-midnight.replace(hour=0,minute=0,second=0)).total_seconds() >= 0 and \
+                                          (timeBEnd-currentTime).total_seconds() >= 0) or
+                                         ((currentTime-timeBStart).total_seconds() >= 0 and \
+                                          (midnight-currentTime).total_seconds() >= 0))):          
+                                        
                                             print "+++++ Currently Playing:", row[3]
 
                                             with tag('tr', klass='bg-info'):
@@ -378,25 +412,60 @@ class PseudoDailyScheduleController():
     * @return null
     *
     '''
-    def play_media(self, mediaType, mediaParentTitle, mediaTitle, offset, customSectionName):
-
+    def play_media(self, mediaType, mediaParentTitle, mediaTitle, offset, customSectionName, durationAmount):
+         # Check for necessary client override, if we have a folder of "channels_<NAME>"
+        cwd = os.getcwd()
+        if "channels_" in cwd:
+            head,sep,tail = cwd.partition('channels_')
+            head,sep,tail = tail.partition('/')
+            self.PLEX_CLIENTS = [head]
+            print "CLIENT OVERRIDE: %s" % self.PLEX_CLIENTS
+            
         try: 
             if mediaType == "TV Shows":
-                print "Here, Trying to play custom type: ", customSectionName
+#                print "Here, Trying to play custom type: ", customSectionName
+                print "+++++ Checking Duration for a Match: "
                 mediaItems = self.PLEX.library.section(customSectionName).get(mediaParentTitle).episodes()
                 for item in mediaItems:
-                    if item.title == mediaTitle:
+#                    print item.duration
+                    if item.title == mediaTitle and item.duration == durationAmount:
+                        print "+++++ MATCH FOUND in %s" % item
                         for client in self.PLEX_CLIENTS:
                             clientItem = self.PLEX.client(client)
                             clientItem.playMedia(item, offset=offset)
                         break
             elif mediaType == "Movies":
-                movie =  self.PLEX.library.section(customSectionName).get(mediaTitle)
+                movies =  self.PLEX.library.section(customSectionName).search(title=mediaTitle)
+                print "+++++ Checking Duration for a Match: "
+                for item in movies:
+#                    print item.duration
+                    if item.duration == durationAmount:
+                        print "+++++ MATCH FOUND in %s" % item
+                        movie = item
+                        break
                 for client in self.PLEX_CLIENTS:
                         clientItem = self.PLEX.client(client)
                         clientItem.playMedia(movie, offset=offset)
             elif mediaType == "Commercials":
-                movie =  self.PLEX.library.section(customSectionName).get(mediaTitle)
+                # This one is a bit more complicated, since we have the dirty gap fix possible
+                # Basically, we are going to just assume it isn't a dirty gap fix, and if it is,
+                # We will just play the first value
+                COMMERCIAL_PADDING = config.commercialPadding
+                movies =  self.PLEX.library.section(customSectionName).search(title=mediaTitle)
+                print "+++++ Checking Duration for a Match: "
+                for item in movies:
+                    #print item
+                    #print item.duration
+                    if (item.duration+1000*COMMERCIAL_PADDING) == durationAmount or item.duration == durationAmount:
+                        print "+++++ MATCH FOUND in %s" % item
+                        movie = item
+                        break
+                try:
+                    movie
+                except:
+                    print "+++++ Commercial is NOT FOUND, my guess is this is the dirty gap.  Picking first one"
+                    movie = movies[0]
+                    
                 for client in self.PLEX_CLIENTS:
                         clientItem = self.PLEX.client(client)
                         clientItem.playMedia(movie, offset=offset)
@@ -459,13 +528,13 @@ class PseudoDailyScheduleController():
 
         print "Here, row[13]", row[13]
 
-        self.play_media(row[11], row[6], row[3], offset, row[13])
+        self.play_media(row[11], row[6], row[3], offset, row[13], row[7])
         self.write_schedule_to_file(
             self.get_html_from_daily_schedule(
                 timeB,
                 self.get_show_photo(
                     row[13], 
-                    row[6] if row[11] == "TV Shows" else row[3]
+                    row[6] if row[11] == "TV Shows" else row[3], row[7]
                 ),
                 datalist,
                 row[6] + " - " + row[3] if row[11] == "TV Shows" else row[3]
@@ -479,7 +548,7 @@ class PseudoDailyScheduleController():
                 timeB,
                 self.get_show_photo(
                     row[13], 
-                    row[6] if row[11] == "TV Shows" else row[3]
+                    row[6] if row[11] == "TV Shows" else row[3], row[7]
                 ),
                 datalist
             )
@@ -513,13 +582,13 @@ class PseudoDailyScheduleController():
                     if currentTime.second == timeB.second:
                         print("Starting Media: " + row[3])
                         print(row)
-                        self.play_media(row[11], row[6], row[3], row[13])
+                        self.play_media(row[11], row[6], row[3], row[13], row[7])
                         self.write_schedule_to_file(
                             self.get_html_from_daily_schedule(
                                 timeB,
                                 self.get_show_photo(
                                     row[13], 
-                                    row[6] if row[11] == "TV Shows" else row[3]
+                                    row[6] if row[11] == "TV Shows" else row[3], row[7]
                                 ),
                                 datalist,
                                 row[6] + " - " + row[3] if row[11] == "TV Shows" else row[3]
@@ -533,7 +602,7 @@ class PseudoDailyScheduleController():
                                 timeB,
                                 self.get_show_photo(
                                     row[13], 
-                                    row[6] if row[11] == "TV Shows" else row[3]
+                                    row[6] if row[11] == "TV Shows" else row[3], row[7]
                                 ),
                                 datalist
                             )
@@ -548,7 +617,9 @@ class PseudoDailyScheduleController():
                 self.check_for_end_time(datalist)
 
     def manually_get_now_playing_bg_image(self, currentTime, datalist):
-
+        now = datetime.now()
+        now = now.replace(year=1900, month=1, day=1)
+        midnight = now.replace(hour=23, minute=59, second=59)
         increase_var = 0
 
         for row in datalist:
@@ -560,8 +631,10 @@ class PseudoDailyScheduleController():
             timeBStart = timeBStart.replace(year=1900, month=1, day=1)
             try:
                 timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S.%f')
+                timeBEnd = timeBEnd.replace(day=1)
             except:
                 timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S')
+                timeBEnd = timeBEnd.replace(day=1)
 
             #print ((currentTime - timeBStart).total_seconds() >= 0 and \
             #       (timeBEnd - currentTime).total_seconds() >= 0)
@@ -569,14 +642,19 @@ class PseudoDailyScheduleController():
             #print currentTime.minute
             #print timeBStart.minute
 
-            if (currentTime - timeBStart).total_seconds() >= 0 and \
-                   (timeBEnd - currentTime).total_seconds() >= 0:
+            if ((currentTime - timeBStart).total_seconds() >= 0 and \
+                 (timeBEnd - currentTime).total_seconds() >= 0) or \
+                 ((timeBStart - timeBEnd).total_seconds() >= 0 and \
+                 (((currentTime-midnight.replace(hour=0,minute=0,second=0)).total_seconds() >= 0 and \
+                  (timeBEnd-currentTime).total_seconds() >= 0) or
+                 ((currentTime-timeBStart).total_seconds() >= 0 and \
+                  (midnight-currentTime).total_seconds() >= 0))): 
 
                 print "+++++ Made the conditional & found item: {}".format(row[6])
 
                 return self.get_show_photo(
                     row[13], 
-                    row[6] if row[11] == "TV Shows" else row[3]
+                    row[6] if row[11] == "TV Shows" else row[3], row[7]
                 )
             
             else:
@@ -591,7 +669,9 @@ class PseudoDailyScheduleController():
             return None
 
     def manually_get_now_playing_title(self, currentTime, datalist):
-
+        now = datetime.now()
+        now = now.replace(year=1900, month=1, day=1)
+        midnight = now.replace(hour=23, minute=59, second=59)
         increase_var = 0
 
         for row in datalist:
@@ -603,8 +683,10 @@ class PseudoDailyScheduleController():
             timeBStart = timeBStart.replace(year=1900, month=1, day=1)
             try:
                 timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S.%f')
+                timeBEnd = timeBEnd.replace(day=1)
             except:
                 timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S')
+                timeBEnd = timeBEnd.replace(day=1)
 
             #print ((currentTime - timeBStart).total_seconds() >= 0 and \
             #       (timeBEnd - currentTime).total_seconds() >= 0)
@@ -612,8 +694,13 @@ class PseudoDailyScheduleController():
             #print currentTime.minute
             #print timeBStart.minute
 
-            if (currentTime - timeBStart).total_seconds() >= 0 and \
-                   (timeBEnd - currentTime).total_seconds() >= 0 :
+            if ((currentTime - timeBStart).total_seconds() >= 0 and \
+                 (timeBEnd - currentTime).total_seconds() >= 0) or \
+                 ((timeBStart - timeBEnd).total_seconds() >= 0 and \
+                 (((currentTime-midnight.replace(hour=0,minute=0,second=0)).total_seconds() >= 0 and \
+                  (timeBEnd-currentTime).total_seconds() >= 0) or
+                 ((currentTime-timeBStart).total_seconds() >= 0 and \
+                  (midnight-currentTime).total_seconds() >= 0))):          
 
                 print "+++++ Made the conditional & found item: {}".format(row[6])
 
