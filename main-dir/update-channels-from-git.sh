@@ -14,6 +14,7 @@
 # ./update-channels-from-git.sh
 #----
 
+dir=$(pwd)
 #----BEGIN EDITABLE VARS----
 if [ $# -gt 1 ]; then
 	echo "ERROR: Please only supply one argument"
@@ -92,13 +93,20 @@ read -p 'Number of Channels: ' number_of_channels
 		mkdir "pseudo-channel_$num"
 		fi
 	done
+	mkdir github_download
+	cd github_download
+	$SCRIPT_TO_EXECUTE_PLUS_ARGS
+	else
+	mkdir github_download
+	cd github_download
+	$SCRIPT_TO_EXECUTE_PLUS_ARGS
 fi
 
 
 #### Next, let's download the latest master version of information from GitHub and store it in a temporary folder
-mkdir github_download
-cd github_download
-$SCRIPT_TO_EXECUTE_PLUS_ARGS
+#mkdir github_download
+#cd github_download
+#$SCRIPT_TO_EXECUTE_PLUS_ARGS
 
 #### If necessary, install the required elements as defined by requirements.txt
 #### Also, ask user for information to fill in the plex_token and pseudo_config files
@@ -187,11 +195,11 @@ if [ "$FIRST_INSTALL" == "true" ]
 		done
 	if [[ "$enter_commercials" == @("Y"|"y"|"yes"|"Yes"|"YES") ]]
 		then
-		commercials_true=true
+		commercials_true=True
 		echo "ENTER the name of EACH Plex library defined as COMMERCIALS"
 		echo -n "[" > commercial-libraries.temp
 		else
-		commercials_true=false
+		commercials_true=False
 	fi
 		while [[ "$enter_commercials" == @(Y|y|Yes|yes|YES) ]]
 			do
@@ -205,7 +213,7 @@ if [ "$FIRST_INSTALL" == "true" ]
 					read -p 'Y/N: ' enter_commercials
 					done
 			done
-	if [[ "$commercials_true" == "true" ]]
+	if [[ "$commercials_true" == "True" ]]
 		then
 		truncate -s-2 commercial-libraries.temp
 		echo -n "]," >> commercial-libraries.temp
@@ -233,7 +241,7 @@ if [ "$FIRST_INSTALL" == "true" ]
 	sudo sed -i "/.\"TV Shows\" :*./c\     \"TV Shows\" : $tv_libraries" github_download/both-dir/pseudo_config.py # WRITE TV LIBRARIES TO CONFIG
 	movie_libraries=$(cat movie-libraries.temp)
 	sudo sed -i "/.\"Movies\" :*./c\     \"Movies\"   : $movie_libraries" github_download/both-dir/pseudo_config.py # WRITE MOVIE LIBRARIES TO CONFIG
-	if [[ "$commercials_true" == "true" ]] #WRITE COMMERCIAL LIBRARIES TO CONFIG
+	if [[ "$commercials_true" == "True" ]] #WRITE COMMERCIAL LIBRARIES TO CONFIG
 		then
 		commercial_libraries=$(cat commercial-libraries.temp)
 		sudo sed -i "/.\"Commercials\" :*./c\     \"Commercials\" : $commercial_libraries" github_download/both-dir/pseudo_config.py
@@ -249,6 +257,8 @@ if [ "$FIRST_INSTALL" == "true" ]
 	sudo rm tv-libraries.temp
 	sudo rm commercial-libraries.temp
 	sudo cp github_download/both-dir/pseudo_config.py ./
+	sudo cp github_download/both-dir/PseudoChannel.py ./
+	cd ..
 	else
 	cd ..
 fi
@@ -305,7 +315,7 @@ fi
 #### - Copy relevant files from github
 #### - Replace files originally removed
 echo "Updating channels folder"
-
+cd $dir
 # Export critical files
 mkdir .pseudo-temp
 
@@ -338,6 +348,7 @@ sudo chmod -R 777 .
 echo "Update Complete"
 
 #### Write variables to config.cache
+> config.cache
 sudo sed -i "s/server_ip=.*/server_ip=$server_ip/" config.cache
 sudo sed -i "s/server_port=.*/server_port=$server_port/" config.cache
 sudo sed -i "s/server_token=.*/server_token=$server_token/" config.cache
