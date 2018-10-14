@@ -73,12 +73,13 @@ select strict_time_entry in "Exact Time" "After Previous"
 		echo "5, 10, 15, 20, etc. after the hour. A value of 30 will only allow the $entry to"
 		echo "start on the half-hour. A value of 2 will restrict start times to even-numbered minutes only."
 		echo "ENTER the TIME SHIFT value"
-		read -p 'Time Shift: ' time_shift
-		while ! [[ $time_shift =~ $re ]]
+		read -p 'Time Shift: ' time_shift_entry
+		time_shift="\"$time_shift_entry\""
+		while ! [[ $time_shift_entry =~ $re ]]
 			do
 			echo "ENTER the TIME SHIFT value"
-			read -p 'Time Shift: ' time_shift
-			time_shift="\"$time_shift\""
+			read -p 'Time Shift: ' time_shift_entry
+			time_shift="\"$time_shift_entry\""
 		done
 	fi
 break
@@ -555,6 +556,7 @@ select day_of_week in "Sunday" "Monday" "Tuesday" "Wednesday" "Thursday" "Friday
 		then
 		echo "FINALIZING SCHEDULE FORMATTING..."
 		echo "</schedule>" >> pseudo_schedule.xml
+		sudo python PseudoChannel.py -xml
 		echo "CLEANING UP TEMPORARY FILES"
 		sudo rm xtra.temp
 		echo "REMOVE BACKUP of Channel $channel_number's previous schedule?"
