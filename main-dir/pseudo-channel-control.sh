@@ -2,6 +2,21 @@
 source config.cache
 re='^[0-9]+$'
 number_of_channels=$(ls | grep pseudo-channel_ | wc -l)
+app_dir="$PWD"
+if [ ! -e pseudo-channel.db ]
+	then
+		do_first_run="true"
+	else
+		do_first_run="false"
+fi
+if [ $do_first_run == "true" ]
+	then
+	clear
+	echo "+++++++++++++++++++++++++++PSEUDO CHANNEL+++++++++++++++++++++++++++"
+	echo "Database file not found, generating database..."
+	(sudo python Global_DatabaseUpdate.py -u)
+	(sudo ./schedule-editor.sh)
+fi
 clear
 echo "+++++++++++++++++++++++++++PSEUDO CHANNEL+++++++++++++++++++++++++++"
 echo "Choose a CATEGORY"

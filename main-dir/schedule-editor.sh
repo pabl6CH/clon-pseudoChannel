@@ -556,7 +556,7 @@ select day_of_week in "Sunday" "Monday" "Tuesday" "Wednesday" "Thursday" "Friday
 		then
 		echo "FINALIZING SCHEDULE FORMATTING..."
 		echo "</schedule>" >> pseudo_schedule.xml
-		sudo python PseudoChannel.py -xml
+		#sudo ./updatexml.sh
 		echo "CLEANING UP TEMPORARY FILES"
 		sudo rm xtra.temp
 		echo "REMOVE BACKUP of Channel $channel_number's previous schedule?"
@@ -572,6 +572,8 @@ select day_of_week in "Sunday" "Monday" "Tuesday" "Wednesday" "Thursday" "Friday
 			then
 			sudo rm pseudo_schedule.backup
 		fi
+		cd ..
+		(sudo ./updatexml.sh)
 		exit 0
 	fi
 sleep 1

@@ -1,14 +1,14 @@
 #!/bin/bash
-# file: update-channels-from-git.sh
+# file: install.sh
 
 #----
-# Simple script to update every channel with updates from the github repo. 
+# Simple script to update every channel with updates from the github repo.
 # BACKUP EACH XML/DB IN EACH CHANNEL.
 # Code will take in one argument: To take from the master or development branch
 # For ALL installs, simply place this file in the location you would like your channels to be installed/updated
 #----
 
-#---- 
+#----
 # To Use:
 # chmod +x update-channels-from-git.sh
 # ./update-channels-from-git.sh
@@ -41,27 +41,15 @@ if [[ "$FIND_CHANNEL_FOLDERS" == '' ]]
 	then
 		FIRST_INSTALL=true
 	else
-		FIRST_INSTALL=false
+		echo "ERROR: PSEUDO CHANNEL INSTALLATION DETECTED!"
+		echo "This is a first-install script. To update to the latest version, use the update-channels-from-git.sh script."
+		echo "Preparing to exit..."
+		sleep 5
+		exit 0
 fi
 
 
 #----END EDITABLE VARS-------
-
-
-
-# First, we need to figure out if we have actually installed this already
-# To do this, we are going to check if we go up one level we have the folder "channels"
-# We will also check if the current directory has "channels"
-# FIRST_INSTALL=true
-
-# if [ -d "$INSTALL_FOLDER" ] || [ -d "../$INSTALL_FOLDER" ]; then
-	# echo "This is NOT the first install"
-	# FIRST_INSTALL=false
-# else
-	# echo "This IS the first install, installing 'channels' directory in current directory with five starting channels."
-	# FIRST_INSTALL=true
-# fi
-
 
 # If this is our first install, we will now make all necessary directories to prepare for install
 if [ "$FIRST_INSTALL" == "true" ]; then
@@ -75,7 +63,7 @@ read -p 'Number of Channels: ' number_of_channels
 	fi
 	while [[ $entry_is_number == "no" ]]
 	do
-		echo "Enter the number of channels you would like this script to generate?"
+		echo "This is a FIRST INSTALL, ENTER the NUMBER of PSEUDO CHANNELS to SET UP"
 		read -p 'Number of Channels: ' number_of_channels
 		if (( $number_of_channels >= 1 ))
 		then
@@ -104,15 +92,12 @@ fi
 
 
 #### Next, let's download the latest master version of information from GitHub and store it in a temporary folder
-#mkdir github_download
-#cd github_download
-#$SCRIPT_TO_EXECUTE_PLUS_ARGS
 
 #### If necessary, install the required elements as defined by requirements.txt
 #### Also, ask user for information to fill in the plex_token and pseudo_config files
 if [ "$FIRST_INSTALL" == "true" ]
 	then
-	echo "INSTALLING REQUIREMENTS because this is a FIRST RUN"
+	echo "INSTALLING EXTERNAL REQUIREMENTS"
 	sudo pip install -r requirements.txt
 	sudo apt-get -y install libxml2-utils recode # NEEDED FOR XML PARSING
 	cd ..
@@ -151,8 +136,20 @@ if [ "$FIRST_INSTALL" == "true" ]
 	echo -n "[" > tv-libraries.temp
 	while [[ "$enter_tv_shows" == @(Y|y|Yes|yes|YES) ]]
 		do
-			read -p 'TV Show Library Name: ' tv_library_entry
-			echo -n "\"$tv_library_entry\"" >> tv-libraries.temp
+			#read -p 'TV Show Library Name: ' tv_library_entry
+			#echo -n "\"$tv_library_entry\"" >> tv-libraries.temp
+			library_list_tv=$(xmllint --xpath "//Directory[@type=\"show\"]/@title" "http://$server_ip:$server_port/library/sections" | sed "s|title=||g" | sed "s|^ ||g" && echo -e " Other")
+			eval set $library_list_tv
+			select tv_library_entry in "$@"
+				do
+				if [[ "$tv_library_entry" == "Other" ]]
+					then
+					read -p 'TV Show Library Name: ' tv_library_entry
+					tv_library_entry=$(eval echo $tv_library_entry)
+				fi
+				echo -n "\"$tv_library_entry\"" >> tv-libraries.temp
+				break
+				done
 			echo "ENTER another TV SHOW LIBRARY?"
 			read -p 'Y/N: ' enter_tv_shows
 			while [[ "$enter_tv_shows" != @(Y|y|Yes|yes|YES|N|n|No|no|NO) ]]
@@ -171,8 +168,20 @@ if [ "$FIRST_INSTALL" == "true" ]
 	echo -n "[" > movie-libraries.temp
 	while [[ "$enter_movies" == @(Y|y|Yes|yes|YES) ]]
 		do
-			read -p 'Movie Library Name: ' movie_library_entry
-			echo -n "\"$movie_library_entry\"" >> movie-libraries.temp
+			#read -p 'Movie Library Name: ' movie_library_entry
+			#echo -n "\"$movie_library_entry\"" >> movie-libraries.temp
+			library_list_movie=$(xmllint --xpath "//Directory[@type=\"movie\"]/@title" "http://$server_ip:$server_port/library/sections" | sed "s|title=||g" | sed "s|^ ||g" && echo -e " Other")
+			eval set $library_list_movie
+			select movie_library_entry in "$@"
+				do
+				if [[ "$movie_library_entry" == "Other" ]]
+					then
+					read -p 'Movie Library Name: ' movie_library_entry
+					movie_library_entry=$(eval echo $movie_library_entry)
+				fi
+				echo -n "\"$movie_library_entry\"" >> movie-libraries.temp
+				break
+				done
 			echo "ENTER another MOVIE LIBRARY?"
 			read -p 'Y/N: ' enter_movies
 			while [[ "$enter_movies" != @(Y|y|Yes|yes|YES|N|n|No|no|NO) ]]
@@ -203,8 +212,19 @@ if [ "$FIRST_INSTALL" == "true" ]
 	fi
 		while [[ "$enter_commercials" == @(Y|y|Yes|yes|YES) ]]
 			do
-				read -p 'Commercial Library Name: ' commercial_library_entry
-				echo -n "\"$commercial_library_entry\", " >> commercial-libraries.temp
+				#read -p 'Commercial Library Name: ' commercial_library_entry
+				library_list_commercial=$(xmllint --xpath "//Directory[@type=\"movie\"]/@title" "http://$server_ip:$server_port/library/sections" | sed "s|title=||g" | sed "s|^ ||g" && echo -e " Other")
+				eval set $library_list_commercial
+				select commercial_library_entry in "$@"
+					do
+					if [[ "$commercial_library_entry" == "Other" ]]
+						then
+						read -p 'Commercial Library Name: ' commercial_library_entry
+						commercial_library_entry=$(eval echo $commercial_library_entry)
+					fi
+					echo -n "\"$commercial_library_entry\"" >> commercial-libraries.temp
+					break
+					done
 				echo "ENTER another COMMERCIAL LIBRARY?"
 				read -p 'Y/N: ' enter_commercials
 				while [[ "$enter_commercials" != @(Y|y|Yes|yes|YES|N|n|No|no|NO) ]]
@@ -212,10 +232,14 @@ if [ "$FIRST_INSTALL" == "true" ]
 					echo "ENTER another COMMERCIAL LIBRARY?"
 					read -p 'Y/N: ' enter_commercials
 					done
+				if [[ "$enter_commercials" == @(Y|y|Yes|yes|YES) ]]
+					then
+					echo -n ", " >> commercial-libraries.temp
+				fi
 			done
 	if [[ "$commercials_true" == "True" ]]
 		then
-		truncate -s-2 commercial-libraries.temp
+		#truncate -s-2 commercial-libraries.temp
 		echo -n "]," >> commercial-libraries.temp
 	fi
 	# DEFINE THE DAILY RESET TIME
@@ -228,6 +252,7 @@ if [ "$FIRST_INSTALL" == "true" ]
 	reset_time_minute="${reset_time_formatted: -2}"
 	reset_time_minute=$(echo $reset_time_minute | sed "-e s|^[0]||")
 	# SET UP CRON JOB TO RUN DAILY RESET
+	sudo crontab -e &
 	sudo crontab -l | grep -v 'daily-cron.sh' | crontab -
 	sudo echo \#\!/bin/bash > ./daily-cron.sh && echo "cd $PWD" >> ./daily-cron.sh && echo "sudo ./generate-channels-daily-schedules.sh" >> ./daily-cron.sh
 	( sudo crontab -l ; echo "$reset_time_minute $reset_time_hour * * * $PWD/daily-cron.sh" ) | sudo crontab -
@@ -252,6 +277,10 @@ if [ "$FIRST_INSTALL" == "true" ]
 	sudo sed -i "s/controllerServerPath =.*/controllerServerPath = \"\"/" github_download/both-dir/pseudo_config.py
 	sudo sed -i "s/controllerServerPort =.*/controllerServerPort = \"\"/" github_download/both-dir/pseudo_config.py
 	sudo sed -i "s/debug_mode =.*/debug_mode = False/" github_download/both-dir/pseudo_config.py
+	# WRITE TO CONFIG.CACHE
+	sudo echo "server_ip=$server_ip" > config.cache
+	sudo echo "server_port=$server_port" >> config.cache
+	sudo echo "server_token=$server_token" >> config.cache
 	# CLEAN UP TEMP FILES AND COPY CONFIG
 	sudo rm movie-libraries.temp
 	sudo rm tv-libraries.temp
@@ -346,10 +375,5 @@ rm -rf ./github_download
 sudo chmod -R 777 .
 
 echo "Update Complete"
-
-#### Write variables to config.cache
-echo "Writing config.cache"
-> config.cache
-sudo echo "server_ip=$server_ip" >> config.cache
-sudo echo "server_port=$server_port" >> config.cache
-sudo echo "server_token=$server_token" >> config.cache
+echo "Starting Pseudo Channel Control..."
+sudo ./pseudo-channel-control.sh

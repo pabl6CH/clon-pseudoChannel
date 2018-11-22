@@ -41,6 +41,10 @@ update_call = "sudo python PseudoChannel.py %s" % update_flags
 
 # Step ONE: Global database update 
 print("+++++ Doing global update from PLEX: %s" % update_flags)
+try:
+	os.rename("pseudo-channel.db", "pseudo-channel.bak")
+except OSError:
+	pass
 os.system(update_call)
 
 
@@ -80,6 +84,7 @@ for channel_dir in channel_dirs:
         print("+++++ Database experiencing errors or hasn't been formed yet; creating fresh one")
         lastEpisode_export = []
         lastMovie_export = []
+	daily_schedule = []
     
     
     # Step THREE: Delete the previous database, replace with the recently created global one
