@@ -13,7 +13,6 @@
 # chmod +x update-channels-from-git.sh
 # ./update-channels-from-git.sh
 #----
-
 dir=$(pwd)
 #----BEGIN EDITABLE VARS----
 if [ $# -gt 1 ]; then
@@ -52,8 +51,8 @@ fi
 #----END EDITABLE VARS-------
 
 # If this is our first install, we will now make all necessary directories to prepare for install
-if [ "$FIRST_INSTALL" == "true" ]; then
-echo "This is a FIRST INSTALL, ENTER the NUMBER of PSEUDO CHANNELS to SET UP"
+#if [ "$FIRST_INSTALL" == "true" ]; then
+echo "ENTER the NUMBER of PSEUDO CHANNELS to SET UP"
 read -p 'Number of Channels: ' number_of_channels
 	if (( $number_of_channels >= 1 ))
 	then
@@ -84,19 +83,19 @@ read -p 'Number of Channels: ' number_of_channels
 	mkdir github_download
 	cd github_download
 	$SCRIPT_TO_EXECUTE_PLUS_ARGS
-	else
-	mkdir github_download
-	cd github_download
-	$SCRIPT_TO_EXECUTE_PLUS_ARGS
-fi
+#	else
+#	mkdir github_download
+#	cd github_download
+#	$SCRIPT_TO_EXECUTE_PLUS_ARGS
+#fi
 
 
 #### Next, let's download the latest master version of information from GitHub and store it in a temporary folder
 
 #### If necessary, install the required elements as defined by requirements.txt
 #### Also, ask user for information to fill in the plex_token and pseudo_config files
-if [ "$FIRST_INSTALL" == "true" ]
-	then
+#if [ "$FIRST_INSTALL" == "true" ]
+#	then
 	echo "INSTALLING EXTERNAL REQUIREMENTS"
 	sudo pip install -r requirements.txt
 	sudo apt-get -y install libxml2-utils recode # NEEDED FOR XML PARSING
@@ -287,10 +286,10 @@ if [ "$FIRST_INSTALL" == "true" ]
 	sudo rm commercial-libraries.temp
 	sudo cp github_download/both-dir/pseudo_config.py ./
 	sudo cp github_download/both-dir/PseudoChannel.py ./
-	cd ..
-	else
-	cd ..
-fi
+	cd $dir
+#	else
+#	cd ..
+#fi
 
 #### With information downloaded, we will first go to each channel folder and update important things
 #### This will take the following form
@@ -301,8 +300,7 @@ fi
 
 # Scan the dir to see how many channels there are, store them in an arr.
 CHANNEL_DIR_ARR=( $(find . -maxdepth 1 -type d -name '*'"$CHANNEL_DIR_INCREMENT_SYMBOL"'[[:digit:]]*' -printf "%P\n" | sort -t"$CHANNEL_DIR_INCREMENT_SYMBOL" -n) )
-
-if [ "${#CHANNEL_DIR_ARR[@]}" -gt 1 ]; then
+#if [ "${#CHANNEL_DIR_ARR[@]}" -gt 1 ]; then
 	echo "+++++ There are ${#CHANNEL_DIR_ARR[@]} channels detected."
 	for channel in "${CHANNEL_DIR_ARR[@]}"
 	do
@@ -335,7 +333,7 @@ if [ "${#CHANNEL_DIR_ARR[@]}" -gt 1 ]; then
 
 		cd ..
 	done
-fi
+#fi
 
 #### Now we will return to the original file, and ensure that everything is in the main folder
 #### This will include the following form
