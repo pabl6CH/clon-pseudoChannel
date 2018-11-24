@@ -1,4 +1,5 @@
 #!/bin/bash
+main_dir=$(pwd)
 source config.cache
 re='^[0-9]+$'
 number_of_channels=$(ls | grep pseudo-channel_ | wc -l)
@@ -7,13 +8,13 @@ loop_or_exit=loop
 
 time_entry() {
 sleep 1
-clear
+#clear
 echo "++++++++++++++++++++PSEUDO CHANNEL SCHEDULE EDITOR++++++++++++++++++++"
 echo "ENTER the START TIME for THIS ENTRY in 24h format"
 read -p 'Time (24h): ' start_time
 echo "START TIME set to $start_time"
 sleep 1
-clear
+#clear
 echo "++++++++++++++++++++PSEUDO CHANNEL SCHEDULE EDITOR++++++++++++++++++++"
 echo "Choose MEDIA TYPE to start at $start_time"
 select media_type in "Movie" "TV Series" "Random TV Episode"
@@ -572,7 +573,7 @@ select day_of_week in "Sunday" "Monday" "Tuesday" "Wednesday" "Thursday" "Friday
 			then
 			sudo rm pseudo_schedule.backup
 		fi
-		cd ..
+		cd $main_dir
 		(sudo ./updatexml.sh)
 		exit 0
 	fi
