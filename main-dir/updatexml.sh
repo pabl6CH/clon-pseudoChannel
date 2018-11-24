@@ -6,7 +6,7 @@
 # Simple script to updates each channels local db with new Plex lib items / xml.
 #----
 
-#----
+#---- 
 # To Use:
 # If you added new content to your Plex Library, just make this file executable move it
 # to where the plex_token.py file is and run ./updatechannels.sh
@@ -63,6 +63,7 @@ if [ "${#CHANNEL_DIR_ARR[@]}" -gt 0 ]; then
 
 	for channel in "${CHANNEL_DIR_ARR[@]}"
 	do
+		
 		echo "+++++ Trying to update: $PYTHON_TO_USE $channel/$SCRIPT_TO_EXECUTE_PLUS_ARGS"
 		# If the running.pid file doesn't exists, create it, start PseudoChannel.py and add the PID to it.
 		cd "$channel"
@@ -72,6 +73,7 @@ if [ "${#CHANNEL_DIR_ARR[@]}" -gt 0 ]; then
 		sleep 1
 
 	done
+	
 fi
 
 exit 0
