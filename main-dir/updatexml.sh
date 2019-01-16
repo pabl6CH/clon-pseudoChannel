@@ -16,7 +16,7 @@
 
 #----BEGIN EDITABLE VARS----
 
-SCRIPT_TO_EXECUTE_PLUS_ARGS='PseudoChannel.py -u -xml'
+SCRIPT_TO_EXECUTE_PLUS_ARGS='PseudoChannel.py -xml'
 
 OUTPUT_PREV_CHANNEL_PATH=.
 
@@ -66,7 +66,9 @@ if [ "${#CHANNEL_DIR_ARR[@]}" -gt 0 ]; then
 		
 		echo "+++++ Trying to update: $PYTHON_TO_USE $channel/$SCRIPT_TO_EXECUTE_PLUS_ARGS"
 		# If the running.pid file doesn't exists, create it, start PseudoChannel.py and add the PID to it.
-		"$PYTHON_TO_USE" "$channel"/$SCRIPT_TO_EXECUTE_PLUS_ARGS
+		cd "$channel"
+		"$PYTHON_TO_USE" $SCRIPT_TO_EXECUTE_PLUS_ARGS
+		cd ..
 
 		sleep 1
 
