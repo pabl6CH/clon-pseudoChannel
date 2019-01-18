@@ -20,11 +20,11 @@ if [ $# -gt 1 ]; then
 	exit 9999
 elif [ "$1" == "develop" ]; then
 	echo "Downloading the develop branch"
-	SCRIPT_TO_EXECUTE_PLUS_ARGS='git clone https://github.com/mutto233/pseudo-channel . --branch develop'
+	SCRIPT_TO_EXECUTE_PLUS_ARGS='git clone https://github.com/FakeTV/pseudo-channel . --branch develop'
 
 else
 	echo "Downloading the master branch"
-	SCRIPT_TO_EXECUTE_PLUS_ARGS='git clone https://github.com/mutto233/pseudo-channel . --branch master'
+	SCRIPT_TO_EXECUTE_PLUS_ARGS='git clone https://github.com/FakeTV/pseudo-channel . --branch master'
 fi
 
 OUTPUT_PREV_CHANNEL_PATH=.
