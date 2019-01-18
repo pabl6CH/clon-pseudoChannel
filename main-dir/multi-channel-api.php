@@ -4,6 +4,9 @@ multi-channel-api.php
 This file triggers bash-scripts based on a url string. Simply navigate your browser or use
 cURL or some other method to pass in URL params to trigger corresponding scripts. 
 
+*Be sure to update the directory on line 35 to your directory path:
+chdir('/home/justin/channels/');
+
 To use: 
 1) Install PHP
 sudo apt install php
