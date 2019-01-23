@@ -251,10 +251,9 @@ read -p 'Number of Channels: ' number_of_channels
 	reset_time_minute="${reset_time_formatted: -2}"
 	reset_time_minute=$(echo $reset_time_minute | sed "-e s|^[0]||")
 	# SET UP CRON JOB TO RUN DAILY RESET
-	sudo crontab -e &
-	sudo crontab -l | grep -v 'daily-cron.sh' | crontab -
+	sudo echo "$reset_time_minute $reset_time_hour * * * root $PWD/daily-cron.sh" >> pseudo-channel 
+	sudo chown root:root pseudo-channel && sudo chmod 600 pseudo-channel && sudo mv pseudo-channel /etc/cron.d/
 	sudo echo \#\!/bin/bash > ./daily-cron.sh && echo "cd $PWD" >> ./daily-cron.sh && echo "sudo ./generate-channels-daily-schedules.sh" >> ./daily-cron.sh
-	( sudo crontab -l ; echo "$reset_time_minute $reset_time_hour * * * $PWD/daily-cron.sh" ) | sudo crontab -
 
 	#### WRITE VARIABLES TO TOKEN AND CONFIG FILES ####
 	reset_time="\"$reset_time_entry\""
