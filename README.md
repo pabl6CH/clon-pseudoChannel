@@ -1,6 +1,6 @@
 # PseudoChannel.py - Your Home-Brewed TV Channels
 
-![Generated HTML schedule](https://i.imgur.com/LqSbcpP.gif)
+![Generated HTML schedule](https://i.imgur.com/CUgxb1W.gif)
 
 ## How to Use:
 
