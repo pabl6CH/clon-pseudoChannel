@@ -159,7 +159,7 @@ if [ "${#CHANNEL_DIR_ARR[@]}" -gt 1 ]; then
 
 	if [ "$FIRST_RUN" = false ]; then
 		cd "$OUTPUT_PREV_CHANNEL_PATH"/"$PREV_CHANNEL_DIR" && bash ./"$SCRIPT_TO_EXECUTE"
-		cd ../"$NEXT_CHANNEL_DIR" && ./"$SCRIPT_TO_EXECUTE"
+		cd ../"$NEXT_CHANNEL_DIR" && bash ./"$SCRIPT_TO_EXECUTE"
 	else
 
 		cd "$OUTPUT_PREV_CHANNEL_PATH"/"$NEXT_CHANNEL_DIR" && bash ./"$SCRIPT_TO_EXECUTE"
