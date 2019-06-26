@@ -80,6 +80,7 @@ read -p 'Number of Channels: ' number_of_channels
 		mkdir "pseudo-channel_$num"
 		fi
 	done
+	sudo apt-get install -y python-pip git
 	mkdir github_download
 	cd github_download
 	$SCRIPT_TO_EXECUTE_PLUS_ARGS
@@ -97,7 +98,6 @@ read -p 'Number of Channels: ' number_of_channels
 #if [ "$FIRST_INSTALL" == "true" ]
 #	then
 	echo "INSTALLING EXTERNAL REQUIREMENTS"
-	sudo apt-get install -y python-pip git
 	pip install -r requirements.txt
 	sudo apt-get -y install libxml2-utils recode # NEEDED FOR XML PARSING
 	cd ..
@@ -253,7 +253,7 @@ read -p 'Number of Channels: ' number_of_channels
 	reset_time_minute=$(echo $reset_time_minute | sed "-e s|^[0]||")
 	# SET UP CRON JOB TO RUN DAILY RESET
 	echo "$reset_time_minute $reset_time_hour * * * root $PWD/daily-cron.sh" >> pseudo-channel 
-	chown root:root pseudo-channel && sudo chmod 600 pseudo-channel && sudo mv pseudo-channel /etc/cron.d/
+	sudo chown root:root pseudo-channel && sudo chmod 600 pseudo-channel && sudo mv pseudo-channel /etc/cron.d/
 	echo \#\!/bin/bash > ./daily-cron.sh && echo "cd $PWD" >> ./daily-cron.sh && echo "./generate-channels-daily-schedules.sh" >> ./daily-cron.sh
 
 	#### WRITE VARIABLES TO TOKEN AND CONFIG FILES ####
