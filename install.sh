@@ -374,4 +374,4 @@ rm -rf ./github_download
 
 echo "Update Complete"
 echo "Starting Pseudo Channel Control..."
-./pseudo-channel-control.sh
+bash ./pseudo-channel-control.sh
