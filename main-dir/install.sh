@@ -20,11 +20,11 @@ if [ $# -gt 1 ]; then
 	exit 9999
 elif [ "$1" == "develop" ]; then
 	echo "Downloading the develop branch"
-	SCRIPT_TO_EXECUTE_PLUS_ARGS='git clone https://github.com/mutto233/pseudo-channel . --branch develop'
+	SCRIPT_TO_EXECUTE_PLUS_ARGS='git clone https://github.com/FakeTV/pseudo-channel . --branch develop'
 
 else
 	echo "Downloading the master branch"
-	SCRIPT_TO_EXECUTE_PLUS_ARGS='git clone https://github.com/mutto233/pseudo-channel . --branch master'
+	SCRIPT_TO_EXECUTE_PLUS_ARGS='git clone https://github.com/FakeTV/pseudo-channel . --branch master'
 fi
 
 OUTPUT_PREV_CHANNEL_PATH=.
@@ -115,7 +115,7 @@ read -p 'Number of Channels: ' number_of_channels
 	echo "PLEX AUTH TOKEN is $server_token"
 	echo "SELECT the PLEX CLIENT for this install or ENTER one manually"
 	# DISPLAY A LIST OF CONNECTED CLIENTS AND ALLOW THE USER TO SELECT ONE OR ENTER ONE THAT ISN'T DISPLAYED
-	clientlist=$(xmllint --xpath "//Server/@name" "http://$server_ip:$server_port/clients" | sed "s|name=||g" | sed "s|^ ||g" && echo -e " Other")
+	clientlist=$(xmllint --xpath "//Server/@name" "http://$server_ip:$server_port/clients/?X-Plex-Token=$server_token" | sed "s|name=||g" | sed "s|^ ||g" && echo -e " Other")
 	eval set $clientlist
 	select ps_client_entry in "$@"
 		do
@@ -137,7 +137,7 @@ read -p 'Number of Channels: ' number_of_channels
 		do
 			#read -p 'TV Show Library Name: ' tv_library_entry
 			#echo -n "\"$tv_library_entry\"" >> tv-libraries.temp
-			library_list_tv=$(xmllint --xpath "//Directory[@type=\"show\"]/@title" "http://$server_ip:$server_port/library/sections" | sed "s|title=||g" | sed "s|^ ||g" && echo -e " Other")
+			library_list_tv=$(xmllint --xpath "//Directory[@type=\"show\"]/@title" "http://$server_ip:$server_port/library/sections/?X-Plex-Token=$server_token" | sed "s|title=||g" | sed "s|^ ||g" && echo -e " Other")
 			eval set $library_list_tv
 			select tv_library_entry in "$@"
 				do
@@ -169,7 +169,7 @@ read -p 'Number of Channels: ' number_of_channels
 		do
 			#read -p 'Movie Library Name: ' movie_library_entry
 			#echo -n "\"$movie_library_entry\"" >> movie-libraries.temp
-			library_list_movie=$(xmllint --xpath "//Directory[@type=\"movie\"]/@title" "http://$server_ip:$server_port/library/sections" | sed "s|title=||g" | sed "s|^ ||g" && echo -e " Other")
+			library_list_movie=$(xmllint --xpath "//Directory[@type=\"movie\"]/@title" "http://$server_ip:$server_port/library/sections/?X-Plex-Token=$server_token" | sed "s|title=||g" | sed "s|^ ||g" && echo -e " Other")
 			eval set $library_list_movie
 			select movie_library_entry in "$@"
 				do
@@ -212,7 +212,7 @@ read -p 'Number of Channels: ' number_of_channels
 		while [[ "$enter_commercials" == @(Y|y|Yes|yes|YES) ]]
 			do
 				#read -p 'Commercial Library Name: ' commercial_library_entry
-				library_list_commercial=$(xmllint --xpath "//Directory[@type=\"movie\"]/@title" "http://$server_ip:$server_port/library/sections" | sed "s|title=||g" | sed "s|^ ||g" && echo -e " Other")
+				library_list_commercial=$(xmllint --xpath "//Directory[@type=\"movie\"]/@title" "http://$server_ip:$server_port/library/sections/?X-Plex-Token=$server_token" | sed "s|title=||g" | sed "s|^ ||g" && echo -e " Other")
 				eval set $library_list_commercial
 				select commercial_library_entry in "$@"
 					do
@@ -251,10 +251,9 @@ read -p 'Number of Channels: ' number_of_channels
 	reset_time_minute="${reset_time_formatted: -2}"
 	reset_time_minute=$(echo $reset_time_minute | sed "-e s|^[0]||")
 	# SET UP CRON JOB TO RUN DAILY RESET
-	sudo crontab -e &
-	sudo crontab -l | grep -v 'daily-cron.sh' | crontab -
+	sudo echo "$reset_time_minute $reset_time_hour * * * root $PWD/daily-cron.sh" >> pseudo-channel 
+	sudo chown root:root pseudo-channel && sudo chmod 600 pseudo-channel && sudo mv pseudo-channel /etc/cron.d/
 	sudo echo \#\!/bin/bash > ./daily-cron.sh && echo "cd $PWD" >> ./daily-cron.sh && echo "sudo ./generate-channels-daily-schedules.sh" >> ./daily-cron.sh
-	( sudo crontab -l ; echo "$reset_time_minute $reset_time_hour * * * $PWD/daily-cron.sh" ) | sudo crontab -
 
 	#### WRITE VARIABLES TO TOKEN AND CONFIG FILES ####
 	reset_time="\"$reset_time_entry\""

@@ -125,29 +125,47 @@ class PseudoDailyScheduleController():
                 timeB = datetime.strptime(row[8], '%I:%M:%S %p')
                 if currentTime == None:
                     with tag('time',
-                            ('data-key', str(row[12])),
-                            ('data-current', 'false'),
-                            ('data-type', str(row[11])),
-                            ('data-title', str(row[3])),
-                            ('data-start-time', str(row[8])),
+                            ('key', str(row[12])),
+                            ('current', 'false'),
+                            ('type', str(row[11])),
+			    ('show-title', str(row[6])),
+			    ('show-season', str(row[5])),
+			    ('show-episode', str(row[4])),
+                            ('title', str(row[3])),
+			    ('duration', str(row[7])),
+                            ('time-start', str(row[8])),
+			    ('time-end', str(row[9])),
+			    ('library', str(row[13])),
                         ):
                         text(row[8])
                 elif currentTime.hour == timeB.hour and currentTime.minute == timeB.minute:
                     with tag('time',
-                            ('data-key', str(row[12])),
-                            ('data-current', 'true'),
-                            ('data-type', str(row[11])),
-                            ('data-title', str(row[3])),
-                            ('data-start-time', str(row[8])),
+                            ('key', str(row[12])),
+                            ('current', 'true'),
+                            ('type', str(row[11])),
+			    ('show-title', str(row[6])),
+                            ('show-season', str(row[5])),
+                            ('show-episode', str(row[4])),
+                            ('title', str(row[3])),
+                            ('duration', str(row[7])),
+                            ('time-start', str(row[8])),
+                            ('time-end', str(row[9])),
+                            ('library', str(row[13])),
                         ):
                         text(row[8])
                 else:
                     with tag('time',
-                            ('data-key', str(row[12])),
-                            ('data-current', 'false'),
-                            ('data-type', str(row[11])),
-                            ('data-title', str(row[3])),
-                            ('data-start-time', str(row[8])),
+                            ('key', str(row[12])),
+                            ('current', 'false'),
+                            ('type', str(row[11])),
+                            ('show-title', str(row[6])),
+                            ('show-season', str(row[5])),
+                            ('show-episode', str(row[4])),
+                            ('title', str(row[3])),
+                            ('duration', str(row[7])),
+                            ('time-start', str(row[8])),
+                            ('time-end', str(row[9])),
+                            ('library', str(row[13])),
                         ):
                         text(row[8])
         return indent(doc.getvalue())
