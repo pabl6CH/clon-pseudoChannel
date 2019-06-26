@@ -54,7 +54,7 @@ CHANNEL_DIR_ARR=( $(find . -maxdepth 1 -type d -name '*'"$CHANNEL_DIR_INCREMENT_
 # Since leading zeros may be an issue, we need to correctly sort the channels.  The best way to do this seems to be in python
 # So a script will take in the channels as they are, then output them in the correct, sorted order in Channels_Sorted.txt.
 # We will run the script, then read in the results.
-sudo python ./Channel_Sorter.py ${CHANNEL_DIR_ARR[@]}
+python ./Channel_Sorter.py ${CHANNEL_DIR_ARR[@]}
 
 filename="./Channels_Sorted.txt"
 i=0

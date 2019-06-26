@@ -27,7 +27,7 @@ do
 	fi
 
 	# Update the given box with the gitHub repository branch selected.
-	sudo ./update-channels-from-git.sh ${BRANCH}
+	bash ./update-channels-from-git.sh ${BRANCH}
 
 	# Now we need to go in and perform the symlink again
 	CHANNEL_DIR_ARR=( $(find . -maxdepth 1 -type d -name '*'"$CHANNEL_DIR_INCREMENT_SYMBOL"'[[:digit:]]*' -printf "%P\n" | sort -t"$CHANNEL_DIR_INCREMENT_SYMBOL" -n) )

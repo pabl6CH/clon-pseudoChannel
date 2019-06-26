@@ -310,7 +310,7 @@ clear
 echo "++++++++++++++++++++PSEUDO CHANNEL SCHEDULE EDITOR++++++++++++++++++++"
 echo "Backing up CURRENT SCHEDULE FILE..."
 sleep 1
-sudo cp pseudo_schedule.xml pseudo_schedule.backup
+cp pseudo_schedule.xml pseudo_schedule.backup
 echo "Creating NEW SCHEDULE FILE..."
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > pseudo_schedule.xml
 echo "<schedule>" >> pseudo_schedule.xml
@@ -559,7 +559,7 @@ select day_of_week in "Sunday" "Monday" "Tuesday" "Wednesday" "Thursday" "Friday
 		echo "</schedule>" >> pseudo_schedule.xml
 		#sudo ./updatexml.sh
 		echo "CLEANING UP TEMPORARY FILES"
-		sudo rm xtra.temp
+		rm xtra.temp
 		echo "REMOVE BACKUP of Channel $channel_number's previous schedule?"
 		read -p 'Y/N: ' remove_backup_schedule
 			while [[ "$remove_backup_schedule" != @(Y|y|Yes|yes|YES|N|n|No|no|NO) ]]
@@ -571,10 +571,10 @@ select day_of_week in "Sunday" "Monday" "Tuesday" "Wednesday" "Thursday" "Friday
 			done
 		if [[ "$remove_backup_schedule" == @(Y|y|Yes|yes|YES) ]]
 			then
-			sudo rm pseudo_schedule.backup
+			rm pseudo_schedule.backup
 		fi
 		cd $main_dir
-		(sudo ./updatexml.sh)
+		(bash ./updatexml.sh)
 		exit 0
 	fi
 sleep 1
