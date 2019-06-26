@@ -574,7 +574,11 @@ select day_of_week in "Sunday" "Monday" "Tuesday" "Wednesday" "Thursday" "Friday
 			rm pseudo_schedule.backup
 		fi
 		cd $main_dir
+		echo "++++++++++++++++++++UPDATING XML's++++++++++++++++++++"
 		(bash ./updatexml.sh)
+		sleep 5
+		echo "++++++++++++++++++++GENERATING NEW SCHEDULES++++++++++++++++++++"
+		(bash ./generate-channels-daily-schedules.sh)
 		exit 0
 	fi
 sleep 1

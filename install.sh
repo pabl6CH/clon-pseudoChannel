@@ -97,7 +97,7 @@ read -p 'Number of Channels: ' number_of_channels
 #if [ "$FIRST_INSTALL" == "true" ]
 #	then
 	echo "INSTALLING EXTERNAL REQUIREMENTS"
-	sudo apt-get install python-pip
+	sudo apt-get install -y python-pip git
 	pip install -r requirements.txt
 	sudo apt-get -y install libxml2-utils recode # NEEDED FOR XML PARSING
 	cd ..
