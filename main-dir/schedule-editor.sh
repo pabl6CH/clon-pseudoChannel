@@ -579,6 +579,8 @@ select day_of_week in "Sunday" "Monday" "Tuesday" "Wednesday" "Thursday" "Friday
 		sleep 5
 		echo "++++++++++++++++++++GENERATING NEW SCHEDULES++++++++++++++++++++"
 		(bash ./generate-channels-daily-schedules.sh)
+		echo "++++++++++++++++++++UPDATING HTML/XML OUTPUT DOCS++++++++++++++++++++"
+		(bash ./updateweb.sh)
 		exit 0
 	fi
 sleep 1
