@@ -15,7 +15,7 @@ if [ $do_first_run == "true" ]
 	echo "+++++++++++++++++++++++++++PSEUDO CHANNEL+++++++++++++++++++++++++++"
 	echo "Database file not found, generating database..."
 	(python Global_DatabaseUpdate.py -u)
-	(./schedule-editor.sh)
+	(bash ./schedule-editor.sh)
 fi
 clear
 echo "+++++++++++++++++++++++++++PSEUDO CHANNEL+++++++++++++++++++++++++++"
@@ -52,23 +52,23 @@ select category in "CONTROL" "EDIT" "UPDATE" "EXIT"
 				done
 				if [[ $channel_number -ge 1 && $channel_number -le 9 ]]
 					then
-					(./manual.sh 0"$channel_number")
+					(bash ./manual.sh 0"$channel_number")
 					else
-					(./manual.sh "$channel_number")
+					(bash ./manual.sh "$channel_number")
 				fi
 				break
 			fi
                         if [[ "$pseudo_channel_do" == "NEXT CHANNEL" ]]
                                 then
-				(./channelup.sh)
+				(bash ./channelup.sh)
                         fi
                         if [[ "$pseudo_channel_do" == "PREVIOUS CHANNEL" ]]
                                 then
-				(./channeldown.sh)
+				(bash ./channeldown.sh)
                         fi
                         if [[ "$pseudo_channel_do" == "STOP CHANNEL" ]]
                                 then
-				(./stop-all-channels.sh)
+				(bash ./stop-all-channels.sh)
                         fi
                         if [[ "$pseudo_channel_do" == "BACK" ]]
                                 then
@@ -95,11 +95,11 @@ select category in "CONTROL" "EDIT" "UPDATE" "EXIT"
                 	echo "+++++++++++++++++++++++++++PSEUDO CHANNEL+++++++++++++++++++++++++++"
                         if [[ "$pseudo_channel_do" == "EDIT SCHEDULE" ]]
                                 then
-				(./schedule-editor.sh)
+				(bash ./schedule-editor.sh)
                         fi
                         if [[ "$pseudo_channel_do" == "EDIT CONFIG" ]]
                                 then
-				(./config_editor.sh)
+				(bash ./config_editor.sh)
                         fi
                         if [[ "$pseudo_channel_do" == "ADD CLIENT" ]]
                                 then
@@ -115,7 +115,7 @@ select category in "CONTROL" "EDIT" "UPDATE" "EXIT"
 					fi
 				break
 				done
-				(./create_box.sh "$create_box_client")
+				(bash ./create_box.sh "$create_box_client")
                         fi
                         if [[ "$pseudo_channel_do" == "BACK" ]]
                                 then
@@ -162,7 +162,7 @@ select category in "CONTROL" "EDIT" "UPDATE" "EXIT"
                         fi
                         if [[ "$pseudo_channel_do" == "SOFTWARE UPDATE" ]]
                                 then
-				(./update-channels-from-git.sh)
+				(bash ./update-channels-from-git.sh)
                         fi
                         if [[ "$pseudo_channel_do" == "BACK" ]]
                                 then

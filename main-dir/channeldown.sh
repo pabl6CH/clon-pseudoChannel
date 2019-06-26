@@ -134,11 +134,11 @@ if [ "${#CHANNEL_DIR_ARR[@]}" -gt 1 ]; then
 	# This will stop the previous channels playback & trigger the next channels playback
 
 	if [ "$FIRST_RUN" = false ]; then
-		cd "$OUTPUT_PREV_CHANNEL_PATH"/"$PREV_CHANNEL_DIR" && ./"$SCRIPT_TO_EXECUTE"
+		cd "$OUTPUT_PREV_CHANNEL_PATH"/"$PREV_CHANNEL_DIR" && bash ./"$SCRIPT_TO_EXECUTE"
 		cd ../"$NEXT_CHANNEL" && ./"$SCRIPT_TO_EXECUTE"
 	else
 
-		cd "$OUTPUT_PREV_CHANNEL_PATH"/"$NEXT_CHANNEL" && ./"$SCRIPT_TO_EXECUTE"
+		cd "$OUTPUT_PREV_CHANNEL_PATH"/"$NEXT_CHANNEL" && bash ./"$SCRIPT_TO_EXECUTE"
 
 	fi
 
