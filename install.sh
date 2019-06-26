@@ -23,8 +23,8 @@ elif [ "$1" == "develop" ]; then
 	SCRIPT_TO_EXECUTE_PLUS_ARGS='git clone https://github.com/FakeTV/pseudo-channel . --branch develop'
 
 else
-	echo "Downloading the permissions branch"
-	SCRIPT_TO_EXECUTE_PLUS_ARGS='git clone https://github.com/FakeTV/pseudo-channel . --branch permissions'
+	echo "Downloading the master branch"
+	SCRIPT_TO_EXECUTE_PLUS_ARGS='git clone https://github.com/FakeTV/pseudo-channel . --branch master'
 fi
 
 OUTPUT_PREV_CHANNEL_PATH=.
