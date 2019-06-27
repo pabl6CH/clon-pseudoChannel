@@ -281,7 +281,7 @@ clear
 echo "++++++++++++++++++++PSEUDO CHANNEL SCHEDULE EDITOR++++++++++++++++++++"
 if [[ $channel_number == '' ]] # IF NO ARGUMENT PROVIDED, ASK IF USER WANTS TO EDIT THE MAIN CONFIG OR SELECT A CHANNEL
         then
-	echo "CHOOSE which CHANNEL SCHEDULE to create."
+	echo "CHOOSE which CHANNEL SCHEDULE to create (or ctrl+c to exit)."
 	echo "Enter CHANNEL NUMBER between 1 and $number_of_channels"
                 read -p 'Channel Number: ' channel_number
                 while ! [[ $channel_number =~ $re ]] # VALIDATES THAT CHANNEL NUMBER IS ACTUALLY A NUMBER

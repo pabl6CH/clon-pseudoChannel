@@ -369,8 +369,7 @@ rm -rf ./.pseudo-temp
 
 rm -rf ./github_download
 
-#### Change permissions to 777 for all files, so that things will run
-#sudo chmod -R 777 .
+find . -type f -name "*.sh" -exec chmod +x {} \;
 
 echo "Update Complete"
 echo "Starting Pseudo Channel Control..."
