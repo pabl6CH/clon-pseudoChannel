@@ -33,7 +33,7 @@
 4. Run the install and follow the prompts:
 
 ```bash
-% ./install.sh
+% ./install.sh develop
 ```
 
 You need to have your Plex server IP and [Plex Token](https://bit.ly/2p7RtOu) handy as the install script will ask for them. If you run into issues or want to know more about customizing/configuring PseudoChannel, check out the wiki for details. If you need further help, have some ideas or just want to chat all things FakeTV, visit our FakeTV Discord chat here: https://discord.gg/7equn68
