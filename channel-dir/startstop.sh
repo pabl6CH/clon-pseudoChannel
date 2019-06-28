@@ -50,7 +50,7 @@ else
 	# If the running.pid exists, read it & try to kill the process if it exists, then delete it.
 	the_pid=$(<$OUTPUT_PID_PATH/$OUTPUT_PID_FILE)
 
-	rm "$OUTPUT_PID_PATH/$OUTPUT_PID_FILE"
+	rm -f "$OUTPUT_PID_PATH/$OUTPUT_PID_FILE"
 
 	echo "Deleted $OUTPUT_PID_FILE file in $OUTPUT_PID_PATH dir"
 
