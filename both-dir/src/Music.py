@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from Media import Media
+from .Media import Media
 
 class Music(Media):
 

@@ -58,17 +58,17 @@ class PseudoChannelCommercial():
         if prev_item_end_time.replace(second=0,microsecond=0) > curr_item_start_time and strict_time == "false":
             # NOTE: This is just for the logic of this function, I have noticed that this 
             # may cause other issues in other functions, since now the day is off.
-            print "WE MUST BE SKIPPING A DAY, ADDING A DAY TO THE START TIME"
+            print("WE MUST BE SKIPPING A DAY, ADDING A DAY TO THE START TIME")
             curr_item_start_time  = curr_item_start_time.replace(day=2)
 
         
-        print "##############################################"
-        print "get_commercials_to_place_between_media DEBUG"
-        print "NOW: %s" % now
-        print "prev_item_end_time: %s" % prev_item_end_time.replace(second=0,microsecond=0) 
-        print "curr_item_start_time: %s" % curr_item_start_time
-        print "time_diff: %s" % time_diff
-        print "##############################################"
+        print("##############################################")
+        print("get_commercials_to_place_between_media DEBUG")
+        print("NOW: %s" % now)
+        print("prev_item_end_time: %s" % prev_item_end_time.replace(second=0,microsecond=0) )
+        print("curr_item_start_time: %s" % curr_item_start_time)
+        print("time_diff: %s" % time_diff)
+        print("##############################################")
         
         count = 0
         commercial_list = []
@@ -124,7 +124,7 @@ class PseudoChannelCommercial():
                         break
                     else:
 
-                        print "===== Finding correct FINAL commercial to add to List."
+                        print("===== Finding correct FINAL commercial to add to List.")
 
                         last_comm = None
                         for comm in self.commercials:

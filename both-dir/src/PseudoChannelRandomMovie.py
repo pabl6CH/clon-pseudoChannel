@@ -43,7 +43,7 @@ class PseudoChannelRandomMovie():
 
             if(movie[5] is not None): #lastPlayedDate is recorded
 
-                print movie[5]
+                print(movie[5])
 
                 now = datetime.datetime.now()
                 lastPlayedDate = datetime.datetime.strptime(movie[5], '%Y-%m-%d')

@@ -6,7 +6,9 @@ import logging
 import logging.handlers
 from datetime import datetime
 import sqlite3
-import thread,SocketServer,SimpleHTTPServer
+import _thread
+import socketserver
+import http.server
 from plexapi.server import PlexServer
 from yattag import Doc
 from yattag import indent
@@ -83,7 +85,7 @@ class PseudoDailyScheduleController():
             web_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'schedules'))
             os.chdir(web_dir)
             PORT = int(self.CONTROLLER_SERVER_PORT)
-            class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+            class MyHandler(http.server.SimpleHTTPRequestHandler):
 
                 def log_message(self, format, *args):
                     return
@@ -91,7 +93,7 @@ class PseudoDailyScheduleController():
             global httpd
             try:
                 #print "Starting webserver at port: ", PORT
-                # create the httpd handler for the simplehttpserver
+                # create the httpd handler for the http.server
                 # we set the allow_reuse_address incase something hangs can still bind to port
                 class ReusableTCPServer(SocketServer.TCPServer): allow_reuse_address=True
                 # specify the httpd service on 0.0.0.0 (all interfaces) on port 80
@@ -102,8 +104,8 @@ class PseudoDailyScheduleController():
             except KeyboardInterrupt:
                 core.print_info("Exiting the SET web server...")
                 httpd.socket.close()
-            except socket.error, exc:
-                print "Caught exception socket.error : %s" % exc 
+            except(socket.error, exc):
+                print("Caught exception socket.error : %s" % exc )
             # handle the rest
             #except Exception:
             #    print "[*] Exiting the SET web server...\n"
@@ -322,7 +324,7 @@ class PseudoDailyScheduleController():
                                          ((currentTime-timeBStart).total_seconds() >= 0 and \
                                           (midnight-currentTime).total_seconds() >= 0))):          
                                         
-                                            print "+++++ Currently Playing:", row[3]
+                                            print("+++++ Currently Playing:", row[3])
 
                                             with tag('tr', klass='bg-info'):
                                                 with tag('th', scope='row'):
@@ -405,13 +407,13 @@ class PseudoDailyScheduleController():
         if not os.path.exists(writepath):
             os.makedirs(writepath)
         if not os.path.exists(writepath+fileName):
-            file(writepath+fileName, 'w').close()
+            open(writepath+fileName, 'w').close()
         mode = 'r+'
         with open(writepath+fileName, mode) as f:
             f.seek(0)
             first_line = f.read()  
             if self.DEBUG:
-                print "+++++ Html refresh flag: {}".format(first_line)
+                print("+++++ Html refresh flag: {}".format(first_line))
             if first_line == '' or first_line == "0":
                 f.seek(0)
                 f.truncate()
@@ -437,28 +439,28 @@ class PseudoDailyScheduleController():
             head,sep,tail = cwd.partition('channels_')
             head,sep,tail = tail.partition('/')
             self.PLEX_CLIENTS = [head]
-            print "CLIENT OVERRIDE: %s" % self.PLEX_CLIENTS
+            print("CLIENT OVERRIDE: %s" % self.PLEX_CLIENTS)
             
         try: 
             if mediaType == "TV Shows":
 #                print "Here, Trying to play custom type: ", customSectionName
-                print "+++++ Checking Duration for a Match: "
+                print("+++++ Checking Duration for a Match: ")
                 mediaItems = self.PLEX.library.section(customSectionName).get(mediaParentTitle).episodes()
                 for item in mediaItems:
 #                    print item.duration
                     if item.title == mediaTitle and item.duration == durationAmount:
-                        print "+++++ MATCH FOUND in %s" % item
+                        print("+++++ MATCH FOUND in %s" % item)
                         for client in self.PLEX_CLIENTS:
                             clientItem = self.PLEX.client(client)
                             clientItem.playMedia(item, offset=offset)
                         break
             elif mediaType == "Movies":
                 movies =  self.PLEX.library.section(customSectionName).search(title=mediaTitle)
-                print "+++++ Checking Duration for a Match: "
+                print("+++++ Checking Duration for a Match: ")
                 for item in movies:
 #                    print item.duration
                     if item.duration == durationAmount:
-                        print "+++++ MATCH FOUND in %s" % item
+                        print("+++++ MATCH FOUND in %s" % item)
                         movie = item
                         break
                 for client in self.PLEX_CLIENTS:
@@ -470,18 +472,18 @@ class PseudoDailyScheduleController():
                 # We will just play the first value
                 COMMERCIAL_PADDING = config.commercialPadding
                 movies =  self.PLEX.library.section(customSectionName).search(title=mediaTitle)
-                print "+++++ Checking Duration for a Match: "
+                print("+++++ Checking Duration for a Match: ")
                 for item in movies:
                     #print item
                     #print item.duration
                     if (item.duration+1000*COMMERCIAL_PADDING) == durationAmount or item.duration == durationAmount:
-                        print "+++++ MATCH FOUND in %s" % item
+                        print("+++++ MATCH FOUND in %s" % item)
                         movie = item
                         break
                 try:
                     movie
                 except:
-                    print "+++++ Commercial is NOT FOUND, my guess is this is the dirty gap.  Picking first one"
+                    print("+++++ Commercial is NOT FOUND, my guess is this is the dirty gap.  Picking first one")
                     movie = movies[0]
                     
                 for client in self.PLEX_CLIENTS:
@@ -489,11 +491,11 @@ class PseudoDailyScheduleController():
                         clientItem.playMedia(movie, offset=offset)
             else:
                 print("##### Not sure how to play {}".format(customSectionName))
-            print "+++++ Done."
+            print("+++++ Done.")
         except Exception as e:
-            print e.__doc__
-            print e.message
-            print "##### There was an error trying to play the media."
+            print(e.__doc__)
+            print(e.message)
+            print("##### There was an error trying to play the media.")
             pass
         
     def stop_media(self):
@@ -538,13 +540,13 @@ class PseudoDailyScheduleController():
 
     def play(self, row, datalist, offset=0):
 
-        print str("##### Starting Media: '{}'".format(row[3])).encode('UTF-8')
-        print str("##### Media Offset: '{}' seconds.".format(int(offset / 1000))).encode('UTF-8')
+        print(str("##### Starting Media: '{}'".format(row[3])).encode('UTF-8'))
+        print(str("##### Media Offset: '{}' seconds.".format(int(offset / 1000))).encode('UTF-8'))
         if self.DEBUG:
-            print str(row).encode('UTF-8')
+            print(str(row).encode('UTF-8'))
         timeB = datetime.strptime(row[8], '%I:%M:%S %p')
 
-        print "Here, row[13]", row[13]
+        print("Here, row[13]", row[13])
 
         self.play_media(row[11], row[6], row[3], offset, row[13], row[7])
         self.write_schedule_to_file(
@@ -668,7 +670,7 @@ class PseudoDailyScheduleController():
                  ((currentTime-timeBStart).total_seconds() >= 0 and \
                   (midnight-currentTime).total_seconds() >= 0))): 
 
-                print "+++++ Made the conditional & found item: {}".format(row[6])
+                print("+++++ Made the conditional & found item: {}".format(row[6]))
 
                 return self.get_show_photo(
                     row[13], 
@@ -720,7 +722,7 @@ class PseudoDailyScheduleController():
                  ((currentTime-timeBStart).total_seconds() >= 0 and \
                   (midnight-currentTime).total_seconds() >= 0))):          
 
-                print "+++++ Made the conditional & found item: {}".format(row[6])
+                print("+++++ Made the conditional & found item: {}".format(row[6]))
 
                 return row[6] + " - " + row[3] if row[11] == "TV Shows" else row[3]
 
@@ -737,7 +739,7 @@ class PseudoDailyScheduleController():
 
     def make_xml_schedule(self, datalist):
 
-        print "##### ", "Writing XML / HTML to file."
+        print("##### ", "Writing XML / HTML to file.")
         now = datetime.now()
         now = now.replace(year=1900, month=1, day=1)
 
@@ -745,7 +747,7 @@ class PseudoDailyScheduleController():
 
         itemTitle = self.manually_get_now_playing_title(now, datalist)
 
-        print "+++++ The path to the bgImage: {}".format(bgImage)
+        print("+++++ The path to the bgImage: {}".format(bgImage))
 
         self.write_refresh_bool_to_file()
         self.write_schedule_to_file(self.get_html_from_daily_schedule(now, bgImage, datalist, itemTitle))

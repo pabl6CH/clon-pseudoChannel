@@ -221,7 +221,7 @@ class PseudoChannelDatabase():
             self.conn.commit()
         # Catch the exception
         except Exception as e:
-            print plexMediaID
+            print(plexMediaID)
             # Roll back any change if something goes wrong
             self.conn.rollback()
             raise e
@@ -268,8 +268,8 @@ class PseudoChannelDatabase():
             customSectionName
             ):
 
-        print "sectionType", sectionType
-        print "customSectionName", customSectionName
+        print("sectionType", sectionType)
+        print("customSectionName", customSectionName)
         unix = int(time.time())
         try:
             self.cursor.execute("INSERT OR REPLACE INTO daily_schedule "
@@ -301,11 +301,11 @@ class PseudoChannelDatabase():
     def add_media_to_daily_schedule(self, media):
 
         try:
-            print str("#### Adding media to db: {} {}".format(media.title, media.start_time)).encode('UTF-8')
+            print(str("#### Adding media to db: {} {}".format(media.title, media.start_time)).encode('UTF-8'))
         except:
-            print "----- Not outputting media info due to ascii code issues."
+            print("----- Not outputting media info due to ascii code issues.")
 
-        print "media.custom_section_name", media.custom_section_name
+        print("media.custom_section_name", media.custom_section_name)
         self.add_daily_schedule_to_db(
                 0,
                 media.title,
@@ -420,7 +420,7 @@ class PseudoChannelDatabase():
 
     def get_media(self, title, mediaType):
 
-        print "+++++ title:", title
+        print("+++++ title:", title)
         if(title is not None):
             media = mediaType
             sql = "SELECT * FROM "+media+" WHERE (title LIKE ?) COLLATE NOCASE"
@@ -438,10 +438,10 @@ class PseudoChannelDatabase():
 
     def get_daily_schedule(self):
 
-        print "##### Getting Daily Schedule from DB."
+        print("##### Getting Daily Schedule from DB.")
         self.cursor.execute("SELECT * FROM daily_schedule ORDER BY datetime(startTime) ASC")
         datalist = list(self.cursor.fetchall())
-        print "+++++ Done."
+        print("+++++ Done.")
         return datalist
 
     def get_movie(self, title):

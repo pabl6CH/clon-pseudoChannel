@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
+# import importlib
 import signal
 import datetime
 from datetime import time
@@ -11,7 +11,8 @@ import calendar
 import itertools
 import argparse
 import textwrap
-import os, sys
+import os
+import sys
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
 import json
@@ -32,8 +33,8 @@ from src import PseudoChannelCommercial
 from src import PseudoChannelRandomMovie
 import pseudo_config as config
 
-reload(sys)
-sys.setdefaultencoding('utf-8')
+# importlib.reload(sys)
+# sys.setdefaultencoding('utf-8')
 
 class PseudoChannel():
 
@@ -172,7 +173,7 @@ class PseudoChannel():
                                         )
                             
                     elif correct_lib_name == "Commercials":
-                        print "user_lib_name", section.title
+                        print("user_lib_name", section.title)
                         sectionMedia = self.PLEX.library.section(section.title).all()
                         media_length = len(sectionMedia)
                         for i, media in enumerate(sectionMedia):
@@ -266,8 +267,7 @@ class PseudoChannel():
                                             episode.key,
                                             section.title
                                         )
-                            
-                            
+
     def update_db_comm(self):
 
         print("#### Updating Local Database, COMMERCIALS ONLY")
@@ -278,7 +278,7 @@ class PseudoChannel():
             for correct_lib_name, user_lib_name in libs_dict.items():
                 if section.title.lower() in [x.lower() for x in user_lib_name]:
                     if correct_lib_name == "Commercials":
-                        print "user_lib_name", section.title
+                        print("user_lib_name", section.title)
                         sectionMedia = self.PLEX.library.section(section.title).all()
                         media_length = len(sectionMedia)
                         for i, media in enumerate(sectionMedia):
@@ -350,7 +350,7 @@ class PseudoChannel():
                                 )
 
 
-                            print "Adding: ", time.tag, section, time.text, time.attrib['title']
+                            print("Adding: ", time.tag, section, time.text, time.attrib['title'])
                             self.db.add_schedule_to_db(
                                 mediaID_place, # mediaID
                                 title, # title
@@ -422,7 +422,7 @@ class PseudoChannel():
         self.OVERLAP_MAX = overlapMax
         time1 = prevEndTime.strftime('%I:%M:%S %p')
         timeB = datetime.datetime.strptime(intendedStartTime, '%I:%M:%S %p').strftime(self.APP_TIME_FORMAT_STR)
-        print "++++ Previous End Time: ", time1, "Intended start time: ", timeB
+        print("++++ Previous End Time: ", time1, "Intended start time: ", timeB)
         timeDiff = self.time_diff(time1, timeB)
         print("++++timeDiff "+ str(timeDiff))
         # print("++++startTimeUNIX: "+ str(intendedStartTime))
@@ -441,16 +441,16 @@ class PseudoChannel():
         '''
         time1A=prevEndTime.strftime('%H:%M')
         time1A_comp = datetime.datetime.strptime(time1A, '%H:%M') # there was an issue with the date changing to 1/2, so we had to do this for correct comparison
-        timeset=[datetime.time(h,m).strftime("%H:%M") for h,m in itertools.product(xrange(0,24),xrange(0,60,int(self.OVERLAP_GAP)))]
+        timeset=[datetime.time(h,m).strftime("%H:%M") for h,m in itertools.product(range(0,24),range(0,60,int(self.OVERLAP_GAP)))]
         timeset_last = timeset[-1]
         theTimeSetInterval_last = datetime.datetime.strptime(timeset_last, '%H:%M')
         
         prevEndTime = time1A_comp #maybe this will change things?
-        print "++++ Previous End Time: ", time1A_comp
-        print "++++ Last Element of the Day: ", theTimeSetInterval_last
+        print("++++ Previous End Time: ", time1A_comp)
+        print("++++ Last Element of the Day: ", theTimeSetInterval_last)
         
         if time1A_comp > theTimeSetInterval_last:
-            print "++++ We are starting a show with the new day.  Using first element of the next day"
+            print("++++ We are starting a show with the new day.  Using first element of the next day")
             theTimeSetInterval = datetime.datetime.strptime(timeset[0], '%H:%M') #This must be the element we are looking for
             newStartTime = theTimeSetInterval
             '''
@@ -474,7 +474,7 @@ class PseudoChannel():
             for time in timeset:
                 theTimeSetInterval = datetime.datetime.strptime(time, '%H:%M')
                 if theTimeSetInterval >= prevEndTime:
-                    print "++++ There is overlap. Setting new time-interval:", theTimeSetInterval
+                    print("++++ There is overlap. Setting new time-interval:", theTimeSetInterval)
                     newStartTime = theTimeSetInterval
                     break
         elif (timeDiff >= 0) and (self.TIME_GAP != -1):
@@ -495,7 +495,7 @@ class PseudoChannel():
                 tempTimeTwoStr = datetime.datetime.strptime(time1, self.APP_TIME_FORMAT_STR).strftime('%H:%M')
                 formatted_time_two = datetime.datetime.strptime(tempTimeTwoStr, '%H:%M')
                 if theTimeSetInterval >= formatted_time_two:
-                    print "++++ Setting new time-interval:", theTimeSetInterval
+                    print("++++ Setting new time-interval:", theTimeSetInterval)
                     newStartTime = theTimeSetInterval
                     break
         else:
@@ -539,7 +539,7 @@ class PseudoChannel():
         for entry in schedule:
             schedule_advance_watcher += 1
             section = entry[9]
-            for key, val in weekday_dict.iteritems(): 
+            for key, val in weekday_dict.items():
                 if str(entry[7]) in str(val) and int(weekno) == int(key):
                     if section == "TV Shows":
                         if str(entry[3]).lower() == "random":
@@ -585,10 +585,10 @@ class PseudoChannel():
                                 for theSection in sections:
                                     for correct_lib_name, user_lib_name in libs_dict.items():
                                         if theSection.title.lower() in [x.lower() for x in user_lib_name]:
-                                            print "correct_lib_name", correct_lib_name
+                                            print("correct_lib_name", correct_lib_name)
                                             if correct_lib_name == "Movies":
 
-                                                print "entry[13]", entry[13]
+                                                print("entry[13]", entry[13])
                                                 movies = self.PLEX.library.section(theSection.title)
                                                 
                                                 try:
@@ -596,7 +596,7 @@ class PseudoChannel():
                                                     regex = re.compile(r"\b(\w+)\s*:\s*([^:]*)(?=\s+\w+\s*:|$)")
                                                     d = dict(regex.findall(thestr))
                                                     # turn values into list
-                                                    for key, val in d.iteritems():
+                                                    for key, val in d.items():
                                                         d[key] = val.split(',')
                                                     for movie in movies.search(None, **d):
                                                         movies_list.append(movie)
@@ -620,7 +620,7 @@ class PseudoChannel():
 
                                 else:
                                     
-                                    print "movies_list", movies_list
+                                    print("movies_list", movies_list)
 
                                     print("For some reason, I've failed getting movie with xtra args.")
                                     the_movie = self.db.get_random_movie()
@@ -658,7 +658,7 @@ class PseudoChannel():
                             )
                             self.MEDIA.append(movie)
                         else:
-                            print str("Cannot find Movie, {} in the local db".format(entry[3])).encode('UTF-8')
+                            print(str("Cannot find Movie, {} in the local db".format(entry[3])).encode('UTF-8'))
                     elif section == "Music":
                         the_music = self.db.get_music(entry[3])
                         if the_music != None:
@@ -677,7 +677,7 @@ class PseudoChannel():
                             )
                             self.MEDIA.append(music)
                         else:
-                            print str("Cannot find Music, {} in the local db".format(entry[3])).encode('UTF-8')
+                            print(str("Cannot find Music, {} in the local db".format(entry[3])).encode('UTF-8'))
                     elif section == "Video":
                         the_video = self.db.get_video(entry[3])
                         if the_music != None:
@@ -696,21 +696,21 @@ class PseudoChannel():
                             )
                             self.MEDIA.append(video)
                         else:
-                            print str("Cannot find Video, {} in the local db".format(entry[3])).encode('UTF-8')
+                            print(str("Cannot find Video, {} in the local db".format(entry[3])).encode('UTF-8'))
                     else:
                         pass
             """If we reached the end of the scheduled items for today, add them to the daily schedule
 
             """
             if schedule_advance_watcher >= len(schedule):
-                print "+++++ Finished processing time entries, recreating daily_schedule"
+                print("+++++ Finished processing time entries, recreating daily_schedule")
                 previous_episode = None
                 for entry in self.MEDIA:
                     if previous_episode != None:
                         natural_start_time = datetime.datetime.strptime(entry.natural_start_time, self.APP_TIME_FORMAT_STR)
                         natural_end_time = entry.natural_end_time
                         if entry.is_strict_time.lower() == "true":
-                            print "++++ Strict-time: {}".format(str(entry.title))
+                            print("++++ Strict-time: {}".format(str(entry.title)))
                             entry.end_time = self.get_end_time_from_duration(
                                     self.translate_time(entry.start_time), 
                                     entry.duration
@@ -728,19 +728,28 @@ class PseudoChannel():
                             previous_episode = entry
                         else:
                             try:
-                                print "++++ NOT strict-time: {}".format(str(entry.title).encode(sys.stdout.encoding, errors='replace'))
+                                print("++++ NOT strict-time: {}".format(str(entry.title).encode(sys.stdout.encoding, errors='replace')))
                             except:
                                 pass
-                            try:
+
+                            if pseudo_channel.DEBUG:
                                 new_starttime = self.calculate_start_time(
                                     previous_episode.end_time,
-                                    entry.natural_start_time,  
-                                    previous_episode.time_shift, 
+                                    entry.natural_start_time,
+                                    previous_episode.time_shift,
                                     ""
                                 )
-                            except:
-                                print("Error in calculate_start_time")
-                            print "++++ New start time:", new_starttime
+                            else:
+                                try:
+                                    new_starttime = self.calculate_start_time(
+                                        previous_episode.end_time,
+                                        entry.natural_start_time,
+                                        previous_episode.time_shift,
+                                        ""
+                                    )
+                                except:
+                                    print("Error in calculate_start_time")
+                            print("++++ New start time:", new_starttime)
                             entry.start_time = datetime.datetime.strptime(new_starttime, self.APP_TIME_FORMAT_STR).strftime('%I:%M:%S %p')
                             entry.end_time = self.get_end_time_from_duration(entry.start_time, entry.duration)
                             """Get List of Commercials to inject"""
@@ -769,16 +778,16 @@ class PseudoChannel():
 
     def show_clients(self):
 
-        print "##### Connected Clients:"
+        print("##### Connected Clients:")
         for i, client in enumerate(self.PLEX.clients()):
-            print "+++++", str(i + 1)+".", "Client:", client.title
+            print("+++++", str(i + 1)+".", "Client:", client.title)
 
     def show_schedule(self):
 
-        print "##### Daily Pseudo Schedule:"
+        print("##### Daily Pseudo Schedule:")
         daily_schedule = self.db.get_daily_schedule()
         for i , entry in enumerate(daily_schedule):
-            print str("+++++ {} {} {} {} {} {}".format(str(i + 1)+".", entry[8], entry[11], entry[6], " - ", entry[3])).encode(sys.stdout.encoding, errors='replace')
+            print(str("+++++ {} {} {} {} {} {}".format(str(i + 1)+".", entry[8], entry[11], entry[6], " - ", entry[3])).encode(sys.stdout.encoding, errors='replace'))
 
     def write_json_to_file(self, data, fileName):
 
@@ -794,9 +803,9 @@ class PseudoChannel():
 
         shows_table = self.db.get_shows_table()
         json_string = json.dumps(shows_table)
-        print "+++++ Exporting queue "
+        print("+++++ Exporting queue ")
         self.write_json_to_file(json_string, "pseudo-queue.json")
-        print "+++++ Done."
+        print("+++++ Done.")
         self.export_daily_schedule()
 
     def import_queue(self):
@@ -807,7 +816,7 @@ class PseudoChannel():
             data = json.load(data_file)
         #print(data)
         for row in data:
-            print "lastEpisodeTitle:", row[5]
+            print("lastEpisodeTitle:", row[5])
             self.db.import_shows_table_by_row(
                 row[2], 
                 row[3], 
@@ -816,16 +825,16 @@ class PseudoChannel():
                 row[6], 
                 row[7],
             )
-        print "+++++ Done. Imported queue."
+        print("+++++ Done. Imported queue.")
         self.import_daily_schedule()
 
     def export_daily_schedule(self):
 
         daily_schedule_table = self.db.get_daily_schedule()
         json_string = json.dumps(daily_schedule_table)
-        print "+++++ Exporting Daily Schedule "
+        print("+++++ Exporting Daily Schedule ")
         self.write_json_to_file(json_string, "pseudo-daily_schedule.json")
-        print "+++++ Done."
+        print("+++++ Done.")
 
     def import_daily_schedule(self):
 
@@ -833,7 +842,7 @@ class PseudoChannel():
         self.db.remove_all_daily_scheduled_items()
         with open('pseudo-daily_schedule.json') as data_file:    
             data = json.load(data_file)
-        #pprint(data)
+        #print(data)
         for row in data:
             """print row"""
             self.db.import_daily_schedule_table_by_row(
@@ -850,7 +859,7 @@ class PseudoChannel():
                 row[12],
                 row[13],
             )
-        print "+++++ Done. Imported Daily Schedule."
+        print("+++++ Done. Imported Daily Schedule.")
 
     def get_daily_schedule_cache_as_json(self):
 
@@ -860,14 +869,14 @@ class PseudoChannel():
                 data = json.load(data_file)
             #pprint(data)
         except IOError:
-            print ("----- Having issues opening the pseudo-cache file.")
+            print("----- Having issues opening the pseudo-cache file.")
         return data
 
     def save_daily_schedule_as_json(self):
 
         daily_schedule_table = self.db.get_daily_schedule()
         json_string = json.dumps(daily_schedule_table)
-        print "+++++ Saving Daily Schedule Cache "
+        print("+++++ Saving Daily Schedule Cache ")
         self.save_file(json_string, 'daily-schedule.json', '../.pseudo-cache/')
 
     def save_file(self, data, filename, path="./"):
@@ -1041,9 +1050,9 @@ if __name__ == '__main__':
     if args.make_html:
         pseudo_channel.make_xml_schedule()
     if args.run:
-        print banner
-        print "+++++ To run this in the background:"
-        print "+++++", "screen -d -m bash -c 'python PseudoChannel.py -r; exec sh'"
+        print(banner)
+        print("+++++ To run this in the background:")
+        print("+++++", "screen -d -m bash -c 'python PseudoChannel.py -r; exec sh'")
         """Every minute on the minute check the DB startTimes of all media to 
            determine whether or not to play. Also, check the now_time to
            see if it's midnight (or 23.59), if so then generate a new daily_schedule
@@ -1063,7 +1072,7 @@ if __name__ == '__main__':
             now = datetime.datetime.now()
             now = now.replace(year=1900, month=1, day=1)
             closest_media = nearest(dates_list, now)
-            print closest_media
+            print(closest_media)
             prevItem = None
 
             for item in daily_schedule:
@@ -1072,7 +1081,7 @@ if __name__ == '__main__':
                 if item_time == closest_media:
                     #print "Line 1088, Here", item
                     elapsed_time = closest_media - now
-                    print elapsed_time.total_seconds()
+                    print(elapsed_time.total_seconds())
                     try:
                         endTime = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f')
                     except ValueError:
@@ -1080,7 +1089,7 @@ if __name__ == '__main__':
                     # we need to play the content and add an offest
                     if elapsed_time.total_seconds() < 0 and \
                        endTime > now:
-                        print str("+++++ Queueing up {} to play right away.".format(item[3])).encode('UTF-8')
+                        print(str("+++++ Queueing up {} to play right away.".format(item[3])).encode('UTF-8'))
                         offset = int(abs(elapsed_time.total_seconds() * 1000))
                         pseudo_channel.controller.play(item, daily_schedule, offset)
                         break
@@ -1097,43 +1106,43 @@ if __name__ == '__main__':
                                 elapsed_timeTwo = prevItem_time - now
                                 offsetTwo = int(abs(elapsed_timeTwo.total_seconds() * 1000))
                                 if prevItem_time.hour > now.hour:
-                                    print "we have a day skip"
+                                    print("we have a day skip")
                                     now = now.replace(hour=23,minute=59,second=59)
                                     elapsed_timeTwo = prevItem_time-now
                                     mnight = now.replace(hour=0,minute=0,second=0)        
                                     now = datetime.datetime.now()
                                     now = now.replace(year=1900, month=1, day=1)
                                     elapsed_timeTwo = elapsed_timeTwo + (mnight-now)
-                                    print elapsed_timeTwo.total_seconds()
+                                    print(elapsed_timeTwo.total_seconds())
                                     offsetTwo = int(abs(elapsed_timeTwo.total_seconds() * 1000))
                                 if pseudo_channel.DEBUG:
-                                    print "+++++ Closest media was the next media " \
-                                          "but we were in the middle of something so triggering that instead."
-                                print str("+++++ Queueing up '{}' to play right away.".format(prevItem[3])).encode('UTF-8')
+                                    print("+++++ Closest media was the next media " \
+                                          "but we were in the middle of something so triggering that instead.")
+                                print(str("+++++ Queueing up '{}' to play right away.".format(prevItem[3])).encode('UTF-8'))
                                 pseudo_channel.controller.play(prevItem, daily_schedule, offsetTwo)
                                 break
                             prevItem = itemTwo
 
         def job_that_executes_once(item, schedulelist):
 
-            print str("##### Readying media: '{}'".format(item[3])).encode('UTF-8')
+            print(str("##### Readying media: '{}'".format(item[3])).encode('UTF-8'))
             next_start_time = datetime.datetime.strptime(item[8], "%I:%M:%S %p")
             now = datetime.datetime.now()
             now = now.replace(year=1900, month=1, day=1)
             time_diff = next_start_time - now
 
             if time_diff.total_seconds() > 0:
-                print "+++++ Sleeping for {} seconds before playing: '{}'".format(time_diff.total_seconds(), item[3])
+                print("+++++ Sleeping for {} seconds before playing: '{}'".format(time_diff.total_seconds(), item[3]))
                 sleep(int(time_diff.total_seconds()))
                 if pseudo_channel.DEBUG:
-                    print "+++++ Woke up!"
+                    print("+++++ Woke up!")
                 pseudo_channel.controller.play(item, schedulelist)
             else:
                 pseudo_channel.controller.play(item, schedulelist)
             return schedule.CancelJob
         def generate_memory_schedule(schedulelist, isforupdate=False):
 
-            print "##### Generating Memory Schedule."
+            print("##### Generating Memory Schedule.")
             now = datetime.datetime.now()
             now = now.replace(year=1900, month=1, day=1)
             pseudo_cache = pseudo_channel.get_daily_schedule_cache_as_json()
@@ -1148,7 +1157,7 @@ if __name__ == '__main__':
                     """If update time is in between the prev media start / stop then there is overlap"""
                     if prev_start_time < now and prev_end_time > now:
                         try:
-                            print "+++++ It looks like there is update schedule overlap", cached_item[3]
+                            print("+++++ It looks like there is update schedule overlap", cached_item[3])
                         except:
                             pass
                         prev_end_time_to_watch_for = prev_end_time
@@ -1161,13 +1170,13 @@ if __name__ == '__main__':
                     """If prev end time is more then the start time of this media, skip it"""
                     if prev_end_time_to_watch_for > new_start_time:
                         try:
-                            print "Skipping scheduling item do to cached overlap.", item[3]
+                            print("Skipping scheduling item do to cached overlap.", item[3])
                         except:
                             pass
                         continue
                     else:
                         schedule.every().day.at(trans_time).do(job_that_executes_once, item, schedulelist).tag('daily-tasks')
-            print "+++++ Done."
+            print("+++++ Done.")
         generate_memory_schedule(pseudo_channel.db.get_daily_schedule())
         daily_update_time = datetime.datetime.strptime(
             pseudo_channel.translate_time(
