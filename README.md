@@ -21,7 +21,7 @@
 2. Create "/channels" dir, change to that directory, and download the install.sh script to the new directory:
 
 ```bash
-% mkdir ./channels && cd ./channels && wget https://raw.githubusercontent.com/FakeTV/pseudo-channel/develop/install.sh .
+% mkdir ./channels && cd ./channels && wget https://raw.githubusercontent.com/FakeTV/pseudo-channel/master/main-dir/install.sh .
 ```
 
 3. Make the "install.sh" executable:
