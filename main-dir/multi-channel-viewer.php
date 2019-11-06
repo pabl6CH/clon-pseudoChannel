@@ -89,7 +89,7 @@ Click "Generate Now Playing Schedules", to generate up-to-date html schedules to
 
 	<?php
 	function updateNowPlayingSchedules() {
-	    exec("./generate-html-schedules.sh",$out);
+	    exec("bash ./generate-html-schedules.sh",$out);
 	    /*foreach($out as $key => $value)
 		{
 		    echo $key." ".$value."<br>";

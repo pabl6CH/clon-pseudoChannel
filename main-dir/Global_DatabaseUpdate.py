@@ -36,7 +36,7 @@ else:
         update_flags+=' -uc'
 
 
-update_call = "sudo python PseudoChannel.py %s" % update_flags
+update_call = "python PseudoChannel.py %s" % update_flags
 
 
 # Step ONE: Global database update 
@@ -113,7 +113,7 @@ for channel_dir in channel_dirs:
         
     # Step FIVE: Remove any media not in the directories set of commerical archives
     print("+++++ Trimming database at " + db_path)
-    os.system('sudo python report_MediaFolders.py')
+    os.system('python report_MediaFolders.py')
     local_commercials = open('Commercial_Libraries.txt').read().splitlines()
     local_movies = open('Movie_Libraries.txt').read().splitlines()
     local_tvs = open('TV_Libraries.txt').read().splitlines()

@@ -53,7 +53,7 @@ if [ "${#CHANNEL_DIR_ARR[@]}" -gt 1 ]; then
 		
 			echo "+++++ Trying to generate daily schedule: ""$PYTHON_TO_USE" ./"$channel"/$SCRIPT_TO_EXECUTE_PLUS_ARGS
 
-			cd "$channel" && "./generate_daily_sched.sh"
+			cd "$channel" && bash "./generate_daily_sched.sh"
 
 			echo "+++++ Generated: $channel - new schedule."
 

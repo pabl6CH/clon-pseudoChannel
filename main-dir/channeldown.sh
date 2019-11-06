@@ -43,7 +43,7 @@ CHANNEL_DIR_ARR=( $(find . -maxdepth 1 -type d -name '*'"$CHANNEL_DIR_INCREMENT_
 # Since leading zeros may be an issue, we need to correctly sort the channels.  The best way to do this seems to be in python
 # So a script will take in the channels as they are, then output them in the correct, sorted order in Channels_Sorted.txt.
 # We will run the script, then read in the results.
-sudo python ./Channel_Sorter.py ${CHANNEL_DIR_ARR[@]}
+python ./Channel_Sorter.py ${CHANNEL_DIR_ARR[@]}
 
 filename="./Channels_Sorted.txt"
 i=0
@@ -134,11 +134,11 @@ if [ "${#CHANNEL_DIR_ARR[@]}" -gt 1 ]; then
 	# This will stop the previous channels playback & trigger the next channels playback
 
 	if [ "$FIRST_RUN" = false ]; then
-		cd "$OUTPUT_PREV_CHANNEL_PATH"/"$PREV_CHANNEL_DIR" && ./"$SCRIPT_TO_EXECUTE"
-		cd ../"$NEXT_CHANNEL" && ./"$SCRIPT_TO_EXECUTE"
+		cd "$OUTPUT_PREV_CHANNEL_PATH"/"$PREV_CHANNEL_DIR" && bash ./"$SCRIPT_TO_EXECUTE"
+		cd ../"$NEXT_CHANNEL" && bash ./"$SCRIPT_TO_EXECUTE"
 	else
 
-		cd "$OUTPUT_PREV_CHANNEL_PATH"/"$NEXT_CHANNEL" && ./"$SCRIPT_TO_EXECUTE"
+		cd "$OUTPUT_PREV_CHANNEL_PATH"/"$NEXT_CHANNEL" && bash ./"$SCRIPT_TO_EXECUTE"
 
 	fi
 

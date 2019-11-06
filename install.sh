@@ -80,6 +80,7 @@ read -p 'Number of Channels: ' number_of_channels
 		mkdir "pseudo-channel_$num"
 		fi
 	done
+	sudo apt-get install -y python-pip git
 	mkdir github_download
 	cd github_download
 	$SCRIPT_TO_EXECUTE_PLUS_ARGS
@@ -97,7 +98,7 @@ read -p 'Number of Channels: ' number_of_channels
 #if [ "$FIRST_INSTALL" == "true" ]
 #	then
 	echo "INSTALLING EXTERNAL REQUIREMENTS"
-	sudo pip install -r requirements.txt
+	pip install -r requirements.txt
 	sudo apt-get -y install libxml2-utils recode # NEEDED FOR XML PARSING
 	cd ..
 	echo "ENTER the IP ADDRESS of your PLEX SERVER" #GET PLEX SERVER IP AND PORT
@@ -251,40 +252,40 @@ read -p 'Number of Channels: ' number_of_channels
 	reset_time_minute="${reset_time_formatted: -2}"
 	reset_time_minute=$(echo $reset_time_minute | sed "-e s|^[0]||")
 	# SET UP CRON JOB TO RUN DAILY RESET
-	sudo echo "$reset_time_minute $reset_time_hour * * * root $PWD/daily-cron.sh" >> pseudo-channel 
+	echo "$reset_time_minute $reset_time_hour * * * $USER bash $PWD/daily-cron.sh" >> pseudo-channel 
 	sudo chown root:root pseudo-channel && sudo chmod 600 pseudo-channel && sudo mv pseudo-channel /etc/cron.d/
-	sudo echo \#\!/bin/bash > ./daily-cron.sh && echo "cd $PWD" >> ./daily-cron.sh && echo "sudo ./generate-channels-daily-schedules.sh" >> ./daily-cron.sh
+	echo \#\!/bin/bash > ./daily-cron.sh && echo "cd $PWD" >> ./daily-cron.sh  && echo "bash ./stop-all-channels.sh" >> ./daily-cron.sh && echo "bash ./updatexml.sh" >> ./daily-cron.sh && echo "bash ./generate-channels-daily-schedules.sh" >> ./daily-cron.sh && echo "bash ./updateweb.sh" >> ./daily-cron.sh && echo "bash ./channelup.sh" >> ./daily-cron.sh
 
 	#### WRITE VARIABLES TO TOKEN AND CONFIG FILES ####
 	reset_time="\"$reset_time_entry\""
 	echo "token = '$server_token'" > plex_token.py # WRITE PLEX SERVER TOKEN TO FILE
 	echo "baseurl = 'http://$server_ip:$server_port'" >> plex_token.py # WRITE PLEX URL TO FILE
 	tv_libraries=$(cat tv-libraries.temp)
-	sudo sed -i "s/plexClients = .*/plexClients = $ps_client/" github_download/both-dir/pseudo_config.py # WRITE CLIENT TO CONFIG
-	sudo sed -i "/.\"TV Shows\" :*./c\     \"TV Shows\" : $tv_libraries" github_download/both-dir/pseudo_config.py # WRITE TV LIBRARIES TO CONFIG
+	sed -i "s/plexClients = .*/plexClients = $ps_client/" github_download/both-dir/pseudo_config.py # WRITE CLIENT TO CONFIG
+	sed -i "/.\"TV Shows\" :*./c\     \"TV Shows\" : $tv_libraries" github_download/both-dir/pseudo_config.py # WRITE TV LIBRARIES TO CONFIG
 	movie_libraries=$(cat movie-libraries.temp)
-	sudo sed -i "/.\"Movies\" :*./c\     \"Movies\"   : $movie_libraries" github_download/both-dir/pseudo_config.py # WRITE MOVIE LIBRARIES TO CONFIG
+	sed -i "/.\"Movies\" :*./c\     \"Movies\"   : $movie_libraries" github_download/both-dir/pseudo_config.py # WRITE MOVIE LIBRARIES TO CONFIG
 	if [[ "$commercials_true" == "True" ]] #WRITE COMMERCIAL LIBRARIES TO CONFIG
 		then
 		commercial_libraries=$(cat commercial-libraries.temp)
-		sudo sed -i "/.\"Commercials\" :*./c\     \"Commercials\" : $commercial_libraries" github_download/both-dir/pseudo_config.py
+		sed -i "/.\"Commercials\" :*./c\     \"Commercials\" : $commercial_libraries" github_download/both-dir/pseudo_config.py
 	fi
 	# WRITE OTHER CONFIG OPTIONS TO THE CONFIG FILE
-	sudo sed -i "s/useCommercialInjection =.*/useCommercialInjection = $commercials_true/" github_download/both-dir/pseudo_config.py
-	sudo sed -i "s/dailyUpdateTime =.*/dailyUpdateTime = $reset_time/" github_download/both-dir/pseudo_config.py
-	sudo sed -i "s/controllerServerPath =.*/controllerServerPath = \"\"/" github_download/both-dir/pseudo_config.py
-	sudo sed -i "s/controllerServerPort =.*/controllerServerPort = \"\"/" github_download/both-dir/pseudo_config.py
-	sudo sed -i "s/debug_mode =.*/debug_mode = False/" github_download/both-dir/pseudo_config.py
+	sed -i "s/useCommercialInjection =.*/useCommercialInjection = $commercials_true/" github_download/both-dir/pseudo_config.py
+	sed -i "s/dailyUpdateTime =.*/dailyUpdateTime = $reset_time/" github_download/both-dir/pseudo_config.py
+	sed -i "s/controllerServerPath =.*/controllerServerPath = \"\"/" github_download/both-dir/pseudo_config.py
+	sed -i "s/controllerServerPort =.*/controllerServerPort = \"\"/" github_download/both-dir/pseudo_config.py
+	sed -i "s/debug_mode =.*/debug_mode = False/" github_download/both-dir/pseudo_config.py
 	# WRITE TO CONFIG.CACHE
-	sudo echo "server_ip=$server_ip" > config.cache
-	sudo echo "server_port=$server_port" >> config.cache
-	sudo echo "server_token=$server_token" >> config.cache
+	echo "server_ip=$server_ip" > config.cache
+	echo "server_port=$server_port" >> config.cache
+	echo "server_token=$server_token" >> config.cache
 	# CLEAN UP TEMP FILES AND COPY CONFIG
-	sudo rm movie-libraries.temp
-	sudo rm tv-libraries.temp
-	sudo rm commercial-libraries.temp
-	sudo cp github_download/both-dir/pseudo_config.py ./
-	sudo cp github_download/both-dir/PseudoChannel.py ./
+	rm movie-libraries.temp
+	rm tv-libraries.temp
+	rm commercial-libraries.temp
+	cp github_download/both-dir/pseudo_config.py ./
+	cp github_download/both-dir/PseudoChannel.py ./
 	cd $dir
 #	else
 #	cd ..
@@ -368,9 +369,8 @@ rm -rf ./.pseudo-temp
 
 rm -rf ./github_download
 
-#### Change permissions to 777 for all files, so that things will run
-sudo chmod -R 777 .
+find . -type f -name "*.sh" -exec chmod +x {} \;
 
 echo "Update Complete"
 echo "Starting Pseudo Channel Control..."
-sudo ./pseudo-channel-control.sh
+bash ./pseudo-channel-control.sh

@@ -195,9 +195,9 @@ if [[ "$config_option" == "Plex Server URL" ]] # CHANGE THE PLEX SERVER URL AND 
 		server_port="$server_port_entry"
 	fi
 	echo "PLEX SERVER is $server_ip:$server_port"
-	sudo sed -i "s/baseurl =.*/baseurl = \'http:\/\/$server_ip:$server_port\'/" plex_token.py
-	sudo sed -i "s/server_ip=.*/server_ip=$server_ip/" config.cache
-	sudo sed -i "s/server_port=.*/server_port=$server_port/" config.cache
+	sed -i "s/baseurl =.*/baseurl = \'http:\/\/$server_ip:$server_port\'/" plex_token.py
+	sed -i "s/server_ip=.*/server_ip=$server_ip/" config.cache
+	sed -i "s/server_port=.*/server_port=$server_port/" config.cache
 	sleep 1
 elif [[ "$config_option" == "Plex Token" ]] # CHANGE THE PLEX AUTH TOKEN VALUE IN THE PLEX_TOKEN.PY FILE
 	then
@@ -223,8 +223,8 @@ elif [[ "$config_option" == "Plex Token" ]] # CHANGE THE PLEX AUTH TOKEN VALUE I
                 echo "PLEX AUTH TOKEN saved as $server_token"
 		server_token="\'$server_token\'"
 	fi
-	sudo sed -i "s/token =.*/token = $server_token/" plex_token.py
-	sudo sed -i "s/server_token=.*/server_token=$server_token/" config.cache
+	sed -i "s/token =.*/token = $server_token/" plex_token.py
+	sed -i "s/server_token=.*/server_token=$server_token/" config.cache
 	sleep 1
 elif [[ "$config_option" == "Plex Client" ]] # CHANGE PLEX CLIENT
 	then
@@ -240,7 +240,7 @@ elif [[ "$config_option" == "Plex Client" ]] # CHANGE PLEX CLIENT
 			ps_client_entry=$(eval echo $ps_client_entry)
 		fi
 		ps_client="[\"$ps_client_entry\"]"
-		sudo sed -i "s/plexClients = .*/plexClients = $ps_client/" pseudo_config.py
+		sed -i "s/plexClients = .*/plexClients = $ps_client/" pseudo_config.py
 		echo "Plex Client set to $ps_client_entry in the config"
 		sleep 1
 		break
@@ -326,12 +326,12 @@ elif [[ "$config_option" == "Plex Libraries" ]] #CHANGE PLEX LIBRARIES
 			truncate -s-2 commercial-libraries.temp
 	                echo -n "]," >> commercial-libraries.temp
 			commercial_libraries=$(cat commercial-libraries.temp)
-	                sudo sed -i "/.\"Commercials\" :*./c\     \"Commercials\" : $commercial_libraries" pseudo_config.py
+	                sed -i "/.\"Commercials\" :*./c\     \"Commercials\" : $commercial_libraries" pseudo_config.py
 	fi
 	tv_libraries=$(cat tv-libraries.temp)
-	sudo sed -i "/.\"TV Shows\" :*./c\     \"TV Shows\" : $tv_libraries" pseudo_config.py # WRITE TV LIBRARIES TO CONFIG
+	sed -i "/.\"TV Shows\" :*./c\     \"TV Shows\" : $tv_libraries" pseudo_config.py # WRITE TV LIBRARIES TO CONFIG
 	movie_libraries=$(cat movie-libraries.temp)
-	sudo sed -i "/.\"Movies\" :*./c\     \"Movies\"   : $movie_libraries" pseudo_config.py # WRITE MOVIE LIBRARIES TO CONFIG
+	sed -i "/.\"Movies\" :*./c\     \"Movies\"   : $movie_libraries" pseudo_config.py # WRITE MOVIE LIBRARIES TO CONFIG
 elif [[ "$config_option" == "Daily Reset Time" ]]
 	then
 	clear
@@ -354,10 +354,10 @@ elif [[ "$config_option" == "Daily Reset Time" ]]
 	        reset_time_minute="${reset_time_formatted: -2}"
 	        reset_time_minutes="$(echo $reset_time_minutes | sed -e s/^[0]//)"
 	        # SET UP CRON JOB TO RUN DAILY RESET
-		sudo crontab -l | grep -v 'daily-cron.sh' | crontab -
-	        sudo echo \#\!/bin/bash > ./daily-cron.sh && echo "cd $PWD" >> ./daily-cron.sh && echo "sudo ./generate-channels-daily-schedules.sh" >> ./daily-cron.sh
-		( sudo crontab -l ; echo "$reset_time_minute $reset_time_hour * * * $PWD/daily-cron.sh" ) | sudo crontab -
-		sudo sed -i "s/dailyUpdateTime.*/dailyUpdateTime = \"$reset_time_entry\"/" pseudo_config.py
+		crontab -l | grep -v 'daily-cron.sh' | crontab -
+	        echo \#\!/bin/bash > ./daily-cron.sh && echo "cd $PWD" >> ./daily-cron.sh && echo "bash ./generate-channels-daily-schedules.sh" >> ./daily-cron.sh
+		( crontab -l ; echo "$reset_time_minute $reset_time_hour * * * $PWD/daily-cron.sh" ) | crontab -
+		sed -i "s/dailyUpdateTime.*/dailyUpdateTime = \"$reset_time_entry\"/" pseudo_config.py
 	elif [[ "$config_option" == "Use Commercials?" ]]
 		then
 		clear
@@ -372,10 +372,10 @@ elif [[ "$config_option" == "Daily Reset Time" ]]
 	        if [[ "$use_commercials" == "true" ]]
 	                then
 			commercials_true=true
-			sudo sed -i "s/useCommercialInjection =.*/useCommercialInjection = \"true\"/" pseudo_config.py
+			sed -i "s/useCommercialInjection =.*/useCommercialInjection = \"true\"/" pseudo_config.py
 			echo "COMMERCIAL INJECTION has been turned ON"
 			else
-			sudo sed -i "s/useCommercialInjection =.*/useCommercialInjection = \"false\"/" pseudo_config.py
+			sed -i "s/useCommercialInjection =.*/useCommercialInjection = \"false\"/" pseudo_config.py
 			echo "COMMERCIAL INJECTION has been turned OFF"
 	        fi
 	elif [[ "$config_option" == "Use Daily Overlap Cache" ]]
@@ -399,10 +399,10 @@ elif [[ "$config_option" == "Daily Reset Time" ]]
 			fi
 			if [[ "$use_daily_overlap" = @(Y|y|Yes|yes|YES) ]]
 				then
-				sudo sed -i "s/useDailyOverlapCache =.*/useDailyOverlapCache = True/" pseudo_config.py
+				sed -i "s/useDailyOverlapCache =.*/useDailyOverlapCache = True/" pseudo_config.py
 				echo "DAILY OVERLAP CACHE has been set to TRUE"
 				else
-				sudo sed -i "s/useDailyOverlapCache =.*/useDailyOverlapCache = False/" pseudo_config.py
+				sed -i "s/useDailyOverlapCache =.*/useDailyOverlapCache = False/" pseudo_config.py
 				echo "DAILY OVERLAP CACHE has been set to FALSE"
 			fi
 	elif [[ "$config_option" == "Dirty Gap Fix" ]]
@@ -427,10 +427,10 @@ elif [[ "$config_option" == "Daily Reset Time" ]]
 			fi
 			if [[ "$use_dirty_gap" = @(Y|y|Yes|yes|YES) ]]
                                 then
-                                sudo sed -i "s/useDirtyGapFix =.*/useDirtyGapFix = True/" pseudo_config.py
+                                sed -i "s/useDirtyGapFix =.*/useDirtyGapFix = True/" pseudo_config.py
 				echo "DIRTY GAP FIX has been set to TRUE"
                                 else
-                                sudo sed -i "s/useDirtyGapFix =.*/useDirtyGapFix = False/" pseudo_config.py
+                                sed -i "s/useDirtyGapFix =.*/useDirtyGapFix = False/" pseudo_config.py
 				echo "DIRTY GAP FIX has been set to FALSE"
                         fi
 
@@ -450,10 +450,10 @@ elif [[ "$config_option" == "Daily Reset Time" ]]
                         fi
                         if [[ "$use_debug_mode" = @(Y|y|Yes|yes|YES) ]]
                                 then
-                                sudo sed -i "s/debug_mode.*/debug_mode = True/" pseudo_config.py
+                                sed -i "s/debug_mode.*/debug_mode = True/" pseudo_config.py
 				echo "DEBUG MODE has been set to TRUE"
                                 else
-                                sudo sed -i "s/debug_mode =.*/debug_mode = False/" pseudo_config.py
+                                sed -i "s/debug_mode =.*/debug_mode = False/" pseudo_config.py
 				echo "DEBUG MODE has been set to FALSE"
                         fi
 	elif [[ "$config_option" == "TV Guide Page" ]]
@@ -480,22 +480,22 @@ elif [[ "$config_option" == "Daily Reset Time" ]]
                                 then
 				local_ip=$(ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p')
 				echo "Your IP address is $local_ip"
-				sudo sed -i "s/controllerServerPath =.*/controllerServerPath = \"$local_ip\"/" pseudo_config.py
+				sed -i "s/controllerServerPath =.*/controllerServerPath = \"$local_ip\"/" pseudo_config.py
 				echo "Enter the PORT NUMBER to use with THIS CHANNEL"
 				read -p 'Port Number: ' port_number
-				sudo sed -i "s/controllerServerPort =.*/controllerServerPort = \"$port_number\"/" pseudo_config.py
+				sed -i "s/controllerServerPort =.*/controllerServerPort = \"$port_number\"/" pseudo_config.py
 				echo "Set the CHANNEL TITLE for the SCHEDULE PAGE"
 				read -p 'Channel Title: ' channel_name
-				sudo sed -i "s/htmlPseudoTitle =.*/htmlPseudoTitle = \"$channel_name\"/" pseudo_config.py
+				sed -i "s/htmlPseudoTitle =.*/htmlPseudoTitle = \"$channel_name\"/" pseudo_config.py
 				echo "$channel_name's daily schedule will be accessible at http://$local_ip:$port_number"
 				echo "To access this page from OUTSIDE your LOCAL NETWORK, add a port forward rule in"
 				echo "your router for $port_number to $local_ip."
 				else
-				sudo sed -i "s/controllerServerPath =.*/controllerServerPath = \"\"/" pseudo_config.py
-				sudo sed -i "s/controllerServerPort =.*/controllerServerPort = \"\"/" pseudo_config.py
+				sed -i "s/controllerServerPath =.*/controllerServerPath = \"\"/" pseudo_config.py
+				sed -i "s/controllerServerPort =.*/controllerServerPort = \"\"/" pseudo_config.py
 				echo "Set the CHANNEL TITLE for the SCHEDULE PAGE"
 				read -p 'Channel Title: ' channel_name
-				sudo sed -i "s/htmlPseudoTitle =.*/htmlPseudoTitle = \"$channel_name\"/" pseudo_config.py
+				sed -i "s/htmlPseudoTitle =.*/htmlPseudoTitle = \"$channel_name\"/" pseudo_config.py
 				echo "CHANNEL TITLE set to $channel_name"
 			fi
 	elif [[ "$config_option" == "Commercial Padding" ]]
@@ -514,7 +514,7 @@ elif [[ "$config_option" == "Daily Reset Time" ]]
 			echo "Set the COMMERCIAL PADDING value (in SECONDS)"
                         read -p 'Commercial Padding: ' commercial_padding
 		fi
-		sudo sed -i "s/commercialPadding =.*/commercialPadding = $commercial_padding/" pseudo_config.py
+		sed -i "s/commercialPadding =.*/commercialPadding = $commercial_padding/" pseudo_config.py
 
 	elif [[ "$config_option" == "Back" ]]
 		then

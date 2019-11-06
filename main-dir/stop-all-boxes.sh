@@ -18,7 +18,7 @@ do
 	cd ${BOX}
 	echo "+++++ CURRENTLY STOPPING ${BOX}"
 
-	sudo ./stop-all-channels.sh 
+	bash ./stop-all-channels.sh 
 
 	cd ..
 done

@@ -32,7 +32,7 @@ FIRST_RUN=false
 # If the prevplaying file exists, delete it
 if [ -e "$OUTPUT_PREV_CHANNEL_PATH/$OUTPUT_PREV_CHANNEL_FILE" ]; then
 
-	rm "$OUTPUT_PREV_CHANNEL_PATH/$OUTPUT_PREV_CHANNEL_FILE"
+	rm -f "$OUTPUT_PREV_CHANNEL_PATH/$OUTPUT_PREV_CHANNEL_FILE"
 
 fi
 
@@ -90,7 +90,7 @@ if [ "${#CHANNEL_DIR_ARR[@]}" -gt 1 ]; then
 
 			echo "+++++ Removing $channel/$PID_FILE_NAME"
 
-			rm "$channel/$PID_FILE_NAME"
+			rm -f "$channel/$PID_FILE_NAME"
 
 		fi
 
