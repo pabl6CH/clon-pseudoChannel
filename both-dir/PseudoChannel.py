@@ -333,6 +333,7 @@ class PseudoChannel():
                             else:
                                 mediaID_place=0
                             day_of_week = child.tag
+			    duration = time.attrib['duration'] if 'duration' in time.attrib else '0,43200000'
                             strict_time = time.attrib['strict-time'] if 'strict-time' in time.attrib else 'false'
                             time_shift = time.attrib['time-shift'] if 'time-shift' in time.attrib else '1'
                             overlap_max = time.attrib['overlap-max'] if 'overlap-max' in time.attrib else ''
@@ -354,7 +355,7 @@ class PseudoChannel():
                             self.db.add_schedule_to_db(
                                 mediaID_place, # mediaID
                                 title, # title
-                                0, # duration
+                                duration, # duration
                                 natural_start_time, # startTime
                                 natural_end_time, # endTime
                                 day_of_week, # dayOfWeek
@@ -590,16 +591,21 @@ class PseudoChannel():
 
                                                 print "entry[13]", entry[13]
                                                 movies = self.PLEX.library.section(theSection.title)
-                                                
-                                                try:
-                                                    thestr = entry[13]
+
+						try:
+						    thestr = entry[13]
+						    minmax = entry[4].split(",")
+						    min = int(minmax[0])
+						    min = min * 60000
+						    max = int(minmax[1])
+						    max = max * 60000
                                                     regex = re.compile(r"\b(\w+)\s*:\s*([^:]*)(?=\s+\w+\s*:|$)")
                                                     d = dict(regex.findall(thestr))
                                                     # turn values into list
                                                     for key, val in d.iteritems():
                                                         d[key] = val.split(',')
                                                     for movie in movies.search(None, **d):
-                                                        movies_list.append(movie)
+	                                                movies_list.append(movie)
 
                                                     """the_movie = self.db.get_movie(self.movieMagic.get_random_movie_xtra(
                                                             self.db.get_movies(),# Movies DB
@@ -614,6 +620,17 @@ class PseudoChannel():
                                 if (len(movies_list) > 0):
 
                                     the_movie = self.db.get_movie(random.choice(movies_list).title)
+				    #print(the_movie)
+				    movie_duration = the_movie[4]
+				    #print(movie_duration)
+				    attempt = 1
+				    while int(movie_duration) < min or movie_duration > max:
+					the_movie = self.db.get_movie(random.choice(movies_list).title)
+					attempt = attempt + 1
+					if attempt > 500:
+						movie_duration = max
+					else:
+						movie_duration = the_movie[4]
 
                                     """Updating movies table in the db with lastPlayedDate entry"""
                                     self.db.update_movies_table_with_last_played_date(the_movie[3])
@@ -621,9 +638,22 @@ class PseudoChannel():
                                 else:
                                     
                                     print "movies_list", movies_list
-
+				    minmax = entry[4].split(",")
+				    min = int(minmax[0])
+				    min = min * 60000
+				    max = int(minmax[1])
+				    max = max * 60000
                                     print("For some reason, I've failed getting movie with xtra args.")
                                     the_movie = self.db.get_random_movie()
+				    movie_duration = the_movie[4]
+				    attempt = 1
+				    while int(movie_duration) < min or movie_duration > max:
+					the_movie = self.db.get_random_movie()
+					attempt = attempt + 1
+					if attempt > 500:
+						movie_duration = max
+					else:
+						movie_duration = the_movie[4]
 
                                     """Updating movies table in the db with lastPlayedDate entry"""
                                     self.db.update_movies_table_with_last_played_date(the_movie[3])
@@ -634,9 +664,28 @@ class PseudoChannel():
                                         self.db.get_movies(),# Movies DB
                                     )
                                 )"""
-
+				minmax = str(entry[4]).split(",")
+				#print(minmax)
+				min = int(minmax[0])
+				min = min * 60000
+				#print(min)
+				max = int(minmax[1])
+				max = max * 60000
+				#print(max)
                                 the_movie = self.db.get_random_movie()
-
+				movie_duration = the_movie[4]
+				attempt = 1
+				while int(movie_duration) < min or movie_duration > max:
+					the_movie = self.db.get_random_movie()
+					attempt = attempt + 1
+					if attempt > 500:
+						movie_duration = max
+					else:
+						movie_duration = the_movie[4]
+                                movies_list = []
+                                libs_dict = config.plexLibraries
+                                sections = self.PLEX.library.sections()
+				#the_movie = self.db.get_random_movie()
                                 """Updating movies table in the db with lastPlayedDate entry"""
                                 self.db.update_movies_table_with_last_played_date(the_movie[3])
 
