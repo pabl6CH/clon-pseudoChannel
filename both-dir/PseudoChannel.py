@@ -328,15 +328,17 @@ class PseudoChannel():
                             natural_start_time = self.translate_time(time.text)
                             natural_end_time = 0
                             section = key
-                            if section == "TV Shows" and time.attrib['type'] == "random":
+                            if section == "TV Shows" and time.attrib['title'] == "random":
                                 mediaID_place=9999
+                            elif time.attrib['strict-time'] == "secondary":
+                                mediaID_place=1
                             else:
                                 mediaID_place=0
                             day_of_week = child.tag
 			    duration = time.attrib['duration'] if 'duration' in time.attrib else '0,43200000'
                             strict_time = time.attrib['strict-time'] if 'strict-time' in time.attrib else 'false'
                             time_shift = time.attrib['time-shift'] if 'time-shift' in time.attrib else '1'
-                            overlap_max = time.attrib['overlap-max'] if 'overlap-max' in time.attrib else ''
+                            overlap_max = time.attrib['overlap-max'] if 'overlap-max' in time.attrib else '0'
                             seriesOffset = time.attrib['series-offset'] if 'series-offset' in time.attrib else ''
                             xtra = time.attrib['xtra'] if 'xtra' in time.attrib else ''
                             
@@ -757,11 +759,13 @@ class PseudoChannel():
                 for entry in self.MEDIA:
                     if previous_episode != None:
                         natural_start_time = datetime.datetime.strptime(entry.natural_start_time, self.APP_TIME_FORMAT_STR)
+#                        natural_start_time_unix = datetime.datetime.strptime(entry.natural_start_time, '%I:%M:%S %p')
+#                        natural_start_time_unix = calendar.timegm(natural_start_time_unix.timetuple())
                         natural_end_time = entry.natural_end_time
                         if entry.is_strict_time.lower() == "true":
                             print "++++ Strict-time: {}".format(str(entry.title))
                             entry.end_time = self.get_end_time_from_duration(
-                                    self.translate_time(entry.start_time), 
+                                    self.translate_time(entry.start_time),
                                     entry.duration
                                 )
                             """Get List of Commercials to inject"""
@@ -775,6 +779,37 @@ class PseudoChannel():
                                     self.db.add_media_to_daily_schedule(commercial)
                             self.db.add_media_to_daily_schedule(entry)
                             previous_episode = entry
+                        elif entry.is_strict_time.lower() == "secondary":
+                            print "++++ SECONDARY Strict-time: {}".format(str(entry.title))
+                            prev_end_time = datetime.datetime.strptime(str(previous_episode.end_time), '%Y-%m-%d %H:%M:%S.%f')
+                            prev_end_time = prev_end_time.strftime('%I:%M:%S %p')
+                            start_time_difference=self.time_diff(str(entry.natural_start_time),str(prev_end_time))
+                            start_time_difference=start_time_difference*60
+                            print "Entry Duration = {}".format(str(entry.duration))
+                            print "Start Time Difference = {}".format(str(start_time_difference))
+                            if start_time_difference > 0:
+                                running_duration = entry.duration - abs(start_time_difference)
+                                print "Running Duration = {}".format(str(running_duration))
+                                entry.start_time = datetime.datetime.strptime(entry.natural_start_time, self.APP_TIME_FORMAT_STR) + datetime.timedelta(seconds=abs(start_time_difference))
+                                entry.start_time = datetime.datetime.strftime(entry.start_time, '%I:%M:%S %p')
+                                print "New Start Time = {}".format(str(entry.start_time))
+                                entry.end_time = self.get_end_time_from_duration(
+                                    self.translate_time(natural_start_time.strftime('%I:%M:%S %p')),
+                                    entry.duration
+                                )
+                                print "End Time = {}".format(str(entry.end_time))
+                                if running_duration > 0:
+                                    """Get List of Commercials to Inject"""
+                                    if self.USING_COMMERCIAL_INJECTION:
+                                        list_of_commercials = self.commercials.get_commercials_to_place_between_media(
+                                            previous_episode,
+                                            entry,
+                                            entry.is_strict_time.lower()
+                                        )
+                                    for commercial in list_of_commercials:
+                                        self.db.add_media_to_daily_schedule(commercial)
+                            self.db.add_media_to_daily_schedule(entry)
+                            previous_episode = entry
                         else:
                             try:
                                 print "++++ NOT strict-time: {}".format(str(entry.title).encode(sys.stdout.encoding, errors='replace'))
@@ -783,8 +818,8 @@ class PseudoChannel():
                             try:
                                 new_starttime = self.calculate_start_time(
                                     previous_episode.end_time,
-                                    entry.natural_start_time,  
-                                    previous_episode.time_shift, 
+                                    entry.natural_start_time,
+                                    previous_episode.time_shift,
                                     ""
                                 )
                             except:
@@ -1131,7 +1166,21 @@ if __name__ == '__main__':
                        endTime > now:
                         print str("+++++ Queueing up {} to play right away.".format(item[3])).encode('UTF-8')
                         offset = int(abs(elapsed_time.total_seconds() * 1000))
-                        pseudo_channel.controller.play(item, daily_schedule, offset)
+                        nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=item[7])
+                        schedule_offset = nat_start - datetime.datetime.strptime(item[8], '%I:%M:%S %p')
+                        schedule_offset = schedule_offset.total_seconds()
+                        print "Schedule Offset = " + str(schedule_offset)
+                        nat_start = nat_start.strftime('%I:%M:%S %p')
+                        print "Natural Start Time:"
+                        print nat_start
+                        if schedule_offset < 0:
+                            schedule_offset_ms = abs(schedule_offset) * 1000
+                            offset_plus = int(offset + abs(schedule_offset_ms))
+                            print "Updated Offset = " + str(offset_plus)
+                            pseudo_channel.controller.play(item, daily_schedule, offset_plus)
+                        else:
+                            print "No Offset Update"
+                            pseudo_channel.controller.play(item, daily_schedule, offset)
                         break
                     elif elapsed_time.total_seconds() >= 0:
                         for itemTwo in daily_schedule:
@@ -1145,41 +1194,112 @@ if __name__ == '__main__':
                                 prevItem_time = datetime.datetime.strptime(''.join(str(prevItem[8])), "%I:%M:%S %p")
                                 elapsed_timeTwo = prevItem_time - now
                                 offsetTwo = int(abs(elapsed_timeTwo.total_seconds() * 1000))
+                                #nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=item[7])
+                                #schedule_offset = nat_start - datetime.datetime.strptime(item[8], '%I:%M:%S %p')
+                                #schedule_offset = schedule_offset.total_seconds()
+                                #print "Schedule Offset = " + str(schedule_offset)
+                                #nat_start = nat_start.strftime('%I:%M:%S %p')
+                                #print "Natural Start Time..:" + nat_start
+                                #if schedule_offset < 0:
+                                #    schedule_offset_ms = abs(schedule_offset) * 1000
+                                #    offset_plus = int(offset + abs(schedule_offset_ms))
+                                #    print "Updated Offset = " + str(offset_plus)
+                                #    pseudo_channel.controller.play(item, daily_schedule, offset_plus)
+                                #else:
+                                #    print "No Offset Update"
+                                #    pseudo_channel.controller.play(item, daily_schedule, offset)
                                 if prevItem_time.hour > now.hour:
                                     print "we have a day skip"
                                     now = now.replace(hour=23,minute=59,second=59)
                                     elapsed_timeTwo = prevItem_time-now
-                                    mnight = now.replace(hour=0,minute=0,second=0)        
+                                    mnight = now.replace(hour=0,minute=0,second=0)
                                     now = datetime.datetime.now()
                                     now = now.replace(year=1900, month=1, day=1)
                                     elapsed_timeTwo = elapsed_timeTwo + (mnight-now)
                                     print elapsed_timeTwo.total_seconds()
                                     offsetTwo = int(abs(elapsed_timeTwo.total_seconds() * 1000))
+                                    #nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=item[7])
+                                    #nat_start = nat_start.replace(year=1900, month=01, day=01)
+                                    #schedule_offset = nat_start - datetime.datetime.strptime(item[8], '%I:%M:%S %p')
+                                    #schedule_offset = schedule_offset.total_seconds()
+                                    #print "Schedule Offset = " + str(schedule_offset)
+                                    #nat_start = nat_start.strftime('%I:%M:%S %p')
+                                    #print "Natural Start Time..:"
+                                    #print nat_start
+                                    #schedule_offset = self.time_diff(nat_start, itemTwo[8])
+                                    #schedule_offset = schedule_offset * 60
+                                    #print (str(schedule_offset))
                                 if pseudo_channel.DEBUG:
                                     print "+++++ Closest media was the next media " \
                                           "but we were in the middle of something so triggering that instead."
                                 print str("+++++ Queueing up '{}' to play right away.".format(prevItem[3])).encode('UTF-8')
-                                pseudo_channel.controller.play(prevItem, daily_schedule, offsetTwo)
+                                nat_start = datetime.datetime.strptime(prevItem[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=prevItem[7])
+                                schedule_offset = nat_start - datetime.datetime.strptime(prevItem[8], '%I:%M:%S %p')
+                                schedule_offset = schedule_offset.total_seconds()
+                                print "Schedule Offset = " + str(schedule_offset)
+                                nat_start = nat_start.strftime('%I:%M:%S %p')
+                                print "Natural Start Time:"
+                                print nat_start
+                                if schedule_offset < 0:
+                                    schedule_offset_ms = abs(schedule_offset) * 1000
+                                    offset_plus = int(offset + abs(schedule_offset_ms))
+                                    print "Updated Offset = " + str(offset_plus)
+                                    pseudo_channel.controller.play(prevItem, daily_schedule, offset_plus)
+                                else:
+                                    print "No Offset Update"
+                                    pseudo_channel.controller.play(prevItem, daily_schedule, offsetTwo)
                                 break
                             prevItem = itemTwo
 
         def job_that_executes_once(item, schedulelist):
 
             print str("##### Readying media: '{}'".format(item[3])).encode('UTF-8')
+            daily_schedule = pseudo_channel.db.get_daily_schedule()
             next_start_time = datetime.datetime.strptime(item[8], "%I:%M:%S %p")
             now = datetime.datetime.now()
             now = now.replace(year=1900, month=1, day=1)
             time_diff = next_start_time - now
+            nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=item[7])
+            schedule_offset = nat_start - datetime.datetime.strptime(item[8], '%I:%M:%S %p')
+            schedule_offset = schedule_offset.total_seconds()
+            print "Schedule Offset = " + str(schedule_offset)
+            nat_start = nat_start.strftime('%I:%M:%S %p')
+            print "Natural Start Time: " + str(nat_start)
 
             if time_diff.total_seconds() > 0:
                 print "+++++ Sleeping for {} seconds before playing: '{}'".format(time_diff.total_seconds(), item[3])
+                nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=item[7])
+                schedule_offset = nat_start - datetime.datetime.strptime(item[8], '%I:%M:%S %p')
+                schedule_offset = schedule_offset.total_seconds()
+                print "Schedule Offset = " + str(schedule_offset)
+                nat_start = nat_start.strftime('%I:%M:%S %p')
+                print "Natural Start Time: " + str(nat_start)
                 sleep(int(time_diff.total_seconds()))
                 if pseudo_channel.DEBUG:
                     print "+++++ Woke up!"
-                pseudo_channel.controller.play(item, schedulelist)
+                if schedule_offset < 0:
+                    schedule_offset_ms = abs(schedule_offset) * 1000
+                    print "Updated Offset = " + str(schedule_offset_ms)
+                    pseudo_channel.controller.play(item, daily_schedule, schedule_offset_ms)
+                else:
+                    print "job_that_executes_once - No offset"
+                    pseudo_channel.controller.play(item, daily_schedule)
             else:
-                pseudo_channel.controller.play(item, schedulelist)
+                nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=item[7])
+                schedule_offset = nat_start - datetime.datetime.strptime(item[8], '%I:%M:%S %p')
+                schedule_offset = schedule_offset.total_seconds()
+                print "Schedule Offset = " + str(schedule_offset)
+                nat_start = nat_start.strftime('%I:%M:%S %p')
+                print "Natural Start Time: " + str(nat_start)
+                if schedule_offset < 0:
+                    schedule_offset_ms = int(abs(schedule_offset) * 1000)
+                    print "Updated Offset = " + str(schedule_offset_ms)
+                    pseudo_channel.controller.play(item, daily_schedule, schedule_offset_ms)
+                else:
+                    print "job_that_executes_once - No offset 2"
+                    pseudo_channel.controller.play(item, daily_schedule)
             return schedule.CancelJob
+
         def generate_memory_schedule(schedulelist, isforupdate=False):
 
             print "##### Generating Memory Schedule."
