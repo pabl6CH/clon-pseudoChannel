@@ -5,13 +5,16 @@ import socket
 import logging
 import logging.handlers
 from datetime import datetime
+from datetime import time
+from datetime import timedelta
+from datetime import tzinfo
+import pytz
 import sqlite3
 import thread,SocketServer,SimpleHTTPServer
 from plexapi.server import PlexServer
 from yattag import Doc
 from yattag import indent
 import pseudo_config as config
-
 class PseudoDailyScheduleController():
 
     def __init__(self, 
@@ -113,61 +116,161 @@ class PseudoDailyScheduleController():
     def get_xml_from_daily_schedule(self, currentTime, bgImageURL, datalist):
 
         now = datetime.now()
+        new_day = now + timedelta(days=1)
         time = now.strftime("%B %d, %Y")
+        update_time = datetime.strptime(config.dailyUpdateTime,'%H:%M').replace(year=int(now.strftime('%Y')),month=int(now.strftime('%m')),day=int(now.strftime('%d')))
         doc, tag, text, line = Doc(
 
         ).ttl()
         doc.asis('<?xml version="1.0" encoding="UTF-8"?>')
         with tag('schedule', currently_playing_bg_image=bgImageURL if bgImageURL != None else ''):
+            previous_row = None
             for row in datalist:
-                if str(row[11]) == "Commercials" and self.DEBUG == False:
-                    continue
-                timeB = datetime.strptime(row[8], '%I:%M:%S %p')
-                if currentTime == None:
-                    with tag('time',
-                            ('key', str(row[12])),
-                            ('current', 'false'),
-                            ('type', str(row[11])),
-			    ('show-title', str(row[6])),
-			    ('show-season', str(row[5])),
-			    ('show-episode', str(row[4])),
-                            ('title', str(row[3])),
-			    ('duration', str(row[7])),
-                            ('time-start', str(row[8])),
-			    ('time-end', str(row[9])),
-			    ('library', str(row[13])),
-                        ):
-                        text(row[8])
-                elif currentTime.hour == timeB.hour and currentTime.minute == timeB.minute:
-                    with tag('time',
-                            ('key', str(row[12])),
-                            ('current', 'true'),
-                            ('type', str(row[11])),
-			    ('show-title', str(row[6])),
-                            ('show-season', str(row[5])),
-                            ('show-episode', str(row[4])),
-                            ('title', str(row[3])),
-                            ('duration', str(row[7])),
-                            ('time-start', str(row[8])),
-                            ('time-end', str(row[9])),
-                            ('library', str(row[13])),
-                        ):
-                        text(row[8])
+                if datetime.strptime(row[8],'%I:%M:%S %p') > update_time: #checking for after midnight but before reset (from config)
+                    current_start_time = datetime.strptime(row[8],'%I:%M:%S %p').replace(year=int(now.strftime('%Y')),month=int(now.strftime('%m')),day=int(now.strftime('%d')))
                 else:
-                    with tag('time',
-                            ('key', str(row[12])),
-                            ('current', 'false'),
-                            ('type', str(row[11])),
-                            ('show-title', str(row[6])),
-                            ('show-season', str(row[5])),
-                            ('show-episode', str(row[4])),
-                            ('title', str(row[3])),
-                            ('duration', str(row[7])),
-                            ('time-start', str(row[8])),
-                            ('time-end', str(row[9])),
-                            ('library', str(row[13])),
-                        ):
-                        text(row[8])
+                    current_start_time = datetime.strptime(row[8],'%I:%M:%S %p').replace(year=int(new_day.strftime('%Y')),month=int(new_day.strftime('%m')),day=int(new_day.strftime('%d')))
+                current_start_time_unix = (current_start_time - datetime(1970,1,1)).total_seconds()
+                current_start_time_string = current_start_time.strftime('%H:%M:%S')
+                try:
+                    if_end_time = datetime.strptime(row[9],'%Y-%m-%d %H:%M:%S.%f')
+                except ValueError:
+                    if_end_time = datetime.strptime(row[9],'%Y-%m-%d %H:%M:%S')
+                if if_end_time.replace(year=int(now.strftime('%Y')),month=int(now.strftime('%m')),day=int(now.strftime('%d'))) > update_time: #checking for after midnight but before reset (from config)
+                    current_end_time = if_end_time.replace(year=int(now.strftime('%Y')),month=int(now.strftime('%m')),day=int(now.strftime('%d')))
+                else:
+                    current_end_time = if_end_time.replace(year=int(new_day.strftime('%Y')),month=int(new_day.strftime('%m')),day=int(new_day.strftime('%d')))
+                current_end_time_unix = (current_end_time - datetime(1970,1,1)).total_seconds()
+                current_end_time_string = current_end_time.strftime('%H:%M:%S')
+                if previous_row != None:
+                    #compare previous end time to current start time
+                    try:
+                        previous_end_time = datetime.strptime(previous_row[9], '%Y-%m-%d %H:%M:%S.%f')
+                    except ValueError:
+                        previous_end_time = datetime.strptime(previous_row[9], '%Y-%m-%d %H:%M:%S')
+                    if previous_end_time > update_time: #checking for after midnight but before reset (from config)
+                        previous_end_time = previous_end_time.replace(year=int(now.strftime('%Y')),month=int(now.strftime('%m')),day=int(now.strftime('%d')))
+                    else:
+                        previous_end_time = previous_end_time.replace(year=int(new_day.strftime('%Y')),month=int(new_day.strftime('%m')),day=int(new_day.strftime('%d')))
+                    if previous_end_time > current_start_time:
+                        #if previous end time is later than start time, change end time
+                        previous_end_time = current_start_time - timedelta(seconds=1)
+                    #convert start and end times to unix
+                    previous_end_time_unix = (previous_end_time - datetime(1970,1,1)).total_seconds()
+                    #convert start and end times to the same readable format
+                    previous_end_time_string = previous_end_time.strftime('%H:%M:%S')
+                    if str(previous_row[11]) == "Commercials" and self.DEBUG == False:
+                        continue
+                    timeB = datetime.strptime(previous_row[8], '%I:%M:%S %p')
+                    if currentTime == None:
+                        with tag('time',
+                                ('key', str(previous_row[12])),
+                                ('current', 'false'),
+                                ('type', str(previous_row[11])),
+                                ('show-title', str(previous_row[6])),
+                                ('show-season', str(previous_row[5])),
+                                ('show-episode', str(previous_row[4])),
+                                ('title', str(previous_row[3])),
+                                ('duration', str(previous_row[7])),
+                                ('time-start', str(previous_start_time_string)),
+                                ('time-end', str(previous_end_time_string)),
+                                ('time-start-unix', str(previous_start_time_unix)),
+                                ('time-end-unix', str(previous_end_time_unix)),
+                                ('library', str(previous_row[13])),
+                            ):
+                            text(previous_row[8])
+                    elif currentTime.hour == timeB.hour and currentTime.minute == timeB.minute:
+                        with tag('time',
+                                ('key', str(previous_row[12])),
+                                ('current', 'true'),
+                                ('type', str(previous_row[11])),
+                                ('show-title', str(previous_row[6])),
+                                ('show-season', str(previous_row[5])),
+                                ('show-episode', str(previous_row[4])),
+                                ('title', str(previous_row[3])),
+                                ('duration', str(previous_row[7])),
+                                ('time-start', str(previous_start_time_string)),
+                                ('time-end', str(pevious_end_time_string)),
+                                ('time-start-unix', str(previous_start_time_unix)),
+                                ('time-end-unix', str(previous_end_time_unix)),
+                                ('library', str(previous_row[13])),
+                            ):
+                            text(previous_row[8])
+                    else:
+                        with tag('time',
+                                ('key', str(previous_row[12])),
+                                ('current', 'false'),
+                                ('type', str(previous_row[11])),
+                                ('show-title', str(previous_row[6])),
+                                ('show-season', str(previous_row[5])),
+                                ('show-episode', str(previous_row[4])),
+                                ('title', str(previous_row[3])),
+                                ('duration', str(previous_row[7])),
+                                ('time-start', str(previous_start_time_string)),
+                                ('time-end', str(previous_end_time_string)),
+                                ('time-start-unix', str(previous_start_time_unix)),
+                                ('time-end-unix', str(previous_end_time_unix)),
+                                ('library', str(previous_row[13])),
+                            ):
+                            text(previous_row[8])
+                previous_start_time = current_start_time
+                previous_start_time_unix = current_start_time_unix
+                previous_start_time_string = current_start_time_string
+                previous_row = row
+#            if str(row[11]) == "Commercials" and self.DEBUG == False:
+#                continue
+            timeB = datetime.strptime(row[8], '%I:%M:%S %p')
+            if currentTime == None:
+                with tag('time',
+                        ('key', str(row[12])),
+                        ('current', 'false'),
+                        ('type', str(row[11])),
+                        ('show-title', str(row[6])),
+			('show-season', str(row[5])),
+			('show-episode', str(row[4])),
+                        ('title', str(row[3])),
+			('duration', str(row[7])),
+                        ('time-start', str(current_start_time_string)),
+			('time-end', str(current_end_time_string)),
+                        ('time-start-unix', str(current_start_time_unix)),
+                        ('time-end-unix', str(current_end_time_unix)),
+			('library', str(row[13])),
+                    ):
+                    text(row[8])
+            elif currentTime.hour == timeB.hour and currentTime.minute == timeB.minute:
+                with tag('time',
+                        ('key', str(row[12])),
+                        ('current', 'true'),
+                        ('type', str(row[11])),
+	                ('show-title', str(row[6])),
+                        ('show-season', str(row[5])),
+                        ('show-episode', str(row[4])),
+                        ('title', str(row[3])),
+                        ('duration', str(row[7])),
+                        ('time-start', str(current_start_time_string)),
+                        ('time-end', str(current_end_time_string)),
+                        ('time-start-unix', str(current_start_time_unix)),
+                        ('time-end-unix', str(current_end_time_unix)),
+                        ('library', str(row[13])),
+                    ):
+                    text(row[8])
+            else:
+                with tag('time',
+                        ('key', str(row[12])),
+                        ('current', 'false'),
+                        ('type', str(row[11])),
+                        ('show-title', str(row[6])),
+                        ('show-season', str(row[5])),
+                        ('show-episode', str(row[4])),
+                        ('title', str(row[3])),
+                        ('duration', str(row[7])),
+                        ('time-start', str(current_start_time_string)),
+                        ('time-end', str(current_end_time_string)),
+                        ('time-start-unix', str(current_start_time_unix)),
+                        ('time-end-unix', str(current_end_time_unix)),
+                        ('library', str(row[13])),
+                    ):
+                    text(row[8])
         return indent(doc.getvalue())
 
     '''
