@@ -1244,6 +1244,9 @@ if __name__ == '__main__':
                                 print nat_start
                                 if schedule_offset < 0:
                                     schedule_offset_ms = abs(schedule_offset) * 1000
+                                    try:
+                                        offset
+                                    except NameError: offset = offsetTwo
                                     offset_plus = int(offset + abs(schedule_offset_ms))
                                     print "Updated Offset = " + str(offset_plus)
                                     pseudo_channel.controller.play(prevItem, daily_schedule, offset_plus)
