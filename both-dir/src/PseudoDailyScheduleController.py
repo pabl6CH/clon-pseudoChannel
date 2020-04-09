@@ -533,7 +533,7 @@ class PseudoDailyScheduleController():
     * @return null
     *
     '''
-    def play_media(self, mediaType, mediaParentTitle, mediaTitle, offset, customSectionName, durationAmount):
+    def play_media(self, mediaType, mediaParentTitle, mediaTitle, offset, customSectionName, durationAmount, mediaID):
          # Check for necessary client override, if we have a folder of "channels_<NAME>"
         cwd = os.getcwd()
         if "channels_" in cwd:
@@ -543,7 +543,17 @@ class PseudoDailyScheduleController():
             print "CLIENT OVERRIDE: %s" % self.PLEX_CLIENTS
             
         try: 
-            if mediaType == "TV Shows":
+            if customSectionName == "Playlists":
+                mediaItems = self.PLEX.playlist(mediaParentTitle).items()
+                print "+++++ Checking Key for a Match: "
+                for item in mediaItems:
+                    if item.key == mediaID:
+                        print "+++++ MATCH ID FOUND IN %s" % item
+                        for client in self.PLEX_CLIENTS:
+                            clientItem = self.PLEX.client(client)
+                            clientItem.playMedia(item, offset=offset)
+                        break
+            elif mediaType == "TV Shows" and customSectionName != "Playlists":
 #                print "Here, Trying to play custom type: ", customSectionName
                 print "+++++ Checking Duration for a Match: "
                 mediaItems = self.PLEX.library.section(customSectionName).get(mediaParentTitle).episodes()
@@ -551,6 +561,12 @@ class PseudoDailyScheduleController():
 #                    print item.duration
                     if item.title == mediaTitle and item.duration == durationAmount:
                         print "+++++ MATCH FOUND in %s" % item
+                        for client in self.PLEX_CLIENTS:
+                            clientItem = self.PLEX.client(client)
+                            clientItem.playMedia(item, offset=offset)
+                        break
+                    elif item.key == mediaID:
+                        print "+++++ MATCHID FOUND IN %s" % item
                         for client in self.PLEX_CLIENTS:
                             clientItem = self.PLEX.client(client)
                             clientItem.playMedia(item, offset=offset)
@@ -649,7 +665,7 @@ class PseudoDailyScheduleController():
 
         print "Here, row[13]", row[13]
 
-        self.play_media(row[11], row[6], row[3], offset, row[13], row[7])
+        self.play_media(row[11], row[6], row[3], offset, row[13], row[7], row[12])
         self.write_schedule_to_file(
             self.get_html_from_daily_schedule(
                 timeB,
@@ -703,7 +719,7 @@ class PseudoDailyScheduleController():
                     if currentTime.second == timeB.second:
                         print("Starting Media: " + row[3])
                         print(row)
-                        self.play_media(row[11], row[6], row[3], row[13], row[7])
+                        self.play_media(row[11], row[6], row[3], row[13], row[7], row[12])
                         self.write_schedule_to_file(
                             self.get_html_from_daily_schedule(
                                 timeB,
