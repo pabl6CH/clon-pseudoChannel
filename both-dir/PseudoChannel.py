@@ -105,6 +105,71 @@ class PseudoChannel():
         self.db.create_tables()
         libs_dict = config.plexLibraries
         sections = self.PLEX.library.sections()
+	dothething = "yes"
+        if dothething == "yes":
+            playlists = self.PLEX.playlists()
+            for i, playlist in enumerate(playlists):
+                self.db.add_shows_to_db(
+                    2,
+                    playlist.title,
+                    playlist.duration,
+                    '',
+                    '',
+                    playlist.key,
+                    playlist.type
+                )
+                self.print_progress(
+                    i + 1,
+                    len(playlists),
+                    prefix = 'Progress Playlists... ',
+                    suffix = '',
+                    bar_length = 40
+                )
+                print ""
+
+                # add all entries of playlist to episodes table
+                episodes = self.PLEX.playlist(playlist.title).items()
+                for i, episode in enumerate(episodes):
+                    duration = episode.duration
+                    sectionTitle = "Playlists"
+                    itemID = str(episode.playlistItemID)
+                    if itemID != "None":
+                        sNo = itemID[-3]
+                        eNo = itemID[-2] + itemID[-1]
+                        plTitle = episode.title + " (" + itemID  + ")"
+                    else:
+                        sNo = "0"
+                        eNo = "0"
+                        plTitle = episode.title + " (P)"
+                    if duration:
+                        self.db.add_episodes_to_db(
+                            5,
+                            plTitle,
+                            duration,
+                            eNo,
+                            sNo,
+                            playlist.title,
+                            episode.key,
+                            sectionTitle
+                        )
+                    else:
+                        self.db.add_episodes_to_db(
+                            5,
+                            plTitle,
+                            0,
+                            eNo,
+                            sNo,
+                            playlist.title,
+                            episode.key,
+                            sectionTitle
+                        )
+                    self.print_progress(
+                        i + 1,
+                        len(episodes),
+                        prefix = 'Progress Playlist - '+playlist.title+': ',
+                        suffix = 'Complete',
+                        bar_length = 40
+                    )
         for section in sections:
             for correct_lib_name, user_lib_name in libs_dict.items():
                 if section.title.lower() in [x.lower() for x in user_lib_name]:
@@ -170,7 +235,6 @@ class PseudoChannel():
                                             episode.key,
                                             section.title
                                         )
-                            
                     elif correct_lib_name == "Commercials":
                         print "user_lib_name", section.title
                         sectionMedia = self.PLEX.library.section(section.title).all()
@@ -552,9 +616,7 @@ class PseudoChannel():
                         else:
                             next_episode = self.db.get_next_episode(entry[3])
                         if next_episode != None:
-                            
                             customSectionName = next_episode[9]
-                            
                             episode = Episode(
                                 section, # section_type
                                 next_episode[3], # title
@@ -565,7 +627,8 @@ class PseudoChannel():
                                 entry[10], # is_strict_time
                                 entry[11], # time_shift
                                 entry[12], # overlap_max
-                                next_episode[8] if len(next_episode) >= 9 else '', # plex id
+                                #next_episode[8] if len(next_episode) >= 9 else '', # plex id
+                                next_episode[8], #plex id
                                 customSectionName, # custom lib name
                                 entry[3], # show_series_title
                                 next_episode[5], # episode_number
