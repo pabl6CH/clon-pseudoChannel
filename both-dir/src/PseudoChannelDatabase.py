@@ -51,7 +51,7 @@ class PseudoChannelDatabase():
         self.cursor.execute('CREATE TABLE IF NOT EXISTS '
                   'app_settings(id INTEGER PRIMARY KEY AUTOINCREMENT, version TEXT)')
         #index
-        self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_episode_plexMediaID ON episodes (plexMediaID);')
+        self.cursor.execute('CREATE INDEX IF NOT EXISTS idx_episode_plexMediaID ON episodes (plexMediaID);')
         self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_movie_plexMediaID ON movies (plexMediaID);')
         self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_shows_plexMediaID ON shows (plexMediaID);')
         self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_video_plexMediaID ON videos (plexMediaID);')
@@ -175,6 +175,29 @@ class PseudoChannelDatabase():
             self.cursor.execute("INSERT OR IGNORE INTO shows "
                       "(unix, mediaID, title, duration, lastEpisodeTitle, fullImageURL, plexMediaID, customSectionName) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
                       (unix, mediaID, title, duration, lastEpisodeTitle, fullImageURL, plexMediaID, customSectionName))
+            self.conn.commit()
+        # Catch the exception
+        except Exception as e:
+            # Roll back any change if something goes wrong
+            self.conn.rollback()
+            raise e
+
+    def add_playlist_entries_to_db(
+        self, 
+        mediaID, 
+        title, 
+        duration, 
+        episodeNumber, 
+        seasonNumber, 
+        showTitle, 
+        plexMediaID, 
+        customSectionName):
+
+        unix = int(time.time())
+        try:
+            self.cursor.execute("INSERT INTO episodes "
+                "(unix, mediaID, title, duration, episodeNumber, seasonNumber, showTitle, plexMediaID, customSectionName) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (unix, mediaID, title, duration, episodeNumber, seasonNumber, showTitle, plexMediaID, customSectionName))
             self.conn.commit()
         # Catch the exception
         except Exception as e:
