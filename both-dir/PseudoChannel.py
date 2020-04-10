@@ -105,71 +105,6 @@ class PseudoChannel():
         self.db.create_tables()
         libs_dict = config.plexLibraries
         sections = self.PLEX.library.sections()
-	dothething = "yes"
-        if dothething == "yes":
-            playlists = self.PLEX.playlists()
-            for i, playlist in enumerate(playlists):
-                self.db.add_shows_to_db(
-                    2,
-                    playlist.title,
-                    playlist.duration,
-                    '',
-                    '',
-                    playlist.key,
-                    playlist.type
-                )
-                self.print_progress(
-                    i + 1,
-                    len(playlists),
-                    prefix = 'Progress Playlists... ',
-                    suffix = '',
-                    bar_length = 40
-                )
-                print ""
-
-                # add all entries of playlist to episodes table
-                episodes = self.PLEX.playlist(playlist.title).items()
-                for i, episode in enumerate(episodes):
-                    duration = episode.duration
-                    sectionTitle = "Playlists"
-                    itemID = str(episode.playlistItemID)
-                    if itemID != "None":
-                        sNo = itemID[-3]
-                        eNo = itemID[-2] + itemID[-1]
-                        plTitle = episode.title + " (" + itemID  + ")"
-                    else:
-                        sNo = "0"
-                        eNo = "0"
-                        plTitle = episode.title + " (P)"
-                    if duration:
-                        self.db.add_episodes_to_db(
-                            5,
-                            plTitle,
-                            duration,
-                            eNo,
-                            sNo,
-                            playlist.title,
-                            episode.key,
-                            sectionTitle
-                        )
-                    else:
-                        self.db.add_episodes_to_db(
-                            5,
-                            plTitle,
-                            0,
-                            eNo,
-                            sNo,
-                            playlist.title,
-                            episode.key,
-                            sectionTitle
-                        )
-                    self.print_progress(
-                        i + 1,
-                        len(episodes),
-                        prefix = 'Progress Playlist - '+playlist.title+': ',
-                        suffix = 'Complete',
-                        bar_length = 40
-                    )
         for section in sections:
             for correct_lib_name, user_lib_name in libs_dict.items():
                 if section.title.lower() in [x.lower() for x in user_lib_name]:
@@ -248,7 +183,72 @@ class PseudoChannel():
                                 suffix = 'Complete', 
                                 bar_length = 40
                             )
-                            
+	    dothething = "yes"
+        if dothething == "yes":
+            playlists = self.PLEX.playlists()
+            for i, playlist in enumerate(playlists):
+                self.db.add_shows_to_db(
+                    2,
+                    playlist.title,
+                    playlist.duration,
+                    '',
+                    '',
+                    playlist.key,
+                    playlist.type
+                )
+                self.print_progress(
+                    i + 1,
+                    len(playlists),
+                    prefix = 'Progress Playlists... ',
+                    suffix = '',
+                    bar_length = 40
+                )
+                print ""
+
+                # add all entries of playlist to episodes table
+                episodes = self.PLEX.playlist(playlist.title).items()
+                for i, episode in enumerate(episodes):
+                    duration = episode.duration
+                    sectionTitle = "Playlists"
+                    itemID = str(episode.playlistItemID)
+                    if itemID != "None":
+                        sNo = itemID[-3]
+                        eNo = itemID[-2] + itemID[-1]
+                        plTitle = episode.title + " (" + sNo + eNo + ")"
+                    else:
+                        sNo = "0"
+                        eNo = "0"
+                        plTitle = episode.title + " (P)"
+                    if duration:
+                        self.db.add_playlist_entries_to_db(
+                            5,
+                            plTitle,
+                            duration,
+                            eNo,
+                            sNo,
+                            playlist.title,
+                            episode.key,
+                            sectionTitle
+                        )
+                    else:
+                        self.db.add_playlist_entries_to_db(
+                            5,
+                            episode.title,
+                            0,
+                            eNo,
+                            sNo,
+                            playlist.title,
+                            episode.key,
+                            sectionTitle
+                        )
+                    self.print_progress(
+                        i + 1,
+                        len(episodes),
+                        prefix = 'Progress Playlist - '+playlist.title+': ',
+                        suffix = 'Complete',
+                        bar_length = 40
+                    )
+
     def update_db_movies(self):
 
         print("#### Updating Local Database, MOVIES ONLY")
