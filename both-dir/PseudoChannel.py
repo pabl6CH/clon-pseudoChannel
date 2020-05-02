@@ -610,7 +610,21 @@ class PseudoChannel():
                 if str(entry[7]) in str(val) and int(weekno) == int(key):
                     if section == "TV Shows":
                         if str(entry[3]).lower() == "random":
+                            minmax = entry[4].split(",")
+                            min = int(minmax[0])
+                            min = min * 60000
+                            max = int(minmax[1])
+                            max = max * 60000
                             next_episode = self.db.get_random_episode()
+                            episode_duration = next_episode[4]
+                            attempt = 1
+                            while int(episode_duration) < min or episode_duration > max:
+                                next_episode = self.db.get_random_episode()
+                                attempt = attempt + 1
+                                if attempt > 500:
+                                    episode_duration = max
+                                else:
+                                    episode_duration = next_episode[4]
                         elif entry[2] == 9999:
                             next_episode = self.db.get_random_episode_alternate(entry[3])
                         else:
@@ -702,7 +716,7 @@ class PseudoChannel():
 
                                 else:
                                     
-                                    print "movies_list", movies_list
+                                    #print "movies_list", movies_list
 				    minmax = entry[4].split(",")
 				    min = int(minmax[0])
 				    min = min * 60000
