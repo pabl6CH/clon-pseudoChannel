@@ -625,10 +625,13 @@ class PseudoChannel():
                                     episode_duration = max
                                 else:
                                     episode_duration = next_episode[4]
+                            show_title = next_episode[7]
                         elif entry[2] == 9999:
                             next_episode = self.db.get_random_episode_alternate(entry[3])
+                            show_title = next_episode[7]
                         else:
                             next_episode = self.db.get_next_episode(entry[3])
+                            show_title = entry[3]
                         if next_episode != None:
                             customSectionName = next_episode[9]
                             episode = Episode(
@@ -644,7 +647,7 @@ class PseudoChannel():
                                 #next_episode[8] if len(next_episode) >= 9 else '', # plex id
                                 next_episode[8], #plex id
                                 customSectionName, # custom lib name
-                                entry[3], # show_series_title
+                                show_title, # show_series_title
                                 next_episode[5], # episode_number
                                 next_episode[6], # season_number
                                 )
