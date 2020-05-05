@@ -393,9 +393,9 @@ class PseudoChannel():
                             natural_end_time = 0
                             section = key
                             if section == "TV Shows" and time.attrib['title'] == "random":
+                                mediaID_place=999
+                            elif time.attrib['type'] == "random":
                                 mediaID_place=9999
-                            elif time.attrib['strict-time'] == "secondary":
-                                mediaID_place=1
                             else:
                                 mediaID_place=0
                             day_of_week = child.tag
@@ -615,11 +615,53 @@ class PseudoChannel():
                             min = min * 60000
                             max = int(minmax[1])
                             max = max * 60000
-                            next_episode = self.db.get_random_episode()
+                            sections = self.PLEX.library.sections()
+                            shows_list = []
+                            libs_dict = config.plexLibraries
+                            for theSection in sections:
+                                for correct_lib_name, user_lib_name in libs_dict.items():
+                                    if theSection.title.lower() in [x.lower() for x in user_lib_name]:
+                                        #print "correct_lib_name ", correct_lib_name
+                                        if correct_lib_name == "TV Shows" and entry[13] != "":
+                                            print "xtra args: ", entry[13]
+                                            shows = self.PLEX.library.section(theSection.title)
+                                            try:
+                                                thestr = entry[13]
+                                                #print thestr
+                                                regex = re.compile(r"\b(\w+)\s*:\s*([^:]*)(?=\s+\w+\s*:|$)")
+                                                d = dict(regex.findall(thestr))
+                                                #turn values into a list
+                                                for key, val in d.iteritems():
+                                                    d[key] = val.split(',')
+                                                    print d
+                                                for show in shows.search(None, **d):
+                                                    shows_list.append(show)
+                                                #print shows_list
+                                            except:
+                                                pass
+                            if (len(shows_list) > 0):
+                                print("Using xtra args to choose a random show")
+                                the_show = self.db.get_shows(random.choice(shows_list).title)
+                                print("Choosing random episode of "+the_show[3].upper())
+                                next_episode = self.db.get_random_episode_of_show(the_show[3])
+                                print("Episode Selected: S"+str(next_episode[6])+"E"+str(next_episode[5])+" "+next_episode[3].upper())
+                            else:
+                                print("Getting random episode of random show")
+                                next_episode = self.db.get_random_episode()
+                                print("Random Selection: "+next_episode[7]+" - S"+str(next_episode[6])+"E"+str(next_episode[5])+" - "+next_episode[3])
                             episode_duration = next_episode[4]
                             attempt = 1
                             while int(episode_duration) < min or episode_duration > max:
-                                next_episode = self.db.get_random_episode()
+                                if (len(shows_list) > 0):
+                                    print("Using xtra args to choose a random show")
+                                    the_show = self.db.get_shows(random.choice(shows_list).title)
+                                    print("Choosing random episode of "+the_show[3].upper())
+                                    next_episode = self.db.get_random_episode_of_show(the_show[3])
+                                    print("Episode Selected: S"+str(next_episode[6])+"E"+str(next_episode[5])+" "+next_episode[3].upper())
+                                else:
+                                    print("Getting random episode of random show")
+                                    next_episode = self.db.get_random_episode()
+                                    print("Random Selection: "+next_episode[7]+" - (S"+str(next_episode[6])+"E"+str(next_episode[5])+") "+next_episode[3])
                                 attempt = attempt + 1
                                 if attempt > 500:
                                     episode_duration = max
@@ -627,10 +669,25 @@ class PseudoChannel():
                                     episode_duration = next_episode[4]
                             show_title = next_episode[7]
                         elif entry[2] == 9999:
-                            next_episode = self.db.get_random_episode_alternate(entry[3])
+                            print("Getting random episode of "+entry[3])
+                            next_episode = self.db.get_random_episode_of_show(entry[3])
+                            print("Episode Selected: S"+str(next_episode[6])+"E"+str(next_episode[5])+" "+next_episode[3].upper())
+                            show_title = next_episode[7]
+                            episode_duration = next_episode[4]
+                            attempt = 1
+                            while int(episode_duration) < min or episode_duration > max:
+                                print("Getting random episode of "+entry[3])
+                                next_episode = self.db.get_random_episode_of_show(entry[3])
+                                print("Episode Selected: S"+str(next_episode[6])+"E"+str(next_episode[5])+" "+next_episode[3].upper())
+                                attempt = attempt + 1
+                            if attempt > 500:
+                                episode_duration = max
+                            else:
+                                episode_duration = next_episode[4]
                             show_title = next_episode[7]
                         else:
                             next_episode = self.db.get_next_episode(entry[3])
+                            print("Scheduled: "+next_episode[7]+" - (S"+str(next_episode[6])+"E"+str(next_episode[5])+") "+next_episode[3])
                             show_title = entry[3]
                         if next_episode != None:
                             customSectionName = next_episode[9]

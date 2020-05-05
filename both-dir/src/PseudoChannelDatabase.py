@@ -540,7 +540,7 @@ class PseudoChannelDatabase():
     ####mutto233 made this one####
     def get_random_episode_alternate(self,series):
 
-        sql = "SELECT * FROM episodes WHERE (series LIKE ? AND id IN (SELECT id FROM episodes ORDER BY RANDOM() LIMIT 1))"
+        sql = "SELECT * FROM episodes WHERE (showTitle LIKE ? AND id IN (SELECT id FROM episodes ORDER BY RANDOM() LIMIT 1))"
         self.cursor.execute(sql, (series, ))
         return self.cursor.fetchone()
     ####mutto233 made this one####
@@ -550,6 +550,19 @@ class PseudoChannelDatabase():
         sql = "SELECT * FROM movies WHERE id IN (SELECT id FROM movies ORDER BY RANDOM() LIMIT 1)"
         self.cursor.execute(sql)
         return self.cursor.fetchone()
+
+    ###added 5/4/2020###
+    def get_random_episode_of_show(self,series):
+        #print series.upper()
+        sql = "SELECT * FROM episodes WHERE (showTitle LIKE ?) ORDER BY RANDOM() LIMIT 1"
+        self.cursor.execute(sql, (series, ))
+        return self.cursor.fetchone()
+
+    def get_random_show(self):
+        sql = "SELECT * FROM shows WHERE id IN (SELECT id FROM shows ORDER BY RANDOM() LIMIT 1)"
+        self.cursor.execute(sql)
+        return self.cursor.fetchone()
+    ###
     
     ####mutto233 made this one####
     def get_next_episode(self, series):
