@@ -623,51 +623,147 @@ class PseudoChannel():
                                     if theSection.title.lower() in [x.lower() for x in user_lib_name]:
                                         #print "correct_lib_name ", correct_lib_name
                                         if correct_lib_name == "TV Shows" and entry[13] != "":
-                                            print "xtra args: ", entry[13]
+                                            print "XTRA ARGS FOUND"
                                             shows = self.PLEX.library.section(theSection.title)
+                                            xtra = '[]'
+                                            d = {}
+                                            #thestr = entry[13]
+                                            xtra = entry[13].split(';')
                                             try:
-                                                thestr = entry[13]
-                                                #print thestr
-                                                regex = re.compile(r"\b(\w+)\s*:\s*([^:]*)(?=\s+\w+\s*:|$)")
-                                                d = dict(regex.findall(thestr))
+                                                for thestr in xtra:
+                                                    print thestr
+                                                    strsplit = thestr.split(':')
+                                                    if strsplit[0] == "decade":
+                                                        decade = strsplit[1]
+                                                        lastdigit = 0
+                                                        thestr = "year:"
+                                                        while lastdigit <= 9:
+                                                           thestr = thestr+decade[0]+decade[1]+decade[2]+str(lastdigit)
+                                                           lastdigit = lastdigit + 1
+                                                           if lastdigit < 10:
+                                                               thestr = thestr+","
+                                                        print thestr
+                                                    #d.update(strsplit[0],strsplit[1])
+                                                    elif strsplit[0] == "season":
+                                                        xtraSeason = strsplit[1]
+                                                        thestr = ""
+                                                    elif strsplit[0] == "episode":
+                                                        xtraEpisode = strsplit[1]
+                                                        thestr = ""
+                                                    if thestr != "":
+                                                        regex = re.compile(r"\b(\w+)\s*:\s*([^:]*)(?=\s+\w+\s*:|$)")
+                                                        d.update(regex.findall(thestr))
+                                                #d = dict(regex.findall(thestr))
+                                                print d
                                                 #turn values into a list
                                                 for key, val in d.iteritems():
                                                     d[key] = val.split(',')
-                                                    print d
                                                 for show in shows.search(None, **d):
                                                     shows_list.append(show)
-                                                #print shows_list
                                             except:
                                                 pass
                             if (len(shows_list) > 0):
-                                print("Using xtra args to choose a random show")
+                                #print shows_list
+                                print("-----Using xtra args to choose a random show")
                                 the_show = self.db.get_shows(random.choice(shows_list).title)
-                                print("Choosing random episode of "+the_show[3].upper())
-                                next_episode = self.db.get_random_episode_of_show(the_show[3])
-                                print("Episode Selected: S"+str(next_episode[6])+"E"+str(next_episode[5])+" "+next_episode[3].upper())
                             else:
-                                print("Getting random episode of random show")
+                                print("-----Getting random show")
+                                the_show = self.db.get_random_show()
+                                print the_show[3]
+                            if (the_show is None):
+                                print("-----Getting random episode of random show")
                                 next_episode = self.db.get_random_episode()
-                                print("Random Selection: "+next_episode[7]+" - S"+str(next_episode[6])+"E"+str(next_episode[5])+" - "+next_episode[3])
-                            episode_duration = next_episode[4]
-                            attempt = 1
-                            while int(episode_duration) < min or episode_duration > max:
-                                if (len(shows_list) > 0):
-                                    print("Using xtra args to choose a random show")
-                                    the_show = self.db.get_shows(random.choice(shows_list).title)
-                                    print("Choosing random episode of "+the_show[3].upper())
-                                    next_episode = self.db.get_random_episode_of_show(the_show[3])
-                                    print("Episode Selected: S"+str(next_episode[6])+"E"+str(next_episode[5])+" "+next_episode[3].upper())
-                                else:
-                                    print("Getting random episode of random show")
+                                attempt = 1
+                                episode_duration = next_episode[4]
+                                while episode_duration < min or episode_duration > max:
                                     next_episode = self.db.get_random_episode()
-                                    print("Random Selection: "+next_episode[7]+" - (S"+str(next_episode[6])+"E"+str(next_episode[5])+") "+next_episode[3])
-                                attempt = attempt + 1
-                                if attempt > 500:
-                                    episode_duration = max
-                                else:
-                                    episode_duration = next_episode[4]
+                                    episode_duration = int(next_episode[4])
+                                    attempt = attempt + 1
+                                    if attempt > 1000:
+                                        episode_duration = max
+                                    else:
+                                        episode_duration = int(next_episode[4])
+                                print("Random Selection: "+next_episode[7]+" - S"+str(next_episode[6])+"E"+str(next_episode[5])+" - "+next_episode[3])
+                            else:
+                                i = 0
+                                while i < 1000:
+                                    i += 1
+                                    try:
+                                        if xtraSeason is None and xtraEpisode is None:
+                                            print("Choosing random episode of "+the_show[3].upper())
+                                            next_episode = self.db.get_random_episode_of_show(the_show[3])
+                                        elif xtraEpisode is None:
+                                            print("Choosing random episode of "+the_show[3].upper()+" Season "+xtraSeason)
+                                            next_episode = self.db.get_specific_episode(the_show[3], xtraSeason)
+                                        elif xtraSeason is None:
+                                            print("Choosing random episode of "+the_show[3].upper()+" Episode "+xtraEpisode)
+                                            next_episode = self.db.get_specific_episode(the_show[3], None, xtraEpisode)
+                                        else:
+                                            print("Choosing random episode of "+the_show[3].upper()+" Season "+xtraSeason+" Episode "+xtraEpisode)
+                                            next_episode = self.db.get_specific_episode(the_show[3], xtraSeason, xtraEpisode)
+                                        print("Episode Selected: S"+str(next_episode[6])+"E"+str(next_episode[5])+" "+next_episode[3].upper())
+                                        break
+                                    except TypeError as e:
+                                        print e
+                                        if (len(shows_list) > 0):
+                                        #print shows_list
+                                            print("-----Using xtra args to choose a random show")
+                                            the_show = self.db.get_shows(random.choice(shows_list).title)
+                                        else:
+                                            print("-----Getting random show")
+                                            the_show = self.db.get_random_show()
+                                            print the_show[3]
+                                            continue
+                                episode_duration = int(next_episode[4])
+                                attempt = 1
+                                while episode_duration < min or episode_duration > max or next_episode == None:
+                                    i = 0
+                                    while i < 1000:
+                                        i += 1
+                                        try:
+                                            print("DURATION OUTSIDE PARAMETERS")
+                                            if (len(shows_list) > 0):
+                                                print("Using xtra args to choose a random show")
+                                                the_show = self.db.get_shows(random.choice(shows_list).title)
+                                            else:
+                                                print("Getting random show")
+                                                the_show = self.db.get_random_show()
+                                                print the_show
+                                            if xtraSeason is None and xtraEpisode is None:
+                                                print("Choosing random episode of "+the_show[3].upper())
+                                                next_episode = self.db.get_random_episode_of_show(the_show[3])
+                                            elif xtraEpisode is None:
+                                                print("Choosing random episode of "+the_show[3].upper()+" Season "+xtraSeason)
+                                                next_episode = self.db.get_specific_episode(the_show[3], xtraSeason)
+                                            elif xtraSeason is None:
+                                                print("Choosing random episode of "+the_show[3].upper()+" Episode "+xtraEpisode)
+                                                next_episode = self.db.get_specific_episode(the_show[3], None, xtraEpisode)
+                                            else:
+                                                print("Choosing random episode of "+the_show[3].upper()+" Season "+xtraSeason+" Episode "+xtraEpisode)
+                                                next_episode = self.db.get_specific_episode(the_show[3], xtraSeason, xtraEpisode)
+                                            print("Episode Selected: S"+str(next_episode[6])+"E"+str(next_episode[5])+" "+next_episode[3].upper())   
+                                            break
+                                        except TypeError as e:
+                                            print e
+                                            if (len(shows_list) > 0):
+                                                #print shows_list
+                                                print("-----Using xtra args to choose a random show")
+                                                the_show = self.db.get_shows(random.choice(shows_list).title)
+                                            else:
+                                                print("-----Getting random show")
+                                                the_show = self.db.get_random_show()
+                                                print the_show[3]
+                                            continue
+                                    attempt = attempt + 1
+                                    if attempt > 1000:
+                                        episode_duration = max
+                                    else:
+                                        episode_duration = int(next_episode[4])
                             show_title = next_episode[7]
+                            xtraSeason = None
+                            xtraEpisode = None
+                            print("----------------------------------")
+
                         elif entry[2] == 9999:
                             print("Getting random episode of "+entry[3])
                             next_episode = self.db.get_random_episode_of_show(entry[3])
@@ -713,8 +809,12 @@ class PseudoChannel():
                             print("Cannot find TV Show Episode, {} in the local db".format(entry[3]))
                     elif section == "Movies":
                         if str(entry[3]).lower() == "random":
+                            minmax = entry[4].split(",")
+                            min = int(minmax[0])
+                            min = min * 60000
+                            max = int(minmax[1])
+                            max = max * 60000
                             if(entry[13] != ''): # xtra params
-
                                 """
                                 Using specified Movies library names
                                 """
@@ -725,26 +825,27 @@ class PseudoChannel():
                                 for theSection in sections:
                                     for correct_lib_name, user_lib_name in libs_dict.items():
                                         if theSection.title.lower() in [x.lower() for x in user_lib_name]:
-                                            print "correct_lib_name", correct_lib_name
-                                            if correct_lib_name == "Movies":
+                                            #print "correct_lib_name", correct_lib_name
+                                            if correct_lib_name == "Movies" and entry[13] != "":
 
-                                                print "entry[13]", entry[13]
+                                                print "xtra args: ", entry[13]
                                                 movies = self.PLEX.library.section(theSection.title)
-
+                                                xtra = []
+                                                d = {}
+                                                xtra = entry[13].split(';')
+                                                print xtra
 						try:
-						    thestr = entry[13]
-						    minmax = entry[4].split(",")
-						    min = int(minmax[0])
-						    min = min * 60000
-						    max = int(minmax[1])
-						    max = max * 60000
-                                                    regex = re.compile(r"\b(\w+)\s*:\s*([^:]*)(?=\s+\w+\s*:|$)")
-                                                    d = dict(regex.findall(thestr))
+						    for thestr in xtra:
+                                                        print thestr
+                                                        regex = re.compile(r"\b(\w+)\s*:\s*([^:]*)(?=\s+\w+\s*:|$)")
+                                                        d.update(regex.findall(thestr))
+                                                    print d
                                                     # turn values into list
                                                     for key, val in d.iteritems():
                                                         d[key] = val.split(',')
                                                     for movie in movies.search(None, **d):
 	                                                movies_list.append(movie)
+                                                    print movies_list
 
                                                     """the_movie = self.db.get_movie(self.movieMagic.get_random_movie_xtra(
                                                             self.db.get_movies(),# Movies DB
@@ -777,11 +878,6 @@ class PseudoChannel():
                                 else:
                                     
                                     #print "movies_list", movies_list
-				    minmax = entry[4].split(",")
-				    min = int(minmax[0])
-				    min = min * 60000
-				    max = int(minmax[1])
-				    max = max * 60000
                                     print("For some reason, I've failed getting movie with xtra args.")
                                     the_movie = self.db.get_random_movie()
 				    movie_duration = the_movie[4]
@@ -1305,7 +1401,10 @@ if __name__ == '__main__':
                        endTime > now:
                         print str("+++++ Queueing up {} to play right away.".format(item[3])).encode('UTF-8')
                         offset = int(abs(elapsed_time.total_seconds() * 1000))
-                        nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=item[7])
+                        try:
+                            nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=item[7])
+                        except:
+                            nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S') - datetime.timedelta(milliseconds=item[7])
                         schedule_offset = nat_start - datetime.datetime.strptime(item[8], '%I:%M:%S %p')
                         schedule_offset = schedule_offset.total_seconds()
                         print "Schedule Offset = " + str(schedule_offset)
@@ -1372,7 +1471,10 @@ if __name__ == '__main__':
                                     print "+++++ Closest media was the next media " \
                                           "but we were in the middle of something so triggering that instead."
                                 print str("+++++ Queueing up '{}' to play right away.".format(prevItem[3])).encode('UTF-8')
-                                nat_start = datetime.datetime.strptime(prevItem[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=prevItem[7])
+                                try:
+                                    nat_start = datetime.datetime.strptime(prevItem[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=prevItem[7])
+                                except:
+                                    nat_start = datetime.datetime.strptime(prevItem[9], '%Y-%m-%d %H:%M:%S') - datetime.timedelta(milliseconds=prevItem[7])
                                 schedule_offset = nat_start - datetime.datetime.strptime(prevItem[8], '%I:%M:%S %p')
                                 schedule_offset = schedule_offset.total_seconds()
                                 print "Schedule Offset = " + str(schedule_offset)

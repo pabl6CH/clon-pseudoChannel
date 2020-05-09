@@ -504,6 +504,26 @@ class PseudoChannelDatabase():
         datalist = list(self.cursor.fetchall())
         return datalist
 
+    def get_specific_episode(self, tvshow, season=None, episode=None):
+        if season is None and episode is None:
+            print("ERROR! Season and Episode Numbers Not Found")
+            pass
+        elif season is None:
+            episode = str(episode)
+            sql = ("SELECT * FROM episodes WHERE ( showTitle LIKE ? and episodeNumber LIKE ?) ORDER BY RANDOM()")
+            self.cursor.execute(sql, (tvshow, "%"+episode+"&", ))
+        elif episode is None:
+            season = str(season)
+            sql = ("SELECT * FROM episodes WHERE ( showTitle LIKE ? and seasonNumber LIKE ?) ORDER BY RANDOM()")
+            self.cursor.execute(sql, (tvshow, "%"+season+"%", ))
+        else:
+            episode = str(episode)
+            season = str(season)
+            sql = ("SELECT * FROM episodes WHERE ( showTitle LIKE ? and seasonNumber LIKE ? and episodeNumber LIKE ?) ORDER BY RANDOM()")
+            self.cursor.execute(sql, (tvshow, "%"+season+"%", "%"+episode+"%", ))
+        media_item = self.cursor.fetchone()
+        return media_item
+
     def get_first_episode(self, tvshow):
 
         sql = ("SELECT id, unix, mediaID, title, duration, MIN(episodeNumber), MIN(seasonNumber), "
