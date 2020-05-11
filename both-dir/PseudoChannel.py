@@ -603,18 +603,20 @@ class PseudoChannel():
         }
         weekno = datetime.datetime.today().weekday()
         schedule_advance_watcher = 0
+        xtraSeason = None
+        xtraEpisode = None
         for entry in schedule:
             schedule_advance_watcher += 1
             section = entry[9]
             for key, val in weekday_dict.iteritems(): 
                 if str(entry[7]) in str(val) and int(weekno) == int(key):
                     if section == "TV Shows":
+                        minmax = entry[4].split(",")
+                        min = int(minmax[0])
+                        min = min * 60000
+                        max = int(minmax[1])
+                        max = max * 60000
                         if str(entry[3]).lower() == "random":
-                            minmax = entry[4].split(",")
-                            min = int(minmax[0])
-                            min = min * 60000
-                            max = int(minmax[1])
-                            max = max * 60000
                             sections = self.PLEX.library.sections()
                             shows_list = []
                             libs_dict = config.plexLibraries
