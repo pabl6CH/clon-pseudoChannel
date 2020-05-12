@@ -45,7 +45,7 @@ class PseudoChannelCommercial():
 
         prev_item_end_time = datetime.strptime(last_ep.end_time.strftime('%Y-%m-%d %H:%M:%S.%f'), '%Y-%m-%d %H:%M:%S.%f')
         curr_item_start_time = datetime.strptime(now_ep.start_time, '%I:%M:%S %p')        
-        time_diff = (curr_item_start_time - prev_item_end_time)        
+        time_diff = (curr_item_start_time - prev_item_end_time)
         # mutto233 has added some logic at this point
         # - All dates are now changed to 1/1/90 so midnight doesn't cause issues
         # - Issues with day skips again being adressed
@@ -76,7 +76,7 @@ class PseudoChannelCommercial():
         time_diff_milli = self.timedelta_milliseconds(time_diff)
         last_commercial = None
         time_watch = prev_item_end_time 
-        new_commercial_start_time = prev_item_end_time 
+        new_commercial_start_time = prev_item_end_time + timedelta(seconds=1)
         while curr_item_start_time > new_commercial_start_time:
             random_commercial_without_pad = self.get_random_commercial()
             """
@@ -85,11 +85,11 @@ class PseudoChannelCommercial():
             random_commercial = self.pad_the_commercial_dur(random_commercial_without_pad)
             new_commercial_milli = int(random_commercial[4])
             if last_commercial != None:
-                new_commercial_start_time = last_commercial.end_time
+                new_commercial_start_time = last_commercial.end_time + timedelta(seconds=1)
                 new_commercial_end_time = new_commercial_start_time + \
                                           timedelta(milliseconds=int(new_commercial_milli))
             else:
-                new_commercial_start_time = prev_item_end_time
+                new_commercial_start_time = prev_item_end_time + timedelta(seconds=1)
                 new_commercial_end_time = new_commercial_start_time + \
                                           timedelta(milliseconds=int(new_commercial_milli))
             commercial_dur_sum += new_commercial_milli
