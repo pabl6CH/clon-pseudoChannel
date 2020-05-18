@@ -1017,7 +1017,7 @@ class PseudoChannel():
                                     self.db.add_media_to_daily_schedule(commercial)
                             self.db.add_media_to_daily_schedule(entry)
                             previous_episode = entry
-                        elif entry.is_strict_time.lower() == "secondary":
+                        elif entry.is_strict_time.lower() == "secondary": #This mode starts a show "already in progress" if the previous episode or movie runs past the start time of this one
                             print "++++ SECONDARY Strict-time: {}".format(str(entry.title))
                             try:
                                 prev_end_time = datetime.datetime.strptime(str(previous_episode.end_time), '%Y-%m-%d %H:%M:%S.%f')
@@ -1039,17 +1039,24 @@ class PseudoChannel():
                                     entry.duration
                                 )
                                 print "End Time = {}".format(str(entry.end_time))
+                            overlap_max_seconds=int(entry.overlap_max) * 60
+                            print ("Overlap Max is "+str(overlap_max_seconds))
+                            max_end_time=datetime.datetime.strptime(entry.natural_start_time, self.APP_TIME_FORMAT_STR) + datetime.timedelta(seconds=overlap_max_seconds)
+                            if datetime.datetime.strptime(entry.start_time, self.APP_TIME_FORMAT_STR) > max_end_time or datetime.datetime.strptime(entry.start_time, self.APP_TIME_FORMAT_STR) > entry.end_time:
+                                print("----- START TIME PAST MAXIMUM ALLOWED TIME, SKIPPING ENTRY")
+                                pass
+                            else:
                                 """Get List of Commercials to Inject"""
-                            if self.USING_COMMERCIAL_INJECTION:
-                                list_of_commercials = self.commercials.get_commercials_to_place_between_media(
-                                    previous_episode,
-                                    entry,
-                                    entry.is_strict_time.lower()
-                                )
-                                for commercial in list_of_commercials:
-                                    self.db.add_media_to_daily_schedule(commercial)
-                            self.db.add_media_to_daily_schedule(entry)
-                            previous_episode = entry
+                                if self.USING_COMMERCIAL_INJECTION:
+                                    list_of_commercials = self.commercials.get_commercials_to_place_between_media(
+                                        previous_episode,
+                                        entry,
+                                        entry.is_strict_time.lower()
+                                    )
+                                    for commercial in list_of_commercials:
+                                        self.db.add_media_to_daily_schedule(commercial)
+                                self.db.add_media_to_daily_schedule(entry)
+                                previous_episode = entry
                         else:
                             try:
                                 print "++++ NOT strict-time: {}".format(str(entry.title).encode(sys.stdout.encoding, errors='replace'))
