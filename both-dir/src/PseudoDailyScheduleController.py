@@ -572,16 +572,26 @@ class PseudoDailyScheduleController():
                             clientItem.playMedia(item, offset=offset)
                         break
             elif mediaType == "Movies":
-                movies =  self.PLEX.library.section(customSectionName).search(title=mediaTitle)
-                print "+++++ Checking Duration for a Match: "
+                idNum = mediaID.lstrip('/library/metadata/')
+                print("Plex ID Number: "+idNum)
+                try:
+                    movies = self.PLEX.library.section(customSectionName).search(title=mediaTitle) #movie selection
+                except:
+                    movies = self.PLEX.library.section(customSectionName).get(mediaTitle)
+                print "+++++ Checking ID for a Match: "
                 for item in movies:
 #                    print item.duration
-                    if item.duration == durationAmount:
-                        print "+++++ MATCH FOUND in %s" % item
+#                    if item.title == mediaTitle and item.duration == durationAmount:
+#                        print "+++++ MATCH FOUND in %s" % item
+#                        movie = item
+#                        break
+                    if item.key == mediaID:
+                        print "+++++ MATCHID FOUND IN %s" % item.title.upper()
                         movie = item
                         break
                 for client in self.PLEX_CLIENTS:
                         clientItem = self.PLEX.client(client)
+                        print("Playing "+movie.title.upper())
                         clientItem.playMedia(movie, offset=offset)
             elif mediaType == "Commercials":
                 # This one is a bit more complicated, since we have the dirty gap fix possible
