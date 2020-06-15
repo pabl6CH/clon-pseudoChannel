@@ -541,54 +541,71 @@ class PseudoDailyScheduleController():
             head,sep,tail = tail.partition('/')
             self.PLEX_CLIENTS = [head]
             print "CLIENT OVERRIDE: %s" % self.PLEX_CLIENTS
-            
-        try: 
+        try:
             if customSectionName == "Playlists":
-                mediaItems = self.PLEX.playlist(mediaParentTitle).items()
-                print "+++++ Checking Key for a Match: "
-                for item in mediaItems:
-                    if item.key == mediaID:
-                        print "+++++ MATCH ID FOUND IN %s" % item
-                        for client in self.PLEX_CLIENTS:
-                            clientItem = self.PLEX.client(client)
-                            clientItem.playMedia(item, offset=offset)
-                        break
+                try:
+                    print("Fetching PLAYLIST ITEM from MEDIA ID")
+                    item = self.PLEX.fetchItem(mediaID)
+                    for client in self.PLEX_CLIENTS:
+                        clientItem = self.PLEX.client(client)
+                        clientItem.playMedia(item, offset=offset)
+                except:
+                    print("!!!!! MEDIA ID FETCH FAILED - Falling Back")
+                    mediaItems = self.PLEX.playlist(mediaParentTitle).items()
+                    print "+++++ Checking Key for a Match: "
+                    for item in mediaItems:
+                        if item.key == mediaID:
+                            print "+++++ MATCH ID FOUND IN %s" % item
+                            for client in self.PLEX_CLIENTS:
+                                clientItem = self.PLEX.client(client)
+                                clientItem.playMedia(item, offset=offset)
+                            break
             elif mediaType == "TV Shows" and customSectionName != "Playlists":
 #                print "Here, Trying to play custom type: ", customSectionName
-                print "+++++ Checking Duration for a Match: "
-                mediaItems = self.PLEX.library.section(customSectionName).get(mediaParentTitle).episodes()
-                for item in mediaItems:
-#                    print item.duration
-                    if item.title == mediaTitle and item.duration == durationAmount:
-                        print "+++++ MATCH FOUND in %s" % item
-                        for client in self.PLEX_CLIENTS:
-                            clientItem = self.PLEX.client(client)
-                            clientItem.playMedia(item, offset=offset)
-                        break
-                    elif item.key == mediaID:
-                        print "+++++ MATCHID FOUND IN %s" % item
-                        for client in self.PLEX_CLIENTS:
-                            clientItem = self.PLEX.client(client)
-                            clientItem.playMedia(item, offset=offset)
-                        break
+                try:
+                    print("Fetching TV Show from MEDIA ID")
+                    item = self.PLEX.fetchItem(mediaID)
+                    for client in self.PLEX_CLIENTS:
+                        clientItem = self.PLEX.client(client)
+                        clientItem.playMedia(item, offset=offset)
+                except:
+                    print("!!!!! MEDIA ID FETCH FAILED - Falling Back")
+                    mediaItems = self.PLEX.library.section(customSectionName).get(mediaParentTitle).episodes()
+                    for item in mediaItems:
+#                        print item.duration
+                        if item.title == mediaTitle and item.duration == durationAmount:
+                            print "+++++ MATCH FOUND in %s" % item
+                            for client in self.PLEX_CLIENTS:
+                                clientItem = self.PLEX.client(client)
+                                clientItem.playMedia(item, offset=offset)
+                            break
+                        elif item.key == mediaID:
+                            print "+++++ MATCHID FOUND IN %s" % item
+                            for client in self.PLEX_CLIENTS:
+                                clientItem = self.PLEX.client(client)
+                                clientItem.playMedia(item, offset=offset)
+                            break
             elif mediaType == "Movies":
                 idNum = mediaID.lstrip('/library/metadata/')
                 print("Plex ID Number: "+idNum)
                 try:
-                    movies = self.PLEX.library.section(customSectionName).search(title=mediaTitle) #movie selection
+                    print("Fetching MOVIE from MEDIA ID")
+                    movie = self.PLEX.fetchItem(mediaID)
+#                    movies = self.PLEX.library.section(customSectionName).get(mediaTitle)
                 except:
-                    movies = self.PLEX.library.section(customSectionName).get(mediaTitle)
-                print "+++++ Checking ID for a Match: "
-                for item in movies:
-#                    print item.duration
-#                    if item.title == mediaTitle and item.duration == durationAmount:
-#                        print "+++++ MATCH FOUND in %s" % item
-#                        movie = item
-#                        break
-                    if item.key == mediaID:
-                        print "+++++ MATCHID FOUND IN %s" % item.title.upper()
-                        movie = item
-                        break
+                    print("!!!!! MEDIA ID FETCH FAILED - Falling Back")
+                    movies = self.PLEX.library.section(customSectionName).search(title=mediaTitle) #movie selection
+                    print "+++++ Checking ID for a Match: "
+                    for item in movies:
+#                        print item.duration
+#                        if item.title == mediaTitle and item.duration == durationAmount:
+#                            print "+++++ MATCH FOUND in %s" % item
+#                            movie = item
+#                            break
+                        if item.key == mediaID:
+                            print "+++++ ID MATCH FOUND IN %s" % item.title.upper()
+                            movie = item
+                            break
                 for client in self.PLEX_CLIENTS:
                         clientItem = self.PLEX.client(client)
                         print("Playing "+movie.title.upper())
@@ -598,19 +615,30 @@ class PseudoDailyScheduleController():
                 # Basically, we are going to just assume it isn't a dirty gap fix, and if it is,
                 # We will just play the first value
                 COMMERCIAL_PADDING = config.commercialPadding
-                movies =  self.PLEX.library.section(customSectionName).search(title=mediaTitle)
-                print "+++++ Checking Duration for a Match: "
-                for item in movies:
-                    #print item
-                    #print item.duration
-                    if (item.duration+1000*COMMERCIAL_PADDING) == durationAmount or item.duration == durationAmount:
-                        print "+++++ MATCH FOUND in %s" % item
-                        movie = item
-                        break
+                try:
+                    print("Fetching COMMERCIAL from MEDIA ID")
+                    movie = self.PLEX.fetchItem(mediaID)
+#                    movies = self.PLEX.library.section(customSectionName).get(mediaTitle)
+                except:
+                    print("!!!!! MEDIA ID FETCH FAILED - Falling Back")
+                    movies = self.PLEX.library.section(customSectionName).search(title=mediaTitle)
+                    print "+++++ Checking for a Match: "
+                    for item in movies:
+                        #print item
+                        #print item.duration
+                        if item.key == mediaID:
+                            print "+++++ ID MATCH FOUND in %s" % item
+                            movie = item
+                            break
+                        elif (item.duration+1000*COMMERCIAL_PADDING) == durationAmount or item.duration == durationAmount:
+                            print "+++++ DURATION MATCH FOUND in %s" % item
+                            movie = item
+                            break
                 try:
                     movie
                 except:
                     print "+++++ Commercial is NOT FOUND, my guess is this is the dirty gap.  Picking first one"
+                    movies = self.PLEX.library.section(customSectionName).search(title=mediaTitle)
                     movie = movies[0]
                     
                 for client in self.PLEX_CLIENTS:

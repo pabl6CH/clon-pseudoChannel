@@ -104,7 +104,7 @@ class PseudoChannelCommercial():
                 "true", # is_strict_time
                 "1", # time_shift 
                 "0", # overlap_max
-                "", # plex_media_id
+                random_commercial[5], # plex_media_id
                 random_commercial[6], # custom lib name
             )
             last_commercial = new_commercial
@@ -148,7 +148,7 @@ class PseudoChannelCommercial():
                                     "true", # is_strict_time
                                     "1", # time_shift 
                                     "0", # overlap_max
-                                    "", # plex_media_id
+                                    random_final_comm[5], # plex_media_id
                                     random_final_comm[6], # custom lib name
                                 )
                                 commercial_list.append(final_commercial)

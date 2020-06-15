@@ -784,7 +784,7 @@ class PseudoChannel():
                                 episode_duration = next_episode[4]
                             show_title = next_episode[7]
                         else:
-                            next_episode = self.db.get_next_episode(entry[3])
+                            next_episode = self.db.get_next_episode(entry[3]) #get next episode
                             try:
                                 print("Scheduled: "+next_episode[7]+" - (S"+str(next_episode[6])+"E"+str(next_episode[5])+") "+next_episode[3])
                             except:
