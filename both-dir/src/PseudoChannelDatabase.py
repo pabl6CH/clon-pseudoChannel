@@ -51,7 +51,7 @@ class PseudoChannelDatabase():
         self.cursor.execute('CREATE TABLE IF NOT EXISTS '
                   'app_settings(id INTEGER PRIMARY KEY AUTOINCREMENT, version TEXT)')
         #index
-        self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_episode_plexMediaID ON episodes (plexMediaID);')
+        self.cursor.execute('CREATE INDEX IF NOT EXISTS idx_episode_plexMediaID ON episodes (plexMediaID);')
         self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_movie_plexMediaID ON movies (plexMediaID);')
         self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_shows_plexMediaID ON shows (plexMediaID);')
         self.cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_video_plexMediaID ON videos (plexMediaID);')
@@ -175,6 +175,29 @@ class PseudoChannelDatabase():
             self.cursor.execute("INSERT OR IGNORE INTO shows "
                       "(unix, mediaID, title, duration, lastEpisodeTitle, fullImageURL, plexMediaID, customSectionName) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
                       (unix, mediaID, title, duration, lastEpisodeTitle, fullImageURL, plexMediaID, customSectionName))
+            self.conn.commit()
+        # Catch the exception
+        except Exception as e:
+            # Roll back any change if something goes wrong
+            self.conn.rollback()
+            raise e
+
+    def add_playlist_entries_to_db(
+        self, 
+        mediaID, 
+        title, 
+        duration, 
+        episodeNumber, 
+        seasonNumber, 
+        showTitle, 
+        plexMediaID, 
+        customSectionName):
+
+        unix = int(time.time())
+        try:
+            self.cursor.execute("INSERT INTO episodes "
+                "(unix, mediaID, title, duration, episodeNumber, seasonNumber, showTitle, plexMediaID, customSectionName) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (unix, mediaID, title, duration, episodeNumber, seasonNumber, showTitle, plexMediaID, customSectionName))
             self.conn.commit()
         # Catch the exception
         except Exception as e:
@@ -481,6 +504,26 @@ class PseudoChannelDatabase():
         datalist = list(self.cursor.fetchall())
         return datalist
 
+    def get_specific_episode(self, tvshow, season=None, episode=None):
+        if season is None and episode is None:
+            print("ERROR! Season and Episode Numbers Not Found")
+            pass
+        elif season is None:
+            episode = str(episode)
+            sql = ("SELECT * FROM episodes WHERE ( showTitle LIKE ? and episodeNumber LIKE ?) ORDER BY RANDOM()")
+            self.cursor.execute(sql, (tvshow, "%"+episode+"&", ))
+        elif episode is None:
+            season = str(season)
+            sql = ("SELECT * FROM episodes WHERE ( showTitle LIKE ? and seasonNumber LIKE ?) ORDER BY RANDOM()")
+            self.cursor.execute(sql, (tvshow, "%"+season+"%", ))
+        else:
+            episode = str(episode)
+            season = str(season)
+            sql = ("SELECT * FROM episodes WHERE ( showTitle LIKE ? and seasonNumber LIKE ? and episodeNumber LIKE ?) ORDER BY RANDOM()")
+            self.cursor.execute(sql, (tvshow, "%"+season+"%", "%"+episode+"%", ))
+        media_item = self.cursor.fetchone()
+        return media_item
+
     def get_first_episode(self, tvshow):
 
         sql = ("SELECT id, unix, mediaID, title, duration, MIN(episodeNumber), MIN(seasonNumber), "
@@ -500,10 +543,10 @@ class PseudoChannelDatabase():
         episode_id = self.cursor.fetchone()
         return episode_id
     
-    ####mutto233 made this one####
-    def get_episode_id_alternate(self, plexMediaID):
-        sql = "SELECT id FROM episodes WHERE( plexMediaID LIKE ?) COLLATE NOCASE"
-        self.cursor.execute(sql, (plexMediaID, ))
+    ####mutto233 made this one#### UPDATED 5/2/2020
+    def get_episode_id_alternate(self,plexMediaID,series):
+        sql = "SELECT id FROM episodes WHERE (showTitle LIKE ? AND plexMediaID LIKE ?) COLLATE NOCASE"
+        self.cursor.execute(sql, (series,plexMediaID, ))
         episode_id = self.cursor.fetchone()
         return episode_id
     ####mutto233 made this one####
@@ -527,6 +570,19 @@ class PseudoChannelDatabase():
         sql = "SELECT * FROM movies WHERE id IN (SELECT id FROM movies ORDER BY RANDOM() LIMIT 1)"
         self.cursor.execute(sql)
         return self.cursor.fetchone()
+
+    ###added 5/4/2020###
+    def get_random_episode_of_show(self,series):
+        #print series.upper()
+        sql = "SELECT * FROM episodes WHERE (showTitle LIKE ?) ORDER BY RANDOM() LIMIT 1"
+        self.cursor.execute(sql, (series, ))
+        return self.cursor.fetchone()
+
+    def get_random_show(self):
+        sql = "SELECT * FROM shows WHERE id IN (SELECT id FROM shows ORDER BY RANDOM() LIMIT 1)"
+        self.cursor.execute(sql)
+        return self.cursor.fetchone()
+    ###
     
     ####mutto233 made this one####
     def get_next_episode(self, series):
@@ -536,7 +592,7 @@ class PseudoChannelDatabase():
         * determine what has been previously scheduled for each show
         *
         '''
-        self.cursor.execute("SELECT lastEpisodeTitle FROM shows WHERE title LIKE ?  COLLATE NOCASE", (series, ))
+        self.cursor.execute("SELECT lastEpisodeTitle FROM shows WHERE title LIKE ? COLLATE NOCASE", (series, ))
         last_title_list = self.cursor.fetchone()
         '''
         *
@@ -572,10 +628,12 @@ class PseudoChannelDatabase():
             *
             """
             try:
-                sql = ("SELECT * FROM episodes WHERE ( id > "+str(self.get_episode_id_alternate(last_title_list[0])[0])+
+                print("+++++ Getting next episode of "+series.upper()+ " by matching ID and series or playlist name")
+                sql = ("SELECT * FROM episodes WHERE ( id > "+str(self.get_episode_id_alternate(last_title_list[0],series)[0])+
                        " AND showTitle LIKE ? ) ORDER BY seasonNumber LIMIT 1 COLLATE NOCASE")
             except TypeError:
                 try:
+                    print("+++++ Getting next episode by matching title")
                     sql = ("SELECT * FROM episodes WHERE ( id > "+str(self.get_episode_id(last_title_list[0])[0])+
                        " AND showTitle LIKE ? ) ORDER BY seasonNumber LIMIT 1 COLLATE NOCASE")
                     print("+++++ We have an old school last episode title. Using old method, then converting to new method")
