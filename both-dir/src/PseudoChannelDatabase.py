@@ -419,9 +419,13 @@ class PseudoChannelDatabase():
         Updaters, etc.
     """
     def update_shows_table_with_last_episode(self, showTitle, lastEpisodeTitle):
-
         sql1 = "UPDATE shows SET lastEpisodeTitle = ? WHERE title LIKE ? COLLATE NOCASE"
         self.cursor.execute(sql1, (lastEpisodeTitle, showTitle, ))
+        self.conn.commit()
+
+    def update_shows_table_with_last_episode_alt(self, showTitle, lastEpisodeTitle):
+        sql1 = "UPDATE shows SET lastEpisodeTitle = ? WHERE title LIKE ? COLLATE NOCASE"
+        self.cursor.execute(sql1, (lastEpisodeTitle, '%'+showTitle+'%', ))
         self.conn.commit()
 
     def update_movies_table_with_last_played_date(self, movieTitle):
@@ -435,6 +439,12 @@ class PseudoChannelDatabase():
     """Database functions.
         Getters, etc.
     """
+
+    def get_shows_titles(self):
+        self.cursor.execute("SELECT title FROM shows")
+        datalist = self.cursor.fetchall()
+        return datalist
+
     def get_shows_table(self):
 
         sql = "SELECT * FROM shows"
@@ -556,7 +566,12 @@ class PseudoChannelDatabase():
         sql = "SELECT * FROM episodes WHERE id IN (SELECT id FROM episodes ORDER BY RANDOM() LIMIT 1)"
         self.cursor.execute(sql)
         return self.cursor.fetchone()
-    
+
+    def get_random_episode_duration(self,min,max):
+        sql = "SELECT * FROM episodes WHERE (customSectionName NOT LIKE 'playlist' AND duration BETWEEN ? and ?) ORDER BY RANDOM() LIMIT 1"
+        self.cursor.execute(sql, (min, max, ))
+        return self.cursor.fetchone()
+
     ####mutto233 made this one####
     def get_random_episode_alternate(self,series):
 
@@ -571,6 +586,12 @@ class PseudoChannelDatabase():
         self.cursor.execute(sql)
         return self.cursor.fetchone()
 
+    def get_random_movie_duration(self,min,max):
+
+        sql = "SELECT * FROM movies WHERE (duration BETWEEN ? and ?) ORDER BY RANDOM() LIMIT 1"
+        self.cursor.execute(sql, (min, max, ))
+        return self.cursor.fetchone()
+
     ###added 5/4/2020###
     def get_random_episode_of_show(self,series):
         #print series.upper()
@@ -578,12 +599,21 @@ class PseudoChannelDatabase():
         self.cursor.execute(sql, (series, ))
         return self.cursor.fetchone()
 
+    def get_random_episode_of_show_alt(self,series):
+        sql = "SELECT * FROM episodes WHERE (showTitle LIKE '%"+series+"%') ORDER BY RANDOM() LIMIT 1"
+        self.cursor.execute(sql)
+        return self.cursor.fetchone()
+
     def get_random_show(self):
-        sql = "SELECT * FROM shows WHERE id IN (SELECT id FROM shows ORDER BY RANDOM() LIMIT 1)"
+        sql = "SELECT * FROM shows WHERE (customSectionName NOT LIKE 'playlist' AND id IN (SELECT id FROM shows ORDER BY RANDOM() LIMIT 1))"
         self.cursor.execute(sql)
         return self.cursor.fetchone()
     ###
-    
+    def get_random_show_duration(self,min,max):
+        sql = "SELECT * FROM shows WHERE (customSectionName NOT LIKE 'playlist' AND duration BETWEEN ? and ?) ORDER BY RANDOM() LIMIT 1"
+        self.cursor.execute(sql, (min, max, ))
+        return self.cursor.fetchone()
+
     ####mutto233 made this one####
     def get_next_episode(self, series):
         '''
@@ -742,3 +772,12 @@ class PseudoChannelDatabase():
             return datalist
         else:
             return None
+
+    def get_now_playing(self):
+        print "##### Getting Now Playing Item from Daily Schedule DB."
+        sql = "SELECT * FROM daily_schedule WHERE (time(endTime) >= time('now','localtime') AND time(startTime) <= time('now','localtime')) ORDER BY time(startTime) ASC"
+        self.cursor.execute(sql)
+        datalist = list(self.cursor.fetchone())
+        #print (datalist)
+        print "+++++ Done."
+        return datalist

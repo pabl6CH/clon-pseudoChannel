@@ -42,7 +42,7 @@ class PseudoChannel():
     GKEY = config.gkey
     USING_COMMERCIAL_INJECTION = config.useCommercialInjection
     DAILY_UPDATE_TIME = config.dailyUpdateTime
-    APP_TIME_FORMAT_STR = '%I:%M:%S %p'
+    APP_TIME_FORMAT_STR = '%H:%M:%S'
     COMMERCIAL_PADDING_IN_SECONDS = config.commercialPadding
     CONTROLLER_SERVER_PATH = config.controllerServerPath
     CONTROLLER_SERVER_PORT = config.controllerServerPort
@@ -93,10 +93,10 @@ class PseudoChannel():
         filled_length = int(round(bar_length * iteration / float(total)))
         bar = '█' * filled_length + '-' * (bar_length - filled_length)
 
-        sys.stdout.write('\r%s |%s| %s%s %s' % (prefix, bar, percents, '%', suffix)),
+        sys.stdout.write('\x1b[2K\r%s |%s| %s%s %s' % (prefix, bar, percents, '%', suffix)),
 
-        if iteration == total:
-            sys.stdout.write('\n')
+        #if iteration == total:
+        #    sys.stdout.write('\n')
         sys.stdout.flush()
 
     def update_db(self):
@@ -119,6 +119,7 @@ class PseudoChannel():
                                     suffix = 'Complete', 
                                     bar_length = 40
                                 )
+                        print('')
                     elif correct_lib_name == "TV Shows":
                         sectionMedia = self.PLEX.library.section(section.title).all()
                         for i, media in enumerate(sectionMedia):
@@ -135,18 +136,19 @@ class PseudoChannel():
                                 media.key, 
                                 section.title
                             )
-                            self.print_progress(
-                                    i + 1, 
-                                    len(sectionMedia),
-                                    prefix = 'Progress '+section.title+":   ", 
-                                    suffix = 'Complete', 
-                                    bar_length = 40
-                                )
+#                            self.print_progress(
+#                                    i + 1, 
+#                                    len(sectionMedia),
+#                                    prefix = 'Progress '+section.title+":   ", 
+#                                    suffix = 'Complete           ', 
+#                                    bar_length = 40
+#                                )
+#                            print ""
                             #add all episodes of each tv show to episodes table
                             episodes = self.PLEX.library.section(section.title).get(media.title).episodes()
                 
                 
-                            for episode in episodes:
+                            for j, episode in enumerate(episodes):
                                 duration = episode.duration
                                 if duration:
                                     self.db.add_episodes_to_db(
@@ -170,6 +172,14 @@ class PseudoChannel():
                                             episode.key,
                                             section.title
                                         )
+                                self.print_progress(
+                                        j + 1,
+                                        len(episodes),
+                                        prefix = 'Progress TV Show '+str(i+1)+' of '+str(len(sectionMedia))+' - '+media.title+': ',
+                                        suffix = 'Complete',
+                                        bar_length = 40
+                                    )
+                        print('')
                     elif correct_lib_name == "Commercials":
                         print "user_lib_name", section.title
                         sectionMedia = self.PLEX.library.section(section.title).all()
@@ -183,42 +193,36 @@ class PseudoChannel():
                                 suffix = 'Complete', 
                                 bar_length = 40
                             )
+                        print('')
 	    dothething = "yes"
         if dothething == "yes":
             playlists = self.PLEX.playlists()
             for i, playlist in enumerate(playlists):
+                duration_average = playlist.duration / playlist.leafCount
                 self.db.add_shows_to_db(
                     2,
                     playlist.title,
-                    playlist.duration,
+                    duration_average,
                     '',
                     '',
                     playlist.key,
                     playlist.type
                 )
-                self.print_progress(
-                    i + 1,
-                    len(playlists),
-                    prefix = 'Progress Playlists... ',
-                    suffix = '',
-                    bar_length = 40
-                )
-                print ""
-
                 # add all entries of playlist to episodes table
                 episodes = self.PLEX.playlist(playlist.title).items()
-                for i, episode in enumerate(episodes):
+                for j, episode in enumerate(episodes):
                     duration = episode.duration
                     sectionTitle = "Playlists"
                     itemID = str(episode.playlistItemID)
-                    if itemID != "None":
-                        sNo = itemID[-3]
-                        eNo = itemID[-2] + itemID[-1]
-                        plTitle = episode.title + " (" + sNo + eNo + ")"
+                    itemData = self.PLEX.fetchItem(episode.key)
+                    if itemData.type == "episode":
+                        sNo = str(itemData.parentIndex)
+                        eNo = str(itemData.index)
+                        plTitle = episode.grandparentTitle +" - "+ episode.title + " (S" + sNo + "E" + eNo + ")"
                     else:
                         sNo = "0"
                         eNo = "0"
-                        plTitle = episode.title + " (P)"
+                        plTitle = episode.title + " ("+str(episode.year)+")"
                     if duration:
                         self.db.add_playlist_entries_to_db(
                             5,
@@ -242,12 +246,73 @@ class PseudoChannel():
                             sectionTitle
                         )
                     self.print_progress(
-                        i + 1,
+                        j + 1,
                         len(episodes),
-                        prefix = 'Progress Playlist - '+playlist.title+': ',
+                        prefix = 'Progress Playlist '+str(i+1)+' of '+str(len(playlists))+' - '+playlist.title+': ',
                         suffix = 'Complete',
                         bar_length = 40
                     )
+            print('')
+    def update_db_playlist(self):
+        dothething = "yes"
+        if dothething == "yes":
+            playlists = self.PLEX.playlists()
+            for i, playlist in enumerate(playlists):
+                duration_average = playlist.duration / playlist.leafCount
+                self.db.add_shows_to_db(
+                    2,
+                    playlist.title,
+                    duration_average,
+                    '',
+                    '',
+                    playlist.key,
+                    playlist.type
+                )
+                # add all entries of playlist to episodes table
+                episodes = self.PLEX.playlist(playlist.title).items()
+                for j, episode in enumerate(episodes):
+                    duration = episode.duration
+                    sectionTitle = "Playlists"
+                    itemID = str(episode.playlistItemID)
+                    itemData = self.PLEX.fetchItem(episode.key)
+                    if itemData.type == "episode":
+                        sNo = str(itemData.parentIndex)
+                        eNo = str(itemData.index)
+                        plTitle = episode.grandparentTitle +" - "+ episode.title + " (S" + sNo + "E" + eNo + ")"
+                    else:
+                        sNo = "0"
+                        eNo = "0"
+                        plTitle = episode.title + " ("+str(episode.year)+")"
+                    if duration:
+                        self.db.add_playlist_entries_to_db(
+                            5,
+                            plTitle,
+                            duration,
+                            eNo,
+                            sNo,
+                            playlist.title,
+                            episode.key,
+                            sectionTitle
+                        )
+                    else:
+                        self.db.add_playlist_entries_to_db(
+                            5,
+                            episode.title,
+                            0,
+                            eNo,
+                            sNo,
+                            playlist.title,
+                            episode.key,
+                            sectionTitle
+                        )
+                    self.print_progress(
+                        j + 1,
+                        len(episodes),
+                        prefix = 'Progress Playlist '+str(i+1)+' of '+str(len(playlists))+' - '+playlist.title+': ',
+                        suffix = 'Complete',
+                        bar_length = 40
+                    )
+            print('')
 
     def update_db_movies(self):
 
@@ -269,7 +334,7 @@ class PseudoChannel():
                                     suffix = 'Complete', 
                                     bar_length = 40
                                 )
-                            
+                    print('')
     def update_db_tv(self):
 
         print("#### Updating Local Database, TV ONLY")
@@ -295,18 +360,19 @@ class PseudoChannel():
                                 media.key, 
                                 section.title
                             )
-                            self.print_progress(
-                                    i + 1, 
-                                    len(sectionMedia),
-                                    prefix = 'Progress '+section.title+":   ", 
-                                    suffix = 'Complete', 
-                                    bar_length = 40
-                                )
+#                            self.print_progress(
+#                                    i + 1, 
+#                                    len(sectionMedia),
+#                                    prefix = 'Progress '+section.title+":   ", 
+#                                    suffix = 'Complete         ', 
+#                                    bar_length = 40
+#                                )
+#                            print ""
                             #add all episodes of each tv show to episodes table
                             episodes = self.PLEX.library.section(section.title).get(media.title).episodes()
                 
                 
-                            for episode in episodes:
+                            for j, episode in enumerate(episodes):
                                 duration = episode.duration
                                 if duration:
                                     self.db.add_episodes_to_db(
@@ -330,8 +396,14 @@ class PseudoChannel():
                                             episode.key,
                                             section.title
                                         )
-                            
-                            
+                                self.print_progress(
+                                        j + 1,
+                                        len(episodes),
+                                        prefix = 'Progress TV Show '+str(i+1)+' of '+str(len(sectionMedia))+' - '+media.title+': ',
+                                        suffix = 'Complete',
+                                        bar_length = 40
+                                    )
+                        print('')
     def update_db_comm(self):
 
         print("#### Updating Local Database, COMMERCIALS ONLY")
@@ -354,7 +426,7 @@ class PseudoChannel():
                                 suffix = 'Complete', 
                                 bar_length = 40
                             )
-                            
+                    print('')
     def update_schedule(self):
 
         """Changing dir to the schedules dir."""
@@ -467,8 +539,8 @@ class PseudoChannel():
         * Getting the offest by comparing both times from the unix epoch time and getting the difference.
         *
         '''
-        timeA = datetime.datetime.strptime(time1, '%I:%M:%S %p')
-        timeB = datetime.datetime.strptime(time2, '%I:%M:%S %p')
+        timeA = datetime.datetime.strptime(time1, pseudo_channel.APP_TIME_FORMAT_STR)
+        timeB = datetime.datetime.strptime(time2, pseudo_channel.APP_TIME_FORMAT_STR)
         timeAEpoch = calendar.timegm(timeA.timetuple())
         timeBEpoch = calendar.timegm(timeB.timetuple())
         tdelta = abs(timeAEpoch) - abs(timeBEpoch)
@@ -487,8 +559,8 @@ class PseudoChannel():
         self.TIME_GAP = timeGap
         self.OVERLAP_GAP = timeGap
         self.OVERLAP_MAX = overlapMax
-        time1 = prevEndTime.strftime('%I:%M:%S %p')
-        timeB = datetime.datetime.strptime(intendedStartTime, '%I:%M:%S %p').strftime(self.APP_TIME_FORMAT_STR)
+        time1 = prevEndTime.strftime(self.APP_TIME_FORMAT_STR)
+        timeB = datetime.datetime.strptime(intendedStartTime, self.APP_TIME_FORMAT_STR).strftime(self.APP_TIME_FORMAT_STR)
         print "++++ Previous End Time: ", time1, "Intended start time: ", timeB
         timeDiff = self.time_diff(time1, timeB)
         print("++++timeDiff "+ str(timeDiff))
@@ -567,11 +639,11 @@ class PseudoChannel():
                     break
         else:
             print("Not sure what to do here")
-        return newStartTime.strftime('%I:%M:%S %p')
+        return newStartTime.strftime(self.APP_TIME_FORMAT_STR)
 
     def get_end_time_from_duration(self, startTime, duration):
 
-        time = datetime.datetime.strptime(startTime, '%I:%M:%S %p')
+        time = datetime.datetime.strptime(startTime, self.APP_TIME_FORMAT_STR)
         show_time_plus_duration = time + datetime.timedelta(milliseconds=duration)
         return show_time_plus_duration
 
@@ -670,15 +742,20 @@ class PseudoChannel():
                                 the_show = self.db.get_shows(random.choice(shows_list).title)
                             else:
                                 print("-----Getting random show")
-                                the_show = self.db.get_random_show()
-                                print the_show[3]
+                                the_show = self.db.get_random_show_duration(int(min), int(max))
+                                try:
+                                    print the_show[3]
+                                except:
+                                    print ("FAILED TO GET RANDOM SHOW")
                             if (the_show is None):
                                 print("-----Getting random episode of random show")
-                                next_episode = self.db.get_random_episode()
+                                next_episode = self.db.get_random_episode_duration(int(min), int(max))
                                 attempt = 1
                                 episode_duration = next_episode[4]
                                 while episode_duration < min or episode_duration > max:
-                                    next_episode = self.db.get_random_episode()
+                                    print("!!!!! EPISODE LENGTH OUTSIDE PARAMETERS")
+                                    print("-----Getting random episode of random show")
+                                    next_episode = self.db.get_random_episode_duration(int(min), int(max))
                                     episode_duration = int(next_episode[4])
                                     attempt = attempt + 1
                                     if attempt > 1000:
@@ -713,9 +790,12 @@ class PseudoChannel():
                                             the_show = self.db.get_shows(random.choice(shows_list).title)
                                         else:
                                             print("-----Getting random show")
-                                            the_show = self.db.get_random_show()
+                                            the_show = self.db.get_random_show_duration(int(min), int(max))
                                             print the_show[3]
-                                            continue
+                                        if (the_show is None):
+                                            print("-----Getting random episode of random show")
+                                            next_episode = self.db.get_random_episode_duration(int(min), int(max))
+                                        continue
                                 episode_duration = int(next_episode[4])
                                 attempt = 1
                                 while episode_duration < min or episode_duration > max or next_episode == None:
@@ -729,7 +809,7 @@ class PseudoChannel():
                                                 the_show = self.db.get_shows(random.choice(shows_list).title)
                                             else:
                                                 print("Getting random show")
-                                                the_show = self.db.get_random_show()
+                                                the_show = self.db.get_random_show_duration(int(min), int(max))
                                                 print the_show
                                             if xtraSeason is None and xtraEpisode is None:
                                                 print("Choosing random episode of "+the_show[3].upper())
@@ -753,10 +833,13 @@ class PseudoChannel():
                                                 the_show = self.db.get_shows(random.choice(shows_list).title)
                                             else:
                                                 print("-----Getting random show")
-                                                the_show = self.db.get_random_show()
+                                                the_show = self.db.get_random_show_duration(int(min), int(max))
                                                 print the_show[3]
+                                            if (the_show is None):
+                                                next_episode = self.db.get_random_episode_duration(int(min), int(max))
                                             continue
                                     attempt = attempt + 1
+                                    episode_duration = int(next_episode[4])
                                     if attempt > 1000:
                                         episode_duration = max
                                     else:
@@ -884,11 +967,11 @@ class PseudoChannel():
                                     
                                     #print "movies_list", movies_list
                                     print("For some reason, I've failed getting movie with xtra args.")
-                                    the_movie = self.db.get_random_movie()
+                                    the_movie = self.db.get_random_movie_duration(int(min), int(max))
 				    movie_duration = the_movie[4]
 				    attempt = 1
 				    while int(movie_duration) < min or movie_duration > max:
-					the_movie = self.db.get_random_movie()
+					the_movie = self.db.get_random_movie_duration(int(min), int(max))
 					attempt = attempt + 1
 					if attempt > 500:
 						movie_duration = max
@@ -912,11 +995,11 @@ class PseudoChannel():
 				max = int(minmax[1])
 				max = max * 60000
 				#print(max)
-                                the_movie = self.db.get_random_movie()
+                                the_movie = self.db.get_random_movie_duration(int(min), int(max))
 				movie_duration = the_movie[4]
 				attempt = 1
 				while int(movie_duration) < min or movie_duration > max:
-					the_movie = self.db.get_random_movie()
+					the_movie = self.db.get_random_movie_duration(int(min), int(max))
 					attempt = attempt + 1
 					if attempt > 500:
 						movie_duration = max
@@ -1023,7 +1106,7 @@ class PseudoChannel():
                                 prev_end_time = datetime.datetime.strptime(str(previous_episode.end_time), '%Y-%m-%d %H:%M:%S.%f')
                             except ValueError:
                                 prev_end_time = datetime.datetime.strptime(str(previous_episode.end_time), '%Y-%m-%d %H:%M:%S')
-                            prev_end_time = prev_end_time.strftime('%I:%M:%S %p')
+                            prev_end_time = prev_end_time.strftime(self.APP_TIME_FORMAT_STR)
                             start_time_difference=self.time_diff(str(entry.natural_start_time),str(prev_end_time))
                             start_time_difference=start_time_difference*60
                             print "Entry Duration = {}".format(str(entry.duration))
@@ -1032,10 +1115,10 @@ class PseudoChannel():
                                 running_duration = entry.duration - abs(start_time_difference)
                                 print "Running Duration = {}".format(str(running_duration))
                                 entry.start_time = datetime.datetime.strptime(entry.natural_start_time, self.APP_TIME_FORMAT_STR) + datetime.timedelta(seconds=abs(start_time_difference))
-                                entry.start_time = datetime.datetime.strftime(entry.start_time, '%I:%M:%S %p')
+                                entry.start_time = datetime.datetime.strftime(entry.start_time, self.APP_TIME_FORMAT_STR)
                                 print "New Start Time = {}".format(str(entry.start_time))
                                 entry.end_time = self.get_end_time_from_duration(
-                                    self.translate_time(natural_start_time.strftime('%I:%M:%S %p')),
+                                    self.translate_time(natural_start_time.strftime(self.APP_TIME_FORMAT_STR)),
                                     entry.duration
                                 )
                                 print "End Time = {}".format(str(entry.end_time))
@@ -1072,7 +1155,7 @@ class PseudoChannel():
                             except:
                                 print("Error in calculate_start_time")
                             print "++++ New start time:", new_starttime
-                            entry.start_time = datetime.datetime.strptime(new_starttime, self.APP_TIME_FORMAT_STR).strftime('%I:%M:%S %p')
+                            entry.start_time = datetime.datetime.strptime(new_starttime, self.APP_TIME_FORMAT_STR).strftime(self.APP_TIME_FORMAT_STR)
                             entry.end_time = self.get_end_time_from_duration(entry.start_time, entry.duration)
                             """Get List of Commercials to inject"""
                             if self.USING_COMMERCIAL_INJECTION:
@@ -1110,6 +1193,30 @@ class PseudoChannel():
         daily_schedule = self.db.get_daily_schedule()
         for i , entry in enumerate(daily_schedule):
             print str("+++++ {} {} {} {} {} {}".format(str(i + 1)+".", entry[8], entry[11], entry[6], " - ", entry[3])).encode(sys.stdout.encoding, errors='replace')
+
+    def episode_randomizer(self):
+        all_shows = list(self.db.get_shows_titles())
+        shows_list = []
+        for one_show in all_shows:
+            one_show = str(one_show).encode("utf-8").strip()
+            one_show = one_show.replace("(u'","")
+            one_show = one_show.replace("',)","")
+            one_show = one_show.replace('(u"','')
+            one_show = one_show.replace('",)','')
+            one_show = one_show.replace('\\xa1','')
+            shows_list.append(str(one_show))
+        for a_show in shows_list:
+            try:
+                random_episode = self.db.get_random_episode_of_show(a_show)
+                print(a_show + " - " + random_episode[3])
+                self.db.update_shows_table_with_last_episode(a_show, random_episode[8])
+            except TypeError as e:
+                print("ERROR: "+a_show)
+                print(e)
+                random_episode = self.db.get_random_episode_of_show_alt(a_show)
+                print(a_show + " - " + random_episode[3])
+                self.db.update_shows_table_with_last_episode_alt(a_show, random_episode[8])
+                continue
 
     def write_json_to_file(self, data, fileName):
 
@@ -1269,6 +1376,9 @@ if __name__ == '__main__':
     parser.add_argument('-utv', '--update_tv',
                          action='store_true',
                          help='Update the local database with Plex TV libraries ONLY.')
+    parser.add_argument('-up', '--update_playlist',
+                         action='store_true',
+                         help='Update the local database with Plex PLAYLIST libraries ONLY.')
     parser.add_argument('-uc', '--update_commercials',
                          action='store_true',
                          help='Update the local database with Plex COMMERCIAL libraries ONLY.')
@@ -1281,6 +1391,9 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--run',
                          action='store_true', 
                          help='Run this program.')
+    parser.add_argument('-ep', '--episode_randomizer',
+                         action='store_true',
+                         help='Randomize all shows episode progress.')
     '''
     * 
     * Show connected clients: "python PseudoChannel.py -c"
@@ -1343,12 +1456,16 @@ if __name__ == '__main__':
         pseudo_channel.update_db()
     if args.update_movies:
         pseudo_channel.update_db_movies()
+    if args.update_playlist:
+        pseudo_channel.update_db_playlist()
     if args.update_tv:
         pseudo_channel.update_db_tv()
     if args.update_commercials:
         pseudo_channel.update_db_comm()
     if args.xml:
         pseudo_channel.update_schedule()
+    if args.episode_randomizer:
+        pseudo_channel.episode_randomizer()
     if args.show_clients:
         pseudo_channel.show_clients()
     if args.show_schedule:
@@ -1389,147 +1506,144 @@ if __name__ == '__main__':
             def nearest(items, pivot):
                 return min(items, key=lambda x: abs(x - pivot))
 
-            daily_schedule = pseudo_channel.db.get_daily_schedule()
-            dates_list = [datetime.datetime.strptime(''.join(str(date[8])), "%I:%M:%S %p") for date in daily_schedule]
+            #dates_list = [datetime.datetime.strptime(''.join(str(date[8])), pseudo_channel.APP_TIME_FORMAT_STR) for date in daily_schedule]
             now = datetime.datetime.now()
             now = now.replace(year=1900, month=1, day=1)
-            closest_media = nearest(dates_list, now)
-            print closest_media
+            #closest_media = nearest(dates_list, now)
+            #print closest_media
             prevItem = None
-
-            for item in daily_schedule:
-                item_time = datetime.datetime.strptime(''.join(str(item[8])), "%I:%M:%S %p")
-
-                if item_time == closest_media:
-                    #print "Line 1088, Here", item
-                    elapsed_time = closest_media - now
-                    print elapsed_time.total_seconds()
+            db = PseudoChannelDatabase("pseudo-channel.db")
+            item = db.get_now_playing()
+            item_time = datetime.datetime.strptime(''.join(str(item[8])), pseudo_channel.APP_TIME_FORMAT_STR)
+            #if item_time == closest_media:
+            #print "Line 1088, Here", item
+            elapsed_time = item_time - now
+            print elapsed_time.total_seconds()
+            try:
+                endTime = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f')
+            except ValueError:
+                endTime = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S')
+            # we need to play the content and add an offest
+            if elapsed_time.total_seconds() < 0 and \
+               endTime > now:
+                print str("+++++ Queueing up {} to play right away.".format(item[3])).encode('UTF-8')
+                offset = int(abs(elapsed_time.total_seconds() * 1000))
+                try:
+                    nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=item[7])
+                except:
+                    nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S') - datetime.timedelta(milliseconds=item[7])
+                schedule_offset = nat_start - datetime.datetime.strptime(item[8], pseudo_channel.APP_TIME_FORMAT_STR)
+                schedule_offset = schedule_offset.total_seconds()
+                print "Schedule Offset = " + str(schedule_offset)
+                nat_start = nat_start.strftime(pseudo_channel.APP_TIME_FORMAT_STR)
+                print "Natural Start Time:"
+                print nat_start
+                daily_schedule = pseudo_channel.db.get_daily_schedule()
+                if schedule_offset < 0:
+                    schedule_offset_ms = abs(schedule_offset) * 1000
+                    offset_plus = int(offset + abs(schedule_offset_ms))
+                    print "Updated Offset = " + str(offset_plus)
+                    pseudo_channel.controller.play(item, daily_schedule, offset_plus)
+                else:
+                    print "No Offset Update"
+                    pseudo_channel.controller.play(item, daily_schedule, offset)
+            """elif elapsed_time.total_seconds() >= 0:
+                for itemTwo in daily_schedule:
+                    item_timeTwo = datetime.datetime.strptime(''.join(str(itemTwo[8])), pseudo_channel.APP_TIME_FORMAT_STR)
                     try:
-                        endTime = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f')
+                        endTime = datetime.datetime.strptime(itemTwo[9], '%Y-%m-%d %H:%M:%S.%f')
                     except ValueError:
-                        endTime = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S')
-                    # we need to play the content and add an offest
-                    if elapsed_time.total_seconds() < 0 and \
-                       endTime > now:
-                        print str("+++++ Queueing up {} to play right away.".format(item[3])).encode('UTF-8')
-                        offset = int(abs(elapsed_time.total_seconds() * 1000))
+                        endTime = datetime.datetime.strptime(itemTwo[9], '%Y-%m-%d %H:%M:%S')
+                    if item_timeTwo == closest_media and prevItem != None and \
+                        endTime > now:
+                        prevItem_time = datetime.datetime.strptime(''.join(str(prevItem[8])), pseudo_channel.APP_TIME_FORMAT_STR)
+                        elapsed_timeTwo = prevItem_time - now
+                        offsetTwo = int(abs(elapsed_timeTwo.total_seconds() * 1000))
+                        #nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=item[7])
+                        #schedule_offset = nat_start - datetime.datetime.strptime(item[8], '%I:%M:%S %p')
+                        #schedule_offset = schedule_offset.total_seconds()
+                        #print "Schedule Offset = " + str(schedule_offset)
+                        #nat_start = nat_start.strftime('%I:%M:%S %p')
+                        #print "Natural Start Time..:" + nat_start
+                        #if schedule_offset < 0:
+                        #    schedule_offset_ms = abs(schedule_offset) * 1000
+                        #    offset_plus = int(offset + abs(schedule_offset_ms))
+                        #    print "Updated Offset = " + str(offset_plus)
+                        #    pseudo_channel.controller.play(item, daily_schedule, offset_plus)
+                        #else:
+                        #    print "No Offset Update"
+                        #    pseudo_channel.controller.play(item, daily_schedule, offset)
+                        if prevItem_time.hour > now.hour:
+                            print "we have a day skip"
+                            now = now.replace(hour=23,minute=59,second=59)
+                            elapsed_timeTwo = prevItem_time-now
+                            mnight = now.replace(hour=0,minute=0,second=0)
+                            now = datetime.datetime.now()
+                            now = now.replace(year=1900, month=1, day=1)
+                            elapsed_timeTwo = elapsed_timeTwo + (mnight-now)
+                            print elapsed_timeTwo.total_seconds()
+                            offsetTwo = int(abs(elapsed_timeTwo.total_seconds() * 1000))
+                            #nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=item[7])
+                            #nat_start = nat_start.replace(year=1900, month=01, day=01)
+                            #schedule_offset = nat_start - datetime.datetime.strptime(item[8], '%I:%M:%S %p')
+                            #schedule_offset = schedule_offset.total_seconds()
+                            #print "Schedule Offset = " + str(schedule_offset)
+                            #nat_start = nat_start.strftime('%I:%M:%S %p')
+                            #print "Natural Start Time..:"
+                            #print nat_start
+                            #schedule_offset = self.time_diff(nat_start, itemTwo[8])
+                            #schedule_offset = schedule_offset * 60
+                            #print (str(schedule_offset))
+                        if pseudo_channel.DEBUG:
+                            print "+++++ Closest media was the next media " \
+                                  "but we were in the middle of something so triggering that instead."
+                        print str("+++++ Queueing up '{}' to play right away.".format(prevItem[3])).encode('UTF-8')
                         try:
-                            nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=item[7])
+                            nat_start = datetime.datetime.strptime(prevItem[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=prevItem[7])
                         except:
-                            nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S') - datetime.timedelta(milliseconds=item[7])
-                        schedule_offset = nat_start - datetime.datetime.strptime(item[8], '%I:%M:%S %p')
+                            nat_start = datetime.datetime.strptime(prevItem[9], '%Y-%m-%d %H:%M:%S') - datetime.timedelta(milliseconds=prevItem[7])
+                        schedule_offset = nat_start - datetime.datetime.strptime(prevItem[8], pseudo_channel.APP_TIME_FORMAT_STR)
                         schedule_offset = schedule_offset.total_seconds()
                         print "Schedule Offset = " + str(schedule_offset)
-                        nat_start = nat_start.strftime('%I:%M:%S %p')
+                        nat_start = nat_start.strftime(pseudo_channel.APP_TIME_FORMAT_STR)
                         print "Natural Start Time:"
                         print nat_start
                         if schedule_offset < 0:
                             schedule_offset_ms = abs(schedule_offset) * 1000
+                            try:
+                                offset
+                            except NameError: offset = offsetTwo
                             offset_plus = int(offset + abs(schedule_offset_ms))
                             print "Updated Offset = " + str(offset_plus)
-                            pseudo_channel.controller.play(item, daily_schedule, offset_plus)
+                            pseudo_channel.controller.play(prevItem, daily_schedule, offset_plus)
                         else:
                             print "No Offset Update"
-                            pseudo_channel.controller.play(item, daily_schedule, offset)
+                            pseudo_channel.controller.play(prevItem, daily_schedule, offsetTwo)
                         break
-                    elif elapsed_time.total_seconds() >= 0:
-                        for itemTwo in daily_schedule:
-                            item_timeTwo = datetime.datetime.strptime(''.join(str(itemTwo[8])), "%I:%M:%S %p")
-                            try:
-                                endTime = datetime.datetime.strptime(itemTwo[9], '%Y-%m-%d %H:%M:%S.%f')
-                            except ValueError:
-                                endTime = datetime.datetime.strptime(itemTwo[9], '%Y-%m-%d %H:%M:%S')
-                            if item_timeTwo == closest_media and prevItem != None and \
-                               endTime > now:
-                                prevItem_time = datetime.datetime.strptime(''.join(str(prevItem[8])), "%I:%M:%S %p")
-                                elapsed_timeTwo = prevItem_time - now
-                                offsetTwo = int(abs(elapsed_timeTwo.total_seconds() * 1000))
-                                #nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=item[7])
-                                #schedule_offset = nat_start - datetime.datetime.strptime(item[8], '%I:%M:%S %p')
-                                #schedule_offset = schedule_offset.total_seconds()
-                                #print "Schedule Offset = " + str(schedule_offset)
-                                #nat_start = nat_start.strftime('%I:%M:%S %p')
-                                #print "Natural Start Time..:" + nat_start
-                                #if schedule_offset < 0:
-                                #    schedule_offset_ms = abs(schedule_offset) * 1000
-                                #    offset_plus = int(offset + abs(schedule_offset_ms))
-                                #    print "Updated Offset = " + str(offset_plus)
-                                #    pseudo_channel.controller.play(item, daily_schedule, offset_plus)
-                                #else:
-                                #    print "No Offset Update"
-                                #    pseudo_channel.controller.play(item, daily_schedule, offset)
-                                if prevItem_time.hour > now.hour:
-                                    print "we have a day skip"
-                                    now = now.replace(hour=23,minute=59,second=59)
-                                    elapsed_timeTwo = prevItem_time-now
-                                    mnight = now.replace(hour=0,minute=0,second=0)
-                                    now = datetime.datetime.now()
-                                    now = now.replace(year=1900, month=1, day=1)
-                                    elapsed_timeTwo = elapsed_timeTwo + (mnight-now)
-                                    print elapsed_timeTwo.total_seconds()
-                                    offsetTwo = int(abs(elapsed_timeTwo.total_seconds() * 1000))
-                                    #nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=item[7])
-                                    #nat_start = nat_start.replace(year=1900, month=01, day=01)
-                                    #schedule_offset = nat_start - datetime.datetime.strptime(item[8], '%I:%M:%S %p')
-                                    #schedule_offset = schedule_offset.total_seconds()
-                                    #print "Schedule Offset = " + str(schedule_offset)
-                                    #nat_start = nat_start.strftime('%I:%M:%S %p')
-                                    #print "Natural Start Time..:"
-                                    #print nat_start
-                                    #schedule_offset = self.time_diff(nat_start, itemTwo[8])
-                                    #schedule_offset = schedule_offset * 60
-                                    #print (str(schedule_offset))
-                                if pseudo_channel.DEBUG:
-                                    print "+++++ Closest media was the next media " \
-                                          "but we were in the middle of something so triggering that instead."
-                                print str("+++++ Queueing up '{}' to play right away.".format(prevItem[3])).encode('UTF-8')
-                                try:
-                                    nat_start = datetime.datetime.strptime(prevItem[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=prevItem[7])
-                                except:
-                                    nat_start = datetime.datetime.strptime(prevItem[9], '%Y-%m-%d %H:%M:%S') - datetime.timedelta(milliseconds=prevItem[7])
-                                schedule_offset = nat_start - datetime.datetime.strptime(prevItem[8], '%I:%M:%S %p')
-                                schedule_offset = schedule_offset.total_seconds()
-                                print "Schedule Offset = " + str(schedule_offset)
-                                nat_start = nat_start.strftime('%I:%M:%S %p')
-                                print "Natural Start Time:"
-                                print nat_start
-                                if schedule_offset < 0:
-                                    schedule_offset_ms = abs(schedule_offset) * 1000
-                                    try:
-                                        offset
-                                    except NameError: offset = offsetTwo
-                                    offset_plus = int(offset + abs(schedule_offset_ms))
-                                    print "Updated Offset = " + str(offset_plus)
-                                    pseudo_channel.controller.play(prevItem, daily_schedule, offset_plus)
-                                else:
-                                    print "No Offset Update"
-                                    pseudo_channel.controller.play(prevItem, daily_schedule, offsetTwo)
-                                break
-                            prevItem = itemTwo
-
+                    prevItem = itemTwo
+"""
         def job_that_executes_once(item, schedulelist):
 
             print str("##### Readying media: '{}'".format(item[3])).encode('UTF-8')
-            daily_schedule = pseudo_channel.db.get_daily_schedule()
-            next_start_time = datetime.datetime.strptime(item[8], "%I:%M:%S %p")
+            next_start_time = datetime.datetime.strptime(item[8], pseudo_channel.APP_TIME_FORMAT_STR)
             now = datetime.datetime.now()
             now = now.replace(year=1900, month=1, day=1)
             time_diff = next_start_time - now
             nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=item[7])
-            schedule_offset = nat_start - datetime.datetime.strptime(item[8], '%I:%M:%S %p')
+            schedule_offset = nat_start - datetime.datetime.strptime(item[8], pseudo_channel.APP_TIME_FORMAT_STR)
             schedule_offset = schedule_offset.total_seconds()
             print "Schedule Offset = " + str(schedule_offset)
-            nat_start = nat_start.strftime('%I:%M:%S %p')
+            nat_start = nat_start.strftime(pseudo_channel.APP_TIME_FORMAT_STR)
             print "Natural Start Time: " + str(nat_start)
-
+            daily_schedule = pseudo_channel.db.get_daily_schedule()
             if time_diff.total_seconds() > 0:
-                print "+++++ Sleeping for {} seconds before playing: '{}'".format(time_diff.total_seconds(), item[3])
                 nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=item[7])
-                schedule_offset = nat_start - datetime.datetime.strptime(item[8], '%I:%M:%S %p')
+                schedule_offset = nat_start - datetime.datetime.strptime(item[8], pseudo_channel.APP_TIME_FORMAT_STR)
                 schedule_offset = schedule_offset.total_seconds()
                 print "Schedule Offset = " + str(schedule_offset)
-                nat_start = nat_start.strftime('%I:%M:%S %p')
+                nat_start = nat_start.strftime(pseudo_channel.APP_TIME_FORMAT_STR)
                 print "Natural Start Time: " + str(nat_start)
+                print "+++++ Sleeping for {} seconds before playing: '{}'".format(time_diff.total_seconds(), item[3])
                 sleep(int(time_diff.total_seconds()))
                 if pseudo_channel.DEBUG:
                     print "+++++ Woke up!"
@@ -1542,10 +1656,10 @@ if __name__ == '__main__':
                     pseudo_channel.controller.play(item, daily_schedule)
             else:
                 nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=item[7])
-                schedule_offset = nat_start - datetime.datetime.strptime(item[8], '%I:%M:%S %p')
+                schedule_offset = nat_start - datetime.datetime.strptime(item[8], pseudo_channel.APP_TIME_FORMAT_STR)
                 schedule_offset = schedule_offset.total_seconds()
                 print "Schedule Offset = " + str(schedule_offset)
-                nat_start = nat_start.strftime('%I:%M:%S %p')
+                nat_start = nat_start.strftime(pseudo_channel.APP_TIME_FORMAT_STR)
                 print "Natural Start Time: " + str(nat_start)
                 if schedule_offset < 0:
                     schedule_offset_ms = int(abs(schedule_offset) * 1000)
@@ -1565,7 +1679,7 @@ if __name__ == '__main__':
             prev_end_time_to_watch_for = None
             if pseudo_channel.USE_OVERRIDE_CACHE and isforupdate:
                 for cached_item in pseudo_cache:
-                    prev_start_time = datetime.datetime.strptime(cached_item[8], "%I:%M:%S %p")
+                    prev_start_time = datetime.datetime.strptime(cached_item[8], pseudo_channel.APP_TIME_FORMAT_STR)
                     try:
                         prev_end_time = datetime.datetime.strptime(cached_item[9], '%Y-%m-%d %H:%M:%S.%f')
                     except ValueError:
@@ -1578,8 +1692,8 @@ if __name__ == '__main__':
                             pass
                         prev_end_time_to_watch_for = prev_end_time
             for item in schedulelist:
-                trans_time = datetime.datetime.strptime(item[8], "%I:%M:%S %p").strftime("%H:%M")
-                new_start_time = datetime.datetime.strptime(item[8], "%I:%M:%S %p")
+                trans_time = datetime.datetime.strptime(item[8], pseudo_channel.APP_TIME_FORMAT_STR).strftime("%H:%M")
+                new_start_time = datetime.datetime.strptime(item[8], pseudo_channel.APP_TIME_FORMAT_STR)
                 if prev_end_time_to_watch_for == None:
                     schedule.every().day.at(trans_time).do(job_that_executes_once, item, schedulelist).tag('daily-tasks')
                 else:
@@ -1629,10 +1743,12 @@ if __name__ == '__main__':
         try:
             while True:
                 schedule.run_pending()
-                sleep(1)
+                sleep(0.1)
                 if sleep_before_triggering_play_now:
                     logging.info("+++++ Successfully started PseudoChannel.py")
                     trigger_what_should_be_playing_now()
                     sleep_before_triggering_play_now = 0
+                    #generate_memory_schedule(pseudo_channel.db.get_daily_schedule())
         except KeyboardInterrupt:
             print(' Manual break by user')
+
