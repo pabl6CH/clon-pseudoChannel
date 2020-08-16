@@ -1194,6 +1194,28 @@ class PseudoChannel():
         for i , entry in enumerate(daily_schedule):
             print str("+++++ {} {} {} {} {} {}".format(str(i + 1)+".", entry[8], entry[11], entry[6], " - ", entry[3])).encode(sys.stdout.encoding, errors='replace')
 
+    def last_episode(self):
+        print "----- Change the 'Last Episode' set for a show. -----"
+        print "Enter the name of the show."
+        showName = raw_input("Show Name: ")
+        showData = self.db.get_shows(showName)
+        #print("SHOW SELECTED: "+showData[3])
+        if(showData is not None):
+            print("Enter the season and episode numbers for the 'last episode' (episode previous to the episode you wish to be scheduled on next -g run")
+            sNo = raw_input("Season Number: ")
+            eNo = raw_input("Episode Number: ")
+            episodeData = self.db.get_episode_from_season_episode(showName,sNo,eNo)
+            if(episodeData is not None):
+                print("Setting "+episodeData[7]+" - "+episodeData[3]+" S"+str(episodeData[6])+"E"+str(episodeData[5])+" as the Last Episode in the Shows Database")
+                self.db.update_shows_table_with_last_episode(episodeData[7], episodeData[8])
+            else:
+                print("EPISODE NOT FOUND IN PSEUDO CHANNEL DATABASE")
+                sys.exit(1)
+        else:
+            print("SHOW NOT FOUND IN PSEUDO CHANNEL DATABASE")
+            sys.exit(1)
+
+
     def episode_randomizer(self):
         all_shows = list(self.db.get_shows_titles())
         shows_list = []
@@ -1394,6 +1416,9 @@ if __name__ == '__main__':
     parser.add_argument('-ep', '--episode_randomizer',
                          action='store_true',
                          help='Randomize all shows episode progress.')
+    parser.add_argument('-le', '--last_episode',
+                         action='store_true',
+                         help='Set last episode for a show. The next time -g is run, it will start with the episode after the one set.')
     '''
     * 
     * Show connected clients: "python PseudoChannel.py -c"
@@ -1466,6 +1491,8 @@ if __name__ == '__main__':
         pseudo_channel.update_schedule()
     if args.episode_randomizer:
         pseudo_channel.episode_randomizer()
+    if args.last_episode:
+        pseudo_channel.last_episode()
     if args.show_clients:
         pseudo_channel.show_clients()
     if args.show_schedule:

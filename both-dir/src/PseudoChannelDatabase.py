@@ -451,6 +451,11 @@ class PseudoChannelDatabase():
         self.cursor.execute(sql)
         return self.cursor.fetchall()
 
+    def get_episode_from_season_episode(self, title, seasonNumber, episodeNumber):
+        sql = "SELECT * FROM episodes WHERE (showTitle LIKE ?) AND (seasonNumber LIKE ?) AND (episodeNumber LIKE ?) LIMIT 1"
+        self.cursor.execute(sql, (title, seasonNumber, episodeNumber, ))
+        return self.cursor.fetchone()
+
     def get_media(self, title, mediaType):
 
         print "+++++ title:", title
