@@ -470,8 +470,19 @@ class PseudoChannelDatabase():
 
     def get_schedule(self):
 
-        self.cursor.execute("SELECT * FROM schedule ORDER BY datetime(startTimeUnix) ASC")
+        self.cursor.execute("SELECT * FROM schedule ORDER BY datetime(startTime) ASC")
         datalist = list(self.cursor.fetchall())
+        return datalist
+
+    def get_schedule_alternate(self,time):
+        t = str("%02d"%int(time[0]))
+        sql = ("SELECT * FROM schedule WHERE substr(startTime,1,2) >= ? ORDER BY datetime(startTime) ASC")
+        self.cursor.execute(sql, [t])
+        datalist = list(self.cursor.fetchall())
+        sql = ("SELECT * FROM schedule WHERE substr(startTime,1,2) < ? ORDER BY datetime(startTime) ASC")
+        self.cursor.execute(sql, [t])
+        secondHalf = list(self.cursor.fetchall())
+        datalist.extend(secondHalf)
         return datalist
 
     def get_daily_schedule(self):
@@ -599,7 +610,7 @@ class PseudoChannelDatabase():
 
     ###added 5/4/2020###
     def get_random_episode_of_show(self,series):
-        #print series.upper()
+        print series.upper()
         sql = "SELECT * FROM episodes WHERE (showTitle LIKE ?) ORDER BY RANDOM() LIMIT 1"
         self.cursor.execute(sql, (series, ))
         return self.cursor.fetchone()
@@ -607,6 +618,11 @@ class PseudoChannelDatabase():
     def get_random_episode_of_show_alt(self,series):
         sql = "SELECT * FROM episodes WHERE (showTitle LIKE '%"+series+"%') ORDER BY RANDOM() LIMIT 1"
         self.cursor.execute(sql)
+        return self.cursor.fetchone()
+
+    def get_random_episode_of_show_duration(self,series,min,max):
+        sql = "SELECT * FROM episodes WHERE (showTitle LIKE '%"+series+"%' AND duration BETWEEN ? and ?) ORDER BY RANDOM() LIMIT 1"
+        self.cursor.execute(sql (min, max, ))
         return self.cursor.fetchone()
 
     def get_random_show(self):

@@ -41,21 +41,34 @@ class PseudoChannelCommercial():
         commercial = tuple(commercial_as_list)
         return commercial
 
-    def get_commercials_to_place_between_media(self, last_ep, now_ep, strict_time):
+    def get_commercials_to_place_between_media(self, last_ep, now_ep, strict_time, reset_time):
 
+        reset_time = datetime.strptime(reset_time,'%H:%M')
         prev_item_end_time = datetime.strptime(last_ep.end_time.strftime('%Y-%m-%d %H:%M:%S.%f'), '%Y-%m-%d %H:%M:%S.%f')
-        curr_item_start_time = datetime.strptime(now_ep.start_time, '%I:%M:%S %p')        
-        time_diff = (curr_item_start_time - prev_item_end_time)
+        if(now_ep != "reset"):
+            curr_item_start_time = datetime.strptime(now_ep.start_time, '%H:%M:%S')
+        else:
+            curr_item_start_time = reset_time
+            if(curr_item_start_time < prev_item_end_time):
+                curr_item_start_time = curr_item_start_time.replace(day=1)
+            else:
+                curr_item_start_time = curr_item_start_time.replace(day=2)
+
         # mutto233 has added some logic at this point
         # - All dates are now changed to 1/1/90 so midnight doesn't cause issues
         # - Issues with day skips again being adressed
         now = datetime.now()
         now = now.replace(year=1900, month=1, day=1)
         midnight = now.replace(hour=0,minute=0,second=0) 
+        if(curr_item_start_time < reset_time):
+            curr_item_start_time = curr_item_start_time.replace(day=2)
+        if(prev_item_end_time < reset_time):
+            prev_item_end_time = prev_item_end_time.replace(day=2)
+        else:
+            prev_item_end_time = prev_item_end_time.replace(day=1)
+        time_diff = (curr_item_start_time - prev_item_end_time)
         
-        prev_item_end_time = prev_item_end_time.replace(day=1)
-        
-        if prev_item_end_time.replace(second=0,microsecond=0) > curr_item_start_time and strict_time == "false":
+        if prev_item_end_time.replace(microsecond=0) > curr_item_start_time and strict_time == "false":
             # NOTE: This is just for the logic of this function, I have noticed that this 
             # may cause other issues in other functions, since now the day is off.
             print "WE MUST BE SKIPPING A DAY, ADDING A DAY TO THE START TIME"
@@ -65,7 +78,7 @@ class PseudoChannelCommercial():
         print "##############################################"
         print "get_commercials_to_place_between_media DEBUG"
         print "NOW: %s" % now
-        print "prev_item_end_time: %s" % prev_item_end_time.replace(second=0,microsecond=0) 
+        print "prev_item_end_time: %s" % prev_item_end_time.replace(microsecond=0) 
         print "curr_item_start_time: %s" % curr_item_start_time
         print "time_diff: %s" % time_diff
         print "##############################################"
@@ -93,7 +106,7 @@ class PseudoChannelCommercial():
                 new_commercial_end_time = new_commercial_start_time + \
                                           timedelta(milliseconds=int(new_commercial_milli))
             commercial_dur_sum += new_commercial_milli
-            formatted_time_for_new_commercial = new_commercial_start_time.strftime('%I:%M:%S %p')
+            formatted_time_for_new_commercial = new_commercial_start_time.strftime('%H:%M:%S')
             new_commercial = Commercial(
                 "Commercials",
                 random_commercial[3],
@@ -118,7 +131,7 @@ class PseudoChannelCommercial():
                 else:
 
                     # If the gap is smaller than the shortest commercial, break.
-                    gapToFill = curr_item_start_time - datetime.strptime(new_commercial.natural_start_time, '%I:%M:%S %p')
+                    gapToFill = curr_item_start_time - datetime.strptime(new_commercial.natural_start_time, '%H:%M:%S')
                     if int(self.commercials[0][4]) > self.timedelta_milliseconds(gapToFill):
 
                         break
@@ -133,9 +146,9 @@ class PseudoChannelCommercial():
 
                                 random_final_comm = last_comm
 
-                                formatted_time_for_final_commercial = datetime.strptime(new_commercial.natural_start_time, '%I:%M:%S %p').strftime('%I:%M:%S %p')
+                                formatted_time_for_final_commercial = datetime.strptime(new_commercial.natural_start_time, '%H:%M:%S').strftime('%H:%M:%S')
 
-                                final_commercial_end_time = datetime.strptime(new_commercial.natural_start_time, '%I:%M:%S %p') + \
+                                final_commercial_end_time = datetime.strptime(new_commercial.natural_start_time, '%H:%M:%S') + \
                                               timedelta(milliseconds=int(random_final_comm[4])) 
 
                                 final_commercial = Commercial(

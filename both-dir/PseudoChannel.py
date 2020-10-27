@@ -578,11 +578,11 @@ class PseudoChannel():
         * If this doesn't apply, simply move on to the regular "checks"
         *
         '''
-        time1A=prevEndTime.strftime('%H:%M')
-        time1A_comp = datetime.datetime.strptime(time1A, '%H:%M') # there was an issue with the date changing to 1/2, so we had to do this for correct comparison
-        timeset=[datetime.time(h,m).strftime("%H:%M") for h,m in itertools.product(xrange(0,24),xrange(0,60,int(self.OVERLAP_GAP)))]
+        time1A=prevEndTime.strftime('%H:%M:%S')
+        time1A_comp = datetime.datetime.strptime(time1A, '%H:%M:%S') # there was an issue with the date changing to 1/2, so we had to do this for correct comparison
+        timeset=[datetime.time(h,m).strftime("%H:%M:%S") for h,m in itertools.product(xrange(0,24),xrange(0,60,int(self.OVERLAP_GAP)))]
         timeset_last = timeset[-1]
-        theTimeSetInterval_last = datetime.datetime.strptime(timeset_last, '%H:%M')
+        theTimeSetInterval_last = datetime.datetime.strptime(timeset_last, '%H:%M:%S')
         
         prevEndTime = time1A_comp #maybe this will change things?
         print "++++ Previous End Time: ", time1A_comp
@@ -590,7 +590,7 @@ class PseudoChannel():
         
         if time1A_comp > theTimeSetInterval_last:
             print "++++ We are starting a show with the new day.  Using first element of the next day"
-            theTimeSetInterval = datetime.datetime.strptime(timeset[0], '%H:%M') #This must be the element we are looking for
+            theTimeSetInterval = datetime.datetime.strptime(timeset[0], '%H:%M:%S') #This must be the element we are looking for
             newStartTime = theTimeSetInterval
             '''
             *
@@ -611,7 +611,7 @@ class PseudoChannel():
             #print timeset
             timeSetToUse = None
             for time in timeset:
-                theTimeSetInterval = datetime.datetime.strptime(time, '%H:%M')
+                theTimeSetInterval = datetime.datetime.strptime(time, '%H:%M:%S')
                 if theTimeSetInterval >= prevEndTime:
                     print "++++ There is overlap. Setting new time-interval:", theTimeSetInterval
                     newStartTime = theTimeSetInterval
@@ -630,9 +630,9 @@ class PseudoChannel():
             #timeset=[datetime.time(h,m).strftime("%H:%M") for h,m in itertools.product(xrange(0,24),xrange(0,60,int(self.TIME_GAP)))]
             #print timeset
             for time in timeset:
-                theTimeSetInterval = datetime.datetime.strptime(time, '%H:%M')
-                tempTimeTwoStr = datetime.datetime.strptime(time1, self.APP_TIME_FORMAT_STR).strftime('%H:%M')
-                formatted_time_two = datetime.datetime.strptime(tempTimeTwoStr, '%H:%M')
+                theTimeSetInterval = datetime.datetime.strptime(time, '%H:%M:%S')
+                tempTimeTwoStr = datetime.datetime.strptime(time1, self.APP_TIME_FORMAT_STR).strftime('%H:%M:%S')
+                formatted_time_two = datetime.datetime.strptime(tempTimeTwoStr, '%H:%M:%S')
                 if theTimeSetInterval >= formatted_time_two:
                     print "++++ Setting new time-interval:", theTimeSetInterval
                     newStartTime = theTimeSetInterval
@@ -663,7 +663,7 @@ class PseudoChannel():
                 self.COMMERCIAL_PADDING_IN_SECONDS,
                 self.USE_DIRTY_GAP_FIX
             )
-        schedule = self.db.get_schedule()
+        schedule = self.db.get_schedule_alternate(config.dailyUpdateTime)
         weekday_dict = {
             "0" : ["mondays", "weekdays", "everyday"],
             "1" : ["tuesdays", "weekdays", "everyday"],
@@ -702,7 +702,12 @@ class PseudoChannel():
                                             xtra = '[]'
                                             d = {}
                                             #thestr = entry[13]
-                                            xtra = entry[13].split(';')
+                                            if ";" in xtra:
+                                                 xtra = entry[13].split(';')
+                                            else:
+                                                 if xtra != None:
+                                                     xtra = str(entry[13]) + ';'
+                                                     xtra = xtra.split(';')
                                             try:
                                                 for thestr in xtra:
                                                     print thestr
@@ -851,7 +856,11 @@ class PseudoChannel():
 
                         elif entry[2] == 9999:
                             print("Getting random episode of "+entry[3])
-                            next_episode = self.db.get_random_episode_of_show(entry[3])
+                            try:
+                                next_episode = self.db.get_random_episode_of_show_alt(entry[3])
+                            except TypeError as e:
+                                print(e)
+                                next_episode = self.db.get_random_episode_of_show_alt(entry[3])
                             print("Episode Selected: S"+str(next_episode[6])+"E"+str(next_episode[5])+" "+next_episode[3].upper())
                             show_title = next_episode[7]
                             episode_duration = next_episode[4]
@@ -861,10 +870,10 @@ class PseudoChannel():
                                 next_episode = self.db.get_random_episode_of_show(entry[3])
                                 print("Episode Selected: S"+str(next_episode[6])+"E"+str(next_episode[5])+" "+next_episode[3].upper())
                                 attempt = attempt + 1
-                            if attempt > 500:
-                                episode_duration = max
-                            else:
-                                episode_duration = next_episode[4]
+                                if attempt > 500:
+       	                            episode_duration = max
+               	                else:
+                       	            episode_duration = next_episode[4]
                             show_title = next_episode[7]
                         else:
                             next_episode = self.db.get_next_episode(entry[3]) #get next episode
@@ -920,20 +929,25 @@ class PseudoChannel():
                                                 movies = self.PLEX.library.section(theSection.title)
                                                 xtra = []
                                                 d = {}
-                                                xtra = entry[13].split(';')
+                                                if ";" in xtra:
+                                                    xtra = entry[13].split(';')
+                                                else:
+                                                    if xtra != None:
+                                                        xtra = str(entry[13]) + ';'
+                                                        xtra = xtra.split(';')
                                                 print xtra
 						try:
 						    for thestr in xtra:
                                                         print thestr
                                                         regex = re.compile(r"\b(\w+)\s*:\s*([^:]*)(?=\s+\w+\s*:|$)")
                                                         d.update(regex.findall(thestr))
-                                                    print d
+                                                    #print d
                                                     # turn values into list
                                                     for key, val in d.iteritems():
                                                         d[key] = val.split(',')
                                                     for movie in movies.search(None, **d):
 	                                                movies_list.append(movie)
-                                                    print movies_list
+                                                    #print movies_list
 
                                                     """the_movie = self.db.get_movie(self.movieMagic.get_random_movie_xtra(
                                                             self.db.get_movies(),# Movies DB
@@ -1094,7 +1108,8 @@ class PseudoChannel():
                                 list_of_commercials = self.commercials.get_commercials_to_place_between_media(
                                     previous_episode,
                                     entry,
-                                    entry.is_strict_time.lower()
+                                    entry.is_strict_time.lower(),
+                                    config.dailyUpdateTime
                                 )
                                 for commercial in list_of_commercials:
                                     self.db.add_media_to_daily_schedule(commercial)
@@ -1134,7 +1149,8 @@ class PseudoChannel():
                                     list_of_commercials = self.commercials.get_commercials_to_place_between_media(
                                         previous_episode,
                                         entry,
-                                        entry.is_strict_time.lower()
+                                        entry.is_strict_time.lower(),
+                                        config.dailyUpdateTime
                                     )
                                     for commercial in list_of_commercials:
                                         self.db.add_media_to_daily_schedule(commercial)
@@ -1162,7 +1178,8 @@ class PseudoChannel():
                                 list_of_commercials = self.commercials.get_commercials_to_place_between_media(
                                     previous_episode,
                                     entry,
-                                    entry.is_strict_time.lower()
+                                    entry.is_strict_time.lower(),
+                                    config.dailyUpdateTime
                                 )
                                 for commercial in list_of_commercials:
                                     self.db.add_media_to_daily_schedule(commercial)
@@ -1171,6 +1188,19 @@ class PseudoChannel():
                     else:
                         self.db.add_media_to_daily_schedule(entry)
                         previous_episode = entry
+                
+                if self.USING_COMMERCIAL_INJECTION:
+                    list_of_commercials = self.commercials.get_commercials_to_place_between_media(
+                        previous_episode,
+                        "reset",
+                        "true",
+                        config.dailyUpdateTime
+                    )
+#                    print(list_of_commercials)
+                    for commercial in list_of_commercials:
+                        self.db.add_media_to_daily_schedule(commercial)
+                    print("!!!!! END OF DAY - RESET TIME REACHED")
+
                 #self.make_xml_schedule()
 
     def run_commercial_injection(self):
