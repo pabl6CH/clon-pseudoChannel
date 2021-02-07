@@ -36,16 +36,22 @@ else:
         update_flags+=' -uc'
 
 
-update_call = "sudo python PseudoChannel.py %s" % update_flags
+update_call = "python PseudoChannel.py %s" % update_flags
 
 
 # Step ONE: Global database update 
-print("+++++ Doing global update from PLEX: %s" % update_flags)
+print("NOTICE: Doing global update from PLEX: %s" % update_flags)
 try:
-	os.rename("pseudo-channel.db", "pseudo-channel.bak")
+    os.rename("pseudo-channel.db", "pseudo-channel.bak")
 except OSError:
-	pass
-os.system(update_call)
+    pass
+try:
+    os.system(update_call)
+except:
+    print("ERROR: Global Update Failed!")
+    os.remove("pseudo-channel.db")
+    os.rename("pseudo-channel.bak", "pseudo-channel.db")
+    sys.exit()
 
 
 base_dirA = os.path.dirname(os.path.abspath(__file__))
@@ -57,12 +63,13 @@ for channel_dir in channel_dirs:
     # Step TWO: Go to each folder, export the following information
     # - Show title, lastEpisodeTitle
     # - Movie title, lastPlayedDate
+    # - Current channel schedule that the daily schedule is sourced from
     # - Daily schedule currently being executed
     os.chdir(channel_dir)
     
     channel_dirA = os.path.dirname(os.path.abspath(__file__))
     db_path = os.path.join(channel_dirA, "pseudo-channel.db")
-    print("+++++ Importing from " + db_path)
+    print("NOTICE: Importing from " + db_path)
         
     try:
         conn = sqlite3.connect(db_path)
@@ -73,7 +80,7 @@ for channel_dir in channel_dirs:
         lastEpisode_export = list(lastEpisode_export)
         lastMovie_export = table.execute('SELECT lastPlayedDate,title FROM movies').fetchall()
         lastMovie_export = list(lastMovie_export)
-        
+        schedule = table.execute('SELECT * FROM schedule').fetchall()
         daily_schedule = table.execute('SELECT * FROM daily_schedule').fetchall()
         
         
@@ -81,19 +88,20 @@ for channel_dir in channel_dirs:
         conn.commit()
         conn.close()
     except:
-        print("+++++ Database experiencing errors or hasn't been formed yet; creating fresh one")
+        print("NOTICE: Database experiencing errors or hasn't been formed yet; creating fresh one")
         lastEpisode_export = []
         lastMovie_export = []
-	daily_schedule = []
+        schedule = []
+        daily_schedule = []
     
     
     # Step THREE: Delete the previous database, replace with the recently created global one
-    print("+++++ Copying global update to " + db_path)
+    print("NOTICE: Copying global update to " + db_path)
     copy2('../pseudo-channel.db','.')
     
     
     # Step FOUR: Import the previous information we exported previously
-    print("+++++ Exporting to " + db_path)
+    print("NOTICE: Exporting to " + db_path)
     conn = sqlite3.connect(db_path)
     table = conn.cursor()
     
@@ -104,7 +112,10 @@ for channel_dir in channel_dirs:
     for i in range(0,len(lastMovie_export)):
         sql = "UPDATE movies SET lastPlayedDate=? WHERE title=?"
         table.execute(sql,lastMovie_export[i])
-    
+    for i in range(0,len(schedule)):
+        sql = "INSERT INTO schedule(id,unix,mediaID,title,duration,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra)  \
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+        table.execute(sql,schedule[i])    
     for i in range(0,len(daily_schedule)):
         sql = "INSERT INTO daily_schedule(id,unix,mediaID,title,episodeNumber,seasonNumber,showTitle,duration,startTime,endTime,dayOfWeek,sectionType,plexMediaID,customSectionName)  \
             VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
@@ -112,8 +123,8 @@ for channel_dir in channel_dirs:
     
         
     # Step FIVE: Remove any media not in the directories set of commerical archives
-    print("+++++ Trimming database at " + db_path)
-    os.system('sudo python report_MediaFolders.py')
+    print("NOTICE: Trimming database at " + db_path)
+    os.system('python report_MediaFolders.py')
     local_commercials = open('Commercial_Libraries.txt').read().splitlines()
     local_movies = open('Movie_Libraries.txt').read().splitlines()
     local_tvs = open('TV_Libraries.txt').read().splitlines()
@@ -144,6 +155,6 @@ for channel_dir in channel_dirs:
 
     os.chdir('..')
     
-    print("+++++ " + db_path + " complete!  Going to next file")    
+    print("NOTICE: " + db_path + " complete!  Going to next file")    
     
-print("+++++ Global update COMPLETE")
+print("NOTICE: Global update COMPLETE")

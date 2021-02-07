@@ -38,18 +38,18 @@
 * List of plex clients to use (add multiple clients to control multiple TV's)
 *
 '''
-plexClients = ['RasPlex']
+plexClients = ['LivingRoom']
 
 plexLibraries = {
-    "TV Shows" : ["TV"],
-    "Movies"   : ["Films"],
-    "Commercials" : ["Commercials", "Smashing Pumpkins - Videos"],
+    "TV Shows" : ["TV Shows"],
+    "Movies"   : ["Movies"],
+    "Commercials" : ["00s Commercials", "10s Commercials", "70s Commercials", "80s Commercials", "90s Commercials", "Fake Commercials", "Music Videos", "Netflix Trailers", "Station-ID", "Trailers", "Extras"],
 }
 
 useCommercialInjection = True
 
 """How many seconds to pad commercials between each other / other media"""
-commercialPadding = 5
+commercialPadding = 1
 
 """
 Specify the path to this controller on the network (i.e. 'http://192.168.1.28' - no trailing slash).
@@ -58,8 +58,8 @@ schedule will be served at "http://<your-ip>:<your-port>/" (i.e. "http://192.168
 
 You can also leave the below controllerServerPath empty if you'd like to run your own webserver.
 """
-controllerServerPath = "http://192.168.1.28"
-controllerServerPort = "8000"
+controllerServerPath = ""
+controllerServerPort = ""
 
 """
 This variable sets the title for the PseudoChannel.py html page.
@@ -73,7 +73,7 @@ override any media that is trying to play while the previous day is finishing.
 """
 useDailyOverlapCache = False
 
-dailyUpdateTime = "12:01 AM"
+dailyUpdateTime = "5:00"
 
 """When to delete / remake the pseudo-channel.log - right at midnight, (i.e. 'friday') """
 rotateLog = "friday"
@@ -101,7 +101,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 try:
     import plex_token as plex_token
 except ImportError as e:
-    print "+++++ Cannot find plex_token file. Make sure you create a plex_token.py file with the appropriate data."
+    print("NOTICE: Cannot find plex_token file. Make sure you create a plex_token.py file with the appropriate data.")
     raise e
 
 baseurl = plex_token.baseurl

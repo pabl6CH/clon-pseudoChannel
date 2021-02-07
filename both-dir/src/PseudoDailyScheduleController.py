@@ -5,15 +5,16 @@ import socket
 import logging
 import logging.handlers
 from datetime import datetime
+from datetime import time
+from datetime import timedelta
+from datetime import tzinfo
+import pytz
 import sqlite3
-import _thread
-import socketserver
-import http.server
+import _thread,socketserver,http.server
 from plexapi.server import PlexServer
 from yattag import Doc
 from yattag import indent
 import pseudo_config as config
-
 class PseudoDailyScheduleController():
 
     def __init__(self, 
@@ -57,11 +58,8 @@ class PseudoDailyScheduleController():
         # First, we are going to search for movies/commercials
         try:
              movies =  self.PLEX.library.section(section).search(title=showtitle)
-             #print "+++++ Checking Duration for a Match: "
              for item in movies:
-#                    print item.duration
                     if item.duration == durationAmount:
-                        #print "+++++ MATCH FOUND in %s" % item
                         backgroundImagePath = item
                         break
         except:
@@ -85,15 +83,14 @@ class PseudoDailyScheduleController():
             web_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'schedules'))
             os.chdir(web_dir)
             PORT = int(self.CONTROLLER_SERVER_PORT)
-            class MyHandler(http.server.SimpleHTTPRequestHandler):
+            class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
                 def log_message(self, format, *args):
                     return
 
             global httpd
             try:
-                #print "Starting webserver at port: ", PORT
-                # create the httpd handler for the http.server
+                # create the httpd handler for the simplehttpserver
                 # we set the allow_reuse_address incase something hangs can still bind to port
                 class ReusableTCPServer(SocketServer.TCPServer): allow_reuse_address=True
                 # specify the httpd service on 0.0.0.0 (all interfaces) on port 80
@@ -104,72 +101,185 @@ class PseudoDailyScheduleController():
             except KeyboardInterrupt:
                 core.print_info("Exiting the SET web server...")
                 httpd.socket.close()
-            except(socket.error, exc):
-                print("Caught exception socket.error : %s" % exc )
+            except socket.error as exc:
+                print("ERROR: Caught exception socket.error : %s" % exc)
             # handle the rest
-            #except Exception:
-            #    print "[*] Exiting the SET web server...\n"
-            #    httpd.socket.close()
             self.webserverStarted = True
 
     def get_xml_from_daily_schedule(self, currentTime, bgImageURL, datalist):
 
         now = datetime.now()
+        new_day = now + timedelta(days=1)
         time = now.strftime("%B %d, %Y")
+        update_time = datetime.strptime(config.dailyUpdateTime,'%H:%M').replace(year=int(now.strftime('%Y')),month=int(now.strftime('%m')),day=int(now.strftime('%d')))
         doc, tag, text, line = Doc(
 
         ).ttl()
         doc.asis('<?xml version="1.0" encoding="UTF-8"?>')
         with tag('schedule', currently_playing_bg_image=bgImageURL if bgImageURL != None else ''):
+            previous_row = None
             for row in datalist:
-                if str(row[11]) == "Commercials" and self.DEBUG == False:
-                    continue
-                timeB = datetime.strptime(row[8], '%I:%M:%S %p')
-                if currentTime == None:
-                    with tag('time',
-                            ('key', str(row[12])),
-                            ('current', 'false'),
-                            ('type', str(row[11])),
-			    ('show-title', str(row[6])),
-			    ('show-season', str(row[5])),
-			    ('show-episode', str(row[4])),
-                            ('title', str(row[3])),
-			    ('duration', str(row[7])),
-                            ('time-start', str(row[8])),
-			    ('time-end', str(row[9])),
-			    ('library', str(row[13])),
-                        ):
-                        text(row[8])
-                elif currentTime.hour == timeB.hour and currentTime.minute == timeB.minute:
-                    with tag('time',
-                            ('key', str(row[12])),
-                            ('current', 'true'),
-                            ('type', str(row[11])),
-			    ('show-title', str(row[6])),
-                            ('show-season', str(row[5])),
-                            ('show-episode', str(row[4])),
-                            ('title', str(row[3])),
-                            ('duration', str(row[7])),
-                            ('time-start', str(row[8])),
-                            ('time-end', str(row[9])),
-                            ('library', str(row[13])),
-                        ):
-                        text(row[8])
+                try:
+                    start_time = datetime.strptime(row[8],'%I:%M:%S %p')
+                except:
+                    start_time = datetime.strptime(row[8],'%H:%M:%S')
+                if start_time > update_time: #checking for after midnight but before reset (from config)
+                    try:
+                        current_start_time = datetime.strptime(row[8],'%I:%M:%S %p').replace(year=int(now.strftime('%Y')),month=int(now.strftime('%m')),day=int(now.strftime('%d')))
+                    except:
+                        current_start_time = datetime.strptime(row[8],'%H:%M:%S').replace(year=int(now.strftime('%Y')),month=int(now.strftime('%m')),day=int(now.strftime('%d')))
                 else:
-                    with tag('time',
-                            ('key', str(row[12])),
-                            ('current', 'false'),
-                            ('type', str(row[11])),
-                            ('show-title', str(row[6])),
-                            ('show-season', str(row[5])),
-                            ('show-episode', str(row[4])),
-                            ('title', str(row[3])),
-                            ('duration', str(row[7])),
-                            ('time-start', str(row[8])),
-                            ('time-end', str(row[9])),
-                            ('library', str(row[13])),
-                        ):
-                        text(row[8])
+                    try:
+                        current_start_time = datetime.strptime(row[8],'%I:%M:%S %p').replace(year=int(new_day.strftime('%Y')),month=int(new_day.strftime('%m')),day=int(new_day.strftime('%d')))
+                    except:
+                        current_start_time = datetime.strptime(row[8],'%H:%M:%S').replace(year=int(new_day.strftime('%Y')),month=int(new_day.strftime('%m')),day=int(new_day.strftime('%d')))
+                current_start_time_unix = (current_start_time - datetime(1970,1,1)).total_seconds()
+                current_start_time_string = current_start_time.strftime('%H:%M:%S')
+                try:
+                    if_end_time = datetime.strptime(row[9],'%Y-%m-%d %H:%M:%S.%f')
+                except ValueError:
+                    if_end_time = datetime.strptime(row[9],'%Y-%m-%d %H:%M:%S')
+                if if_end_time.replace(year=int(now.strftime('%Y')),month=int(now.strftime('%m')),day=int(now.strftime('%d'))) > update_time: #checking for after midnight but before reset (from config)
+                    current_end_time = if_end_time.replace(year=int(now.strftime('%Y')),month=int(now.strftime('%m')),day=int(now.strftime('%d')))
+                else:
+                    current_end_time = if_end_time.replace(year=int(new_day.strftime('%Y')),month=int(new_day.strftime('%m')),day=int(new_day.strftime('%d')))
+                current_end_time_unix = (current_end_time - datetime(1970,1,1)).total_seconds()
+                current_end_time_string = current_end_time.strftime('%H:%M:%S')
+                if previous_row != None:
+                    #compare previous end time to current start time
+                    try:
+                        previous_end_time = datetime.strptime(previous_row[9], '%Y-%m-%d %H:%M:%S.%f')
+                    except ValueError:
+                        previous_end_time = datetime.strptime(previous_row[9], '%Y-%m-%d %H:%M:%S')
+                    if previous_end_time > update_time: #checking for after midnight but before reset (from config)
+                        previous_end_time = previous_end_time.replace(year=int(now.strftime('%Y')),month=int(now.strftime('%m')),day=int(now.strftime('%d')))
+                    else:
+                        previous_end_time = previous_end_time.replace(year=int(new_day.strftime('%Y')),month=int(new_day.strftime('%m')),day=int(new_day.strftime('%d')))
+                    if previous_end_time > current_start_time:
+                        #if previous end time is later than start time, change end time
+                        previous_end_time = current_start_time - timedelta(seconds=1)
+                    #convert start and end times to unix
+                    previous_end_time_unix = (previous_end_time - datetime(1970,1,1)).total_seconds()
+                    #convert start and end times to the same readable format
+                    previous_end_time_string = previous_end_time.strftime('%H:%M:%S')
+                    if str(previous_row[11]) == "Commercials" and self.DEBUG == False:
+                        continue
+                    try:
+                        timeB = datetime.strptime(previous_row[8], '%I:%M:%S %p')
+                    except:
+                        timeB = datetime.strptime(previous_row[8], '%H:%M:%S')
+                    if currentTime == None:
+                        with tag('time',
+                                ('key', str(previous_row[12])),
+                                ('current', 'false'),
+                                ('type', str(previous_row[11])),
+                                ('show-title', str(previous_row[6])),
+                                ('show-season', str(previous_row[5])),
+                                ('show-episode', str(previous_row[4])),
+                                ('title', str(previous_row[3])),
+                                ('duration', str(previous_row[7])),
+                                ('time-start', str(previous_start_time_string)),
+                                ('time-end', str(previous_end_time.strftime('%H:%M:%S'))),
+                                ('time-start-unix', str(previous_start_time_unix)),
+                                ('time-end-unix', str(previous_end_time_unix)),
+                                ('library', str(previous_row[13])),
+                            ):
+                            text(previous_row[8])
+                    elif currentTime.hour == timeB.hour and currentTime.minute == timeB.minute:
+                        with tag('time',
+                                ('key', str(previous_row[12])),
+                                ('current', 'true'),
+                                ('type', str(previous_row[11])),
+                                ('show-title', str(previous_row[6])),
+                                ('show-season', str(previous_row[5])),
+                                ('show-episode', str(previous_row[4])),
+                                ('title', str(previous_row[3])),
+                                ('duration', str(previous_row[7])),
+                                ('time-start', str(previous_start_time_string)),
+                                ('time-end', str(previous_end_time.strftime('%H:%M:%S'))),
+                                ('time-start-unix', str(previous_start_time_unix)),
+                                ('time-end-unix', str(previous_end_time_unix)),
+                                ('library', str(previous_row[13])),
+                            ):
+                            text(previous_row[8])
+                    else:
+                        with tag('time',
+                                ('key', str(previous_row[12])),
+                                ('current', 'false'),
+                                ('type', str(previous_row[11])),
+                                ('show-title', str(previous_row[6])),
+                                ('show-season', str(previous_row[5])),
+                                ('show-episode', str(previous_row[4])),
+                                ('title', str(previous_row[3])),
+                                ('duration', str(previous_row[7])),
+                                ('time-start', str(previous_start_time_string)),
+                                ('time-end', str(previous_end_time.strftime('%H:%M:%S'))),
+                                ('time-start-unix', str(previous_start_time_unix)),
+                                ('time-end-unix', str(previous_end_time_unix)),
+                                ('library', str(previous_row[13])),
+                            ):
+                            text(previous_row[8])
+                previous_start_time = current_start_time
+                previous_start_time_unix = current_start_time_unix
+                previous_start_time_string = current_start_time_string
+                previous_row = row
+#            if str(row[11]) == "Commercials" and self.DEBUG == False:
+#                continue
+            try:
+                timeB = datetime.strptime(row[8], '%I:%M:%S %p')
+            except:
+                timeB = datetime.strptime(row[8], '%H:%M:%S')
+            if currentTime == None:
+                with tag('time',
+                        ('key', str(row[12])),
+                        ('current', 'false'),
+                        ('type', str(row[11])),
+                        ('show-title', str(row[6])),
+			('show-season', str(row[5])),
+			('show-episode', str(row[4])),
+                        ('title', str(row[3])),
+			('duration', str(row[7])),
+                        ('time-start', str(current_start_time_string)),
+			('time-end', str(current_end_time_string)),
+                        ('time-start-unix', str(current_start_time_unix)),
+                        ('time-end-unix', str(current_end_time_unix)),
+			('library', str(row[13])),
+                    ):
+                    text(row[8])
+            elif currentTime.hour == timeB.hour and currentTime.minute == timeB.minute:
+                with tag('time',
+                        ('key', str(row[12])),
+                        ('current', 'true'),
+                        ('type', str(row[11])),
+	                ('show-title', str(row[6])),
+                        ('show-season', str(row[5])),
+                        ('show-episode', str(row[4])),
+                        ('title', str(row[3])),
+                        ('duration', str(row[7])),
+                        ('time-start', str(current_start_time_string)),
+                        ('time-end', str(current_end_time_string)),
+                        ('time-start-unix', str(current_start_time_unix)),
+                        ('time-end-unix', str(current_end_time_unix)),
+                        ('library', str(row[13])),
+                    ):
+                    text(row[8])
+            else:
+                with tag('time',
+                        ('key', str(row[12])),
+                        ('current', 'false'),
+                        ('type', str(row[11])),
+                        ('show-title', str(row[6])),
+                        ('show-season', str(row[5])),
+                        ('show-episode', str(row[4])),
+                        ('title', str(row[3])),
+                        ('duration', str(row[7])),
+                        ('time-start', str(current_start_time_string)),
+                        ('time-end', str(current_end_time_string)),
+                        ('time-start-unix', str(current_start_time_unix)),
+                        ('time-end-unix', str(current_end_time_unix)),
+                        ('library', str(row[13])),
+                    ):
+                    text(row[8])
         return indent(doc.getvalue())
 
     '''
@@ -291,7 +401,10 @@ class PseudoDailyScheduleController():
                                 with tag('tbody'):
                                     if currentTime != None:
                                         currentTime = currentTime.replace(year=1900, month=1, day=1)
-                                    timeBStart = datetime.strptime(row[8], '%I:%M:%S %p')
+                                    try:
+                                        timeBStart = datetime.strptime(row[8], '%I:%M:%S %p')
+                                    except:
+                                        timeBStart = datetime.strptime(row[8], '%H:%M:%S')
                                     timeBStart = timeBStart.replace(year=1900, month=1, day=1)
                                     try:
                                         timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S.%f')
@@ -299,11 +412,6 @@ class PseudoDailyScheduleController():
                                     except:
                                         timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S')
                                         timeBEnd = timeBEnd.replace(day=1)
-                                    #print timeBStart
-                                    #print "%s" % row[3]
-                                    #print "%s, %s, %s, %s, %s" % (currentTime, timeBStart, timeBEnd, midnight,midnight.replace(hour=0,minute=0,second=0))
-                                    #print "%s" % (timeBStart - timeBEnd).total_seconds()
-                                    #print "%s, %s, %s, %s" % ((currentTime-timeBStart).total_seconds(),(midnight-currentTime).total_seconds(),(currentTime-midnight.replace(hour=0,minute=0,second=0)).total_seconds(),(timeBEnd-currentTime).total_seconds())
                                     if currentTime == None:
                                         with tag('tr'):
                                             with tag('th', scope='row'):
@@ -324,7 +432,7 @@ class PseudoDailyScheduleController():
                                          ((currentTime-timeBStart).total_seconds() >= 0 and \
                                           (midnight-currentTime).total_seconds() >= 0))):          
                                         
-                                            print("+++++ Currently Playing:", row[3])
+                                            print("INFO: Currently Playing:", row[3])
 
                                             with tag('tr', klass='bg-info'):
                                                 with tag('th', scope='row'):
@@ -413,7 +521,7 @@ class PseudoDailyScheduleController():
             f.seek(0)
             first_line = f.read()  
             if self.DEBUG:
-                print("+++++ Html refresh flag: {}".format(first_line))
+                print("INFO: Html refresh flag: {}".format(first_line))
             if first_line == '' or first_line == "0":
                 f.seek(0)
                 f.truncate()
@@ -432,70 +540,117 @@ class PseudoDailyScheduleController():
     * @return null
     *
     '''
-    def play_media(self, mediaType, mediaParentTitle, mediaTitle, offset, customSectionName, durationAmount):
+    def play_media(self, mediaType, mediaParentTitle, mediaTitle, offset, customSectionName, durationAmount, mediaID):
          # Check for necessary client override, if we have a folder of "channels_<NAME>"
         cwd = os.getcwd()
         if "channels_" in cwd:
             head,sep,tail = cwd.partition('channels_')
             head,sep,tail = tail.partition('/')
             self.PLEX_CLIENTS = [head]
-            print("CLIENT OVERRIDE: %s" % self.PLEX_CLIENTS)
-            
-        try: 
-            if mediaType == "TV Shows":
+            print("NOTICE: CLIENT OVERRIDE: %s" % self.PLEX_CLIENTS)
+        try:
+            if customSectionName == "Playlists":
+                try:
+                    print("NOTICE: Fetching PLAYLIST ITEM from MEDIA ID")
+                    item = self.PLEX.fetchItem(mediaID)
+                    for client in self.PLEX_CLIENTS:
+                        clientItem = self.PLEX.client(client)
+                        clientItem.playMedia(item, offset=offset)
+                except:
+                    print("ERROR: MEDIA ID FETCH FAILED - Falling Back")
+                    mediaItems = self.PLEX.playlist(mediaParentTitle).items()
+                    print("NOTICE: Checking Key for a Match: ")
+                    for item in mediaItems:
+                        if item.key == mediaID:
+                            print("NOTICE: MATCH ID FOUND IN %s" % item)
+                            for client in self.PLEX_CLIENTS:
+                                clientItem = self.PLEX.client(client)
+                                clientItem.playMedia(item, offset=offset)
+                            break
+            elif mediaType == "TV Shows" and customSectionName != "Playlists":
 #                print "Here, Trying to play custom type: ", customSectionName
-                print("+++++ Checking Duration for a Match: ")
-                mediaItems = self.PLEX.library.section(customSectionName).get(mediaParentTitle).episodes()
-                for item in mediaItems:
-#                    print item.duration
-                    if item.title == mediaTitle and item.duration == durationAmount:
-                        print("+++++ MATCH FOUND in %s" % item)
-                        for client in self.PLEX_CLIENTS:
-                            clientItem = self.PLEX.client(client)
-                            clientItem.playMedia(item, offset=offset)
-                        break
+                try:
+                    print("NOTICE: Fetching TV Show from MEDIA ID")
+                    item = self.PLEX.fetchItem(mediaID)
+                    for client in self.PLEX_CLIENTS:
+                        clientItem = self.PLEX.client(client)
+                        clientItem.playMedia(item, offset=offset)
+                except:
+                    print("ERROR: MEDIA ID FETCH FAILED - Falling Back")
+                    mediaItems = self.PLEX.library.section(customSectionName).get(mediaParentTitle).episodes()
+                    for item in mediaItems:
+#                        print item.duration
+                        if item.title == mediaTitle and item.duration == durationAmount:
+                            print("NOTICE: MATCH FOUND in %s" % item)
+                            for client in self.PLEX_CLIENTS:
+                                clientItem = self.PLEX.client(client)
+                                clientItem.playMedia(item, offset=offset)
+                            break
+                        elif item.key == mediaID:
+                            print("NOTICE: MATCHID FOUND IN %s" % item)
+                            for client in self.PLEX_CLIENTS:
+                                clientItem = self.PLEX.client(client)
+                                clientItem.playMedia(item, offset=offset)
+                            break
             elif mediaType == "Movies":
-                movies =  self.PLEX.library.section(customSectionName).search(title=mediaTitle)
-                print("+++++ Checking Duration for a Match: ")
-                for item in movies:
-#                    print item.duration
-                    if item.duration == durationAmount:
-                        print("+++++ MATCH FOUND in %s" % item)
-                        movie = item
-                        break
+                idNum = mediaID.lstrip('/library/metadata/')
+                print("INFO: Plex ID Number: "+idNum)
+                try:
+                    print("NOTICE: Fetching MOVIE from MEDIA ID")
+                    movie = self.PLEX.fetchItem(mediaID)
+#                    movies = self.PLEX.library.section(customSectionName).get(mediaTitle)
+                except:
+                    print("ERROR: MEDIA ID FETCH FAILED - Falling Back")
+                    movies = self.PLEX.library.section(customSectionName).search(title=mediaTitle) #movie selection
+                    print("NOTICE: Checking ID for a Match: ")
+                    for item in movies:
+                        if item.key == mediaID:
+                            print("NOTICE: ID MATCH FOUND IN %s" % item.title.upper())
+                            movie = item
+                            break
                 for client in self.PLEX_CLIENTS:
                         clientItem = self.PLEX.client(client)
+                        print("INFO: Playing "+movie.title.upper())
                         clientItem.playMedia(movie, offset=offset)
             elif mediaType == "Commercials":
                 # This one is a bit more complicated, since we have the dirty gap fix possible
                 # Basically, we are going to just assume it isn't a dirty gap fix, and if it is,
                 # We will just play the first value
                 COMMERCIAL_PADDING = config.commercialPadding
-                movies =  self.PLEX.library.section(customSectionName).search(title=mediaTitle)
-                print("+++++ Checking Duration for a Match: ")
-                for item in movies:
-                    #print item
-                    #print item.duration
-                    if (item.duration+1000*COMMERCIAL_PADDING) == durationAmount or item.duration == durationAmount:
-                        print("+++++ MATCH FOUND in %s" % item)
-                        movie = item
-                        break
+                try:
+                    print("NOTICE: Fetching COMMERCIAL from MEDIA ID")
+                    movie = self.PLEX.fetchItem(mediaID)
+#                    movies = self.PLEX.library.section(customSectionName).get(mediaTitle)
+                except:
+                    print("ERROR: MEDIA ID FETCH FAILED - Falling Back")
+                    movies = self.PLEX.library.section(customSectionName).search(title=mediaTitle)
+                    print("NOTICE: Checking for a Match: ")
+                    for item in movies:
+                        if item.key == mediaID:
+                            print("NOTICE: ID MATCH FOUND in %s" % item)
+                            movie = item
+                            break
+                        elif (item.duration+1000*COMMERCIAL_PADDING) == durationAmount or item.duration == durationAmount:
+                            print("NOTICE: DURATION MATCH FOUND in %s" % item)
+                            movie = item
+                            break
                 try:
                     movie
                 except:
-                    print("+++++ Commercial is NOT FOUND, my guess is this is the dirty gap.  Picking first one")
+                    print("ERROR: Commercial is NOT FOUND, my guess is this is the dirty gap.  Picking first one")
+                    movies = self.PLEX.library.section(customSectionName).search(title=mediaTitle)
                     movie = movies[0]
                     
                 for client in self.PLEX_CLIENTS:
                         clientItem = self.PLEX.client(client)
                         clientItem.playMedia(movie, offset=offset)
             else:
-                print("##### Not sure how to play {}".format(customSectionName))
-            print("+++++ Done.")
+                print("NOTICE: Not sure how to play {}".format(customSectionName))
+            print("NOTICE: Done.")
         except Exception as e:
             print(e.__doc__)
             print(e.message)
-            print("##### There was an error trying to play the media.")
+            print("ERROR: There was an error trying to play the media.")
             pass
         
     def stop_media(self):
@@ -532,7 +687,7 @@ class PseudoDailyScheduleController():
                 if currentTime.minute == endTime.minute:
                     if currentTime.second == endTime.second:
                         if self.DEBUG:
-                            print("Ok end time found")
+                            print("INFO: Ok end time found")
                         self.write_schedule_to_file(self.get_html_from_daily_schedule(None, None, datalist))
                         self.write_xml_to_file(self.get_xml_from_daily_schedule(None, None, datalist))
                         self.write_refresh_bool_to_file()
@@ -540,15 +695,18 @@ class PseudoDailyScheduleController():
 
     def play(self, row, datalist, offset=0):
 
-        print(str("##### Starting Media: '{}'".format(row[3])).encode('UTF-8'))
-        print(str("##### Media Offset: '{}' seconds.".format(int(offset / 1000))).encode('UTF-8'))
+        print(str("NOTICE: Starting Media: '{}'".format(row[3])).encode('UTF-8'))
+        print(str("NOTICE: Media Offset: '{}' seconds.".format(int(offset / 1000))).encode('UTF-8'))
         if self.DEBUG:
             print(str(row).encode('UTF-8'))
-        timeB = datetime.strptime(row[8], '%I:%M:%S %p')
+        try:
+            timeB = datetime.strptime(row[8], '%I:%M:%S %p')
+        except:
+            timeB = datetime.strptime(row[8], '%H:%M:%S')
 
-        print("Here, row[13]", row[13])
+        print("INFO: Here, row[13]", row[13])
 
-        self.play_media(row[11], row[6], row[3], offset, row[13], row[7])
+        self.play_media(row[11], row[6], row[3], offset, row[13], row[7], row[12])
         self.write_schedule_to_file(
             self.get_html_from_daily_schedule(
                 timeB,
@@ -574,7 +732,7 @@ class PseudoDailyScheduleController():
             )
         )
         try:
-            self.my_logger.debug('Trying to play: ' + row[3])
+            self.my_logger.debug('INFO: Trying to play: ' + row[3])
         except:
             pass
 
@@ -596,13 +754,16 @@ class PseudoDailyScheduleController():
         except:
             pass
         for row in datalist:
-            timeB = datetime.strptime(row[8], '%I:%M:%S %p')
+            try:
+                timeB = datetime.strptime(row[8], '%I:%M:%S %p')
+            except:
+                timeB = datetime.strptime(row[8], '%H:%M:%S')
             if currentTime.hour == timeB.hour:
                 if currentTime.minute == timeB.minute:
                     if currentTime.second == timeB.second:
-                        print("Starting Media: " + row[3])
+                        print("NOTICE: Starting Media: " + row[3])
                         print(row)
-                        self.play_media(row[11], row[6], row[3], row[13], row[7])
+                        self.play_media(row[11], row[6], row[3], row[13], row[7], row[12])
                         self.write_schedule_to_file(
                             self.get_html_from_daily_schedule(
                                 timeB,
@@ -647,7 +808,10 @@ class PseudoDailyScheduleController():
             #print row[9]
             if str(row[11]) == "Commercials" and self.DEBUG == False:
                 continue
-            timeBStart = datetime.strptime(row[8], '%I:%M:%S %p')
+            try:
+                timeBStart = datetime.strptime(row[8], '%I:%M:%S %p')
+            except:
+                timeBStart = datetime.strptime(row[8], '%H:%M:%S')
             timeBStart = timeBStart.replace(year=1900, month=1, day=1)
             try:
                 timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S.%f')
@@ -655,13 +819,6 @@ class PseudoDailyScheduleController():
             except:
                 timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S')
                 timeBEnd = timeBEnd.replace(day=1)
-
-            #print ((currentTime - timeBStart).total_seconds() >= 0 and \
-            #       (timeBEnd - currentTime).total_seconds() >= 0)
-
-            #print currentTime.minute
-            #print timeBStart.minute
-
             if ((currentTime - timeBStart).total_seconds() >= 0 and \
                  (timeBEnd - currentTime).total_seconds() >= 0) or \
                  ((timeBStart - timeBEnd).total_seconds() >= 0 and \
@@ -670,7 +827,7 @@ class PseudoDailyScheduleController():
                  ((currentTime-timeBStart).total_seconds() >= 0 and \
                   (midnight-currentTime).total_seconds() >= 0))): 
 
-                print("+++++ Made the conditional & found item: {}".format(row[6]))
+                print("INFO: Made the conditional & found item: {}".format(row[6]))
 
                 return self.get_show_photo(
                     row[13], 
@@ -684,7 +841,7 @@ class PseudoDailyScheduleController():
             increase_var += 1
 
         if len(datalist) >= increase_var:
-            print("+++++ In 'manually_get_now_playing_bg_image()'. " 
+            print("INFO: In 'manually_get_now_playing_bg_image()'. " 
                   "Reached the end of the schedule. No bgImages found.")
             return None
 
@@ -695,11 +852,12 @@ class PseudoDailyScheduleController():
         increase_var = 0
 
         for row in datalist:
-            #print row[8]
-            #print row[9]
             """if str(row[11]) == "Commercials" and self.DEBUG == False:
                 continue"""
-            timeBStart = datetime.strptime(row[8], '%I:%M:%S %p')
+            try:
+                timeBStart = datetime.strptime(row[8], '%I:%M:%S %p')
+            except:
+                timeBStart = datetime.strptime(row[8], '%H:%M:%S')
             timeBStart = timeBStart.replace(year=1900, month=1, day=1)
             try:
                 timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S.%f')
@@ -707,13 +865,6 @@ class PseudoDailyScheduleController():
             except:
                 timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S')
                 timeBEnd = timeBEnd.replace(day=1)
-
-            #print ((currentTime - timeBStart).total_seconds() >= 0 and \
-            #       (timeBEnd - currentTime).total_seconds() >= 0)
-
-            #print currentTime.minute
-            #print timeBStart.minute
-
             if ((currentTime - timeBStart).total_seconds() >= 0 and \
                  (timeBEnd - currentTime).total_seconds() >= 0) or \
                  ((timeBStart - timeBEnd).total_seconds() >= 0 and \
@@ -722,7 +873,7 @@ class PseudoDailyScheduleController():
                  ((currentTime-timeBStart).total_seconds() >= 0 and \
                   (midnight-currentTime).total_seconds() >= 0))):          
 
-                print("+++++ Made the conditional & found item: {}".format(row[6]))
+                print("NOTICE: Made the conditional & found item: {}".format(row[6]))
 
                 return row[6] + " - " + row[3] if row[11] == "TV Shows" else row[3]
 
@@ -733,13 +884,13 @@ class PseudoDailyScheduleController():
             increase_var += 1
 
         if len(datalist) >= increase_var:
-            print("+++++ In 'manually_get_now_playing_title()'. " 
+            print("NOTICE: In 'manually_get_now_playing_title()'. " 
                   "Reached the end of the schedule. No bgImages found.")
             return ''
 
     def make_xml_schedule(self, datalist):
 
-        print("##### ", "Writing XML / HTML to file.")
+        print("NOTICE: ", "Writing XML / HTML to file.")
         now = datetime.now()
         now = now.replace(year=1900, month=1, day=1)
 
@@ -747,7 +898,7 @@ class PseudoDailyScheduleController():
 
         itemTitle = self.manually_get_now_playing_title(now, datalist)
 
-        print("+++++ The path to the bgImage: {}".format(bgImage))
+        print("NOTICE: The path to the bgImage: {}".format(bgImage))
 
         self.write_refresh_bool_to_file()
         self.write_schedule_to_file(self.get_html_from_daily_schedule(now, bgImage, datalist, itemTitle))

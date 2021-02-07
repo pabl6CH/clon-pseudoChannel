@@ -11,19 +11,19 @@ from pseudo_config import plexLibraries as local_commercials
 try:
 	commercials = local_commercials["Commercials"]
 except KeyError:
-	print("##### Commercials not defined on this channel, setting to blank")
+	print("ERROR: Commercials not defined on this channel, setting to blank")
 	commercials = ""
 
 try:
 	movies = local_commercials["Movies"]
 except KeyError:
-	print("##### Movies not defined on this channel, setting to blank")
+	print("ERROR: Movies not defined on this channel, setting to blank")
 	movies = ""
 
 try:
 	tvs = local_commercials["TV Shows"]
 except KeyError:
-	print("##### TV Shows not defined on this channel, setting to blank")
+	print("ERROR: TV Shows not defined on this channel, setting to blank")
 	tvs = ""
 commercials_file = open('Commercial_Libraries.txt','w')
 movies_file = open('Movie_Libraries.txt','w')

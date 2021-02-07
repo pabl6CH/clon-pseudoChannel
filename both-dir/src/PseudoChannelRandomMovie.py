@@ -43,7 +43,7 @@ class PseudoChannelRandomMovie():
 
             if(movie[5] is not None): #lastPlayedDate is recorded
 
-                print(movie[5])
+                print("INFO: Last Played Date is "+str(movie[5]))
 
                 now = datetime.datetime.now()
                 lastPlayedDate = datetime.datetime.strptime(movie[5], '%Y-%m-%d')
@@ -75,26 +75,24 @@ class PseudoChannelRandomMovie():
 
         shuffle(self.MOVIES_DB)
 
-        print("get_random_movie_xtra")
+        print("NOTICE: get_random_movie_xtra")
 
         for movieOne in self.MOVIES_XTRA_LIST:
 
-            print("while i < len(self.MOVIES_XTRA_LIST):")
+            print("INFO: while i < len(self.MOVIES_XTRA_LIST):")
 
             movieTitle = movieOne.title
 
-            print("movieTitle", movieTitle)
+            print("INFO: movieTitle", movieTitle)
 
             for movie in self.MOVIES_DB:
 
-                print("for movie in self.MOVIES_DB:")
+                print("INFO: for movie in self.MOVIES_DB:")
 
                 if movie[3] == movieTitle: #title match found
 
                     if(movie[5] is not None): #lastPlayedDate is recorded
-
-                        print("I am here")
-
+                        print("INFO: Last Played Date is "+str(movie[5]))
                         now = datetime.datetime.now()
                         lastPlayedDate = datetime.datetime.strptime(movie[5], '%Y-%m-%d')
 
@@ -102,7 +100,7 @@ class PseudoChannelRandomMovie():
 
                         if(timeDelta.days >= self.TIME_GAP_DAYS): 
 
-                            print("if(timeDelta.months >= self.TIME_GAP_DAYS):")
+                            print("INFO: if(timeDelta.months >= self.TIME_GAP_DAYS):")
 
                             return movieTitle
 
