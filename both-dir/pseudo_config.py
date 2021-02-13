@@ -38,12 +38,12 @@
 * List of plex clients to use (add multiple clients to control multiple TV's)
 *
 '''
-plexClients = ['LivingRoom']
+plexClients = []
 
 plexLibraries = {
-    "TV Shows" : ["TV Shows"],
-    "Movies"   : ["Movies"],
-    "Commercials" : ["00s Commercials", "10s Commercials", "70s Commercials", "80s Commercials", "90s Commercials", "Fake Commercials", "Music Videos", "Netflix Trailers", "Station-ID", "Trailers", "Extras"],
+    "TV Shows" : [],
+    "Movies"   : [],
+    "Commercials" : [],
 }
 
 useCommercialInjection = True
