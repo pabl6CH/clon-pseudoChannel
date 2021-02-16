@@ -42,7 +42,7 @@ plexClients = []
 
 plexLibraries = {
     "TV Shows" : [],
-    "Movies"   : [],
+    "Movies" : [],
     "Commercials" : [],
 }
 
@@ -73,7 +73,7 @@ override any media that is trying to play while the previous day is finishing.
 """
 useDailyOverlapCache = False
 
-dailyUpdateTime = "5:00"
+dailyUpdateTime = ""
 
 """When to delete / remake the pseudo-channel.log - right at midnight, (i.e. 'friday') """
 rotateLog = "friday"
