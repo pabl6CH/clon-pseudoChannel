@@ -19,6 +19,7 @@ channel_dir_increment_symbol = "_"
 parser = argparse.ArgumentParser(description="Global Database Update Script")
 
 parser.add_argument('-u','--update_all',action='store_true',help='update ALL elements')
+parser.add_argument('-i','--install',action='store_true',help='update ALL elements')
 parser.add_argument('-um','--update_movies',action='store_true',help='update MOVIE elements')
 parser.add_argument('-utv','--update_tv',action='store_true',help='update TV elements')
 parser.add_argument('-uc','--update_comm',action='store_true',help='update COMMERCIAL elements')
