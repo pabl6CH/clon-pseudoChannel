@@ -24,7 +24,7 @@ parser.add_argument('-utv','--update_tv',action='store_true',help='update TV ele
 parser.add_argument('-uc','--update_comm',action='store_true',help='update COMMERCIAL elements')
 args = parser.parse_args()
 
-if args.update_all or len(sys.argv) == 1:
+if args.update_all or len(sys.argv) == 1 or args.install:
     update_flags = '-u'
 else:
     update_flags=''
