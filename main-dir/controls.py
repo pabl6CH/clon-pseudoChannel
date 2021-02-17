@@ -148,6 +148,17 @@ def generate_daily_schedules(channelsList):
                 print(output.strip())
         rc = process.poll()
         os.chdir('../')
+        
+def global_database_update():
+    import Global_DatabaseUpdate
+    '''process = subprocess.Popen(["python", "-u", "Global_DatabaseUpdate.py"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    while True:
+        output = process.stdout.readline()
+        if process.poll() is not None:
+            break
+        if output:
+            print(output.strip())
+    rc = process.poll()'''
 
 parser = argparse.ArgumentParser(description='Pseudo Channel Controls')
 channelsList = get_channels()
@@ -176,6 +187,9 @@ parser.add_argument('-r', '--restart',
 parser.add_argument('-g', '--generateschedules',
     action='store_true',
     help='Generate Daily Schedules for All Channels')
+parser.add_argument('-u', '--updatedatabase',
+    action='store_true',
+    help='Generate Pseudo Channel Database')      
     
 args = parser.parse_args()
 
@@ -222,3 +236,5 @@ if args.generateschedules:
     except:
         print("GENERATING DAILY SCHEDULES")
         generate_daily_schedules(channelsList)
+if args.updatedatabase:
+    global_database_update()
