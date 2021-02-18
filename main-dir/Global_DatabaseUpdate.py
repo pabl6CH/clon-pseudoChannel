@@ -9,6 +9,8 @@ import sys
 import argparse
 import sqlite3
 import os
+import datetime
+import time
 from shutil import copy2
 from pseudo_config import plexLibraries as global_commercials
 
@@ -113,10 +115,46 @@ for channel_dir in channel_dirs:
     for i in range(0,len(lastMovie_export)):
         sql = "UPDATE movies SET lastPlayedDate=? WHERE title=?"
         table.execute(sql,lastMovie_export[i])
-    for i in range(0,len(schedule)):
+    if len(schedule) == 0:
+        print("NOTICE: Schedule Not Found, Creating Default Schedule")
+        entryList = {}
+        entryList['id'] = "1"
+        entryList['unix'] = str(time.time())
+        entryList['mediaID'] = "999"
+        entryList['title'] = "random"
+        entryList['duration'] = "10,90"
+        entryList['startTime'] = "00:00:00"
+        entryList['endTime'] = "0"
+        entryList['dayOfWeek'] = "everyday"
+        entryList['startTimeUnix'] = str(time.mktime(time.strptime("2000/01/01 00:00:00", "%Y/%m/%d %H:%M:%S")))
+        entryList['section'] = "TV Shows"
+        entryList['strictTime'] = "true"
+        entryList['timeShift'] = "5"
+        entryList['overlapMax'] = 15
+        entryList['xtra'] = ""
         sql = "INSERT INTO schedule(id,unix,mediaID,title,duration,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra)  \
-            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-        table.execute(sql,schedule[i])    
+            VALUES(:id,:unix,:mediaID,:title,:duration,:startTime,:endTime,:dayOfWeek,:startTimeUnix,:section,:strictTime,:timeShift,:overlapMax,:xtra)"
+        table.execute(sql,entryList)
+        while int(entryList['id']) < 96:
+            entryList['id'] = str(int(entryList['id']) + 1)
+            entryList['unix'] = str(time.time())
+            entryList['startTimeUnix'] = float(entryList['startTimeUnix']) + 900
+            entryList['startTime'] = str(datetime.datetime.fromtimestamp(entryList['startTimeUnix']).strftime("%H:%M:%S"))
+            timediff = datetime.datetime.strptime("23:59:59", "%H:%M:%S") - datetime.datetime.strptime(entryList['startTime'], "%H:%M:%S")
+            durationSplit = entryList['duration'].split(',')
+            if timediff.seconds < 5399:
+                maxTime = round(timediff.seconds / 60)
+                minTime = int(durationSplit[0])
+                if minTime > maxTime:
+                    minTime = maxTime - 1
+                entryList['duration'] = str(minTime)+','+str(maxTime)
+            entryList['overlapMax'] = round(int(durationSplit[0]) * 1.5)
+            table.execute(sql,entryList)
+    else:
+        for i in range(0,len(schedule)):
+            sql = "INSERT INTO schedule(id,unix,mediaID,title,duration,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra)  \
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+            table.execute(sql,schedule[i])
     for i in range(0,len(daily_schedule)):
         sql = "INSERT INTO daily_schedule(id,unix,mediaID,title,episodeNumber,seasonNumber,showTitle,duration,startTime,endTime,dayOfWeek,sectionType,plexMediaID,customSectionName)  \
             VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
