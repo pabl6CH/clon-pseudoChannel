@@ -71,6 +71,10 @@ for channel_dir in channel_dirs:
     os.chdir(channel_dir)
     
     channel_dirA = os.path.dirname(os.path.abspath(__file__))
+    print(channel_dirA.split('/')[-1])
+    if channel_dirA.split('/')[-1] == "channels":
+        os.chdir(os.path.join(channel_dirA, channel_dir))
+        channel_dirA = os.getcwd()
     db_path = os.path.join(channel_dirA, "pseudo-channel.db")
     print("NOTICE: Importing from " + db_path)
         
