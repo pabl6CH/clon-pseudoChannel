@@ -206,18 +206,15 @@ def ps_install(ps_branch='python3', path='./channels'):
         configFile.write(configData)
         configFile.close()
         copyconfig()
-        global_database_update()
+        shutil.copy('./pseudo_config.py', '../')
+        shutil.copy('./plex_token.py', '../')
+        global_database_update('./') #run database scan
+        os.remove('../pseudo_config.py')
+        os.remove('../plex_token.py')
 
-def global_database_update():
-    import Global_DatabaseUpdate
-    '''process = subprocess.Popen(["python", "-u", "Global_DatabaseUpdate.py", "-u"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-    while True:
-        output = process.stdout.readline()
-        if process.poll() is not None:
-            break
-        if output:
-            print(output.strip())
-    rc = process.poll()'''
+def global_database_update(path):
+    os.chdir(path)
+    from channels import Global_DatabaseUpdate
 
 def select_libs(sectionsList):
     x = 1
