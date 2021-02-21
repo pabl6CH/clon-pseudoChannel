@@ -3,6 +3,7 @@ billiard
 certifi
 chardet
 httplib2
+GitPython
 idna
 kombu
 oauth2client

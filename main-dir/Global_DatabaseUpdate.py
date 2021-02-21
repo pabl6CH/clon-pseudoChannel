@@ -11,8 +11,10 @@ import sqlite3
 import os
 import datetime
 import time
+import math
 from shutil import copy2
 from pseudo_config import plexLibraries as global_commercials
+from src import PseudoChannelDatabase
 
 channel_dir_increment_symbol = "_"
 
@@ -43,7 +45,7 @@ update_call = "python PseudoChannel.py %s" % update_flags
 
 
 # Step ONE: Global database update 
-print("NOTICE: Doing global update from PLEX: %s" % update_flags)
+print("ACTION: Doing global update from PLEX: %s" % update_flags)
 try:
     os.rename("pseudo-channel.db", "pseudo-channel.bak")
 except OSError:
@@ -76,7 +78,7 @@ for channel_dir in channel_dirs:
         os.chdir(os.path.join(channel_dirA, channel_dir))
         channel_dirA = os.getcwd()
     db_path = os.path.join(channel_dirA, "pseudo-channel.db")
-    print("NOTICE: Importing from " + db_path)
+    print("ACTION: Importing from " + db_path)
         
     try:
         conn = sqlite3.connect(db_path)
@@ -103,12 +105,12 @@ for channel_dir in channel_dirs:
     
     
     # Step THREE: Delete the previous database, replace with the recently created global one
-    print("NOTICE: Copying global update to " + db_path)
+    print("ACTION: Copying global update to " + db_path)
     copy2('../pseudo-channel.db','.')
     
     
     # Step FOUR: Import the previous information we exported previously
-    print("NOTICE: Exporting to " + db_path)
+    print("ACTION: Exporting to " + db_path)
     conn = sqlite3.connect(db_path)
     table = conn.cursor()
     
@@ -120,40 +122,69 @@ for channel_dir in channel_dirs:
         sql = "UPDATE movies SET lastPlayedDate=? WHERE title=?"
         table.execute(sql,lastMovie_export[i])
     if len(schedule) == 0:
+        #db = PseudoChannelDatabase("./pseudo-channel.db")
         print("NOTICE: Schedule Not Found, Creating Default Schedule")
         entryList = {}
         entryList['id'] = "1"
         entryList['unix'] = str(time.time())
-        entryList['mediaID'] = "999"
-        entryList['title'] = "random"
-        entryList['duration'] = "10,90"
+        entryList['mediaID'] = "0"
+        rndsql = "SELECT * FROM shows WHERE (customSectionName NOT LIKE 'playlist' AND duration BETWEEN 6000 and 999000) ORDER BY RANDOM() LIMIT 1"
+        table.execute(rndsql)
+        the_show = table.fetchone()
+        entryList['duration'] = str("1,"+str(int(the_show[4]) / 60000))
+        entryList['title'] = the_show[3]
         entryList['startTime'] = "00:00:00"
-        entryList['endTime'] = "0"
         entryList['dayOfWeek'] = "everyday"
-        entryList['startTimeUnix'] = str(time.mktime(time.strptime("2000/01/01 00:00:00", "%Y/%m/%d %H:%M:%S")))
+        entryList['startTimeUnix'] = time.mktime(time.strptime("2000/01/01 00:00:00", "%Y/%m/%d %H:%M:%S"))
         entryList['section'] = "TV Shows"
-        entryList['strictTime'] = "true"
-        entryList['timeShift'] = "5"
+        if entryList['startTime'] == "00:00:00":
+            entryList['strictTime'] = "true"
+        else:
+            entryList['strictTime'] = "secondary"
+        entryList['endTime'] = datetime.datetime.fromtimestamp(float(entryList['startTimeUnix']) + the_show[4]/1000).strftime("%H:%M:%S")
+        entryList['timeShift'] = 15
         entryList['overlapMax'] = 15
         entryList['xtra'] = ""
+        print("INFO: Adding "+entryList['startTime']+" - "+entryList['title']+"\033[K",end='\n')
         sql = "INSERT INTO schedule(id,unix,mediaID,title,duration,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra)  \
             VALUES(:id,:unix,:mediaID,:title,:duration,:startTime,:endTime,:dayOfWeek,:startTimeUnix,:section,:strictTime,:timeShift,:overlapMax,:xtra)"
         table.execute(sql,entryList)
-        while int(entryList['id']) < 96:
+        timediff = datetime.datetime.strptime("23:59:59", "%H:%M:%S") - datetime.datetime.strptime(entryList['startTime'], "%H:%M:%S")
+        print("INFO: "+str(timediff.seconds)+" to midnight\033[K",end='\n')
+        endloop = 0
+        while timediff.seconds > 900 and endloop == 0:
             entryList['id'] = str(int(entryList['id']) + 1)
             entryList['unix'] = str(time.time())
-            entryList['startTimeUnix'] = float(entryList['startTimeUnix']) + 900
-            entryList['startTime'] = str(datetime.datetime.fromtimestamp(entryList['startTimeUnix']).strftime("%H:%M:%S"))
+            prevEndTimeUnix = float(entryList['startTimeUnix']) + the_show[4]/1000
+            prevEndTime = datetime.datetime.fromtimestamp(prevEndTimeUnix)
+            entryList['startTime'] = prevEndTime + (datetime.datetime.min - prevEndTime) % datetime.timedelta(minutes=entryList['timeShift'])
+            entryList['startTime'] = entryList['startTime'].strftime("%H:%M:%S")
+            entryList['startTimeUnix'] = time.mktime(time.strptime("2000/01/01 "+entryList['startTime'], "%Y/%m/%d %H:%M:%S"))
+            print("INFO: "+str(entryList['startTimeUnix'])+" - New Unix Time Start\033[K",end='\n')
+            print("INFO: "+str(entryList['startTime'])+" - New Start Time\033[K",end='\n')
+            if entryList['startTime'] == "00:00:00":
+                entryList['strictTime'] = "true"
+            else:
+                entryList['strictTime'] = "secondary"            
             timediff = datetime.datetime.strptime("23:59:59", "%H:%M:%S") - datetime.datetime.strptime(entryList['startTime'], "%H:%M:%S")
-            durationSplit = entryList['duration'].split(',')
-            if timediff.seconds < 5399:
-                maxTime = round(timediff.seconds / 60)
-                minTime = int(durationSplit[0])
-                if minTime > maxTime:
-                    minTime = maxTime - 1
-                entryList['duration'] = str(minTime)+','+str(maxTime)
-            entryList['overlapMax'] = round(int(durationSplit[0]) * 1.5)
-            table.execute(sql,entryList)
+            maxMS = timediff.seconds * 1000
+            if 0 < int(entryList['endTime'].split(':')[1]) <= 15 or 30 < int(entryList['endTime'].split(':')[1]) <= 45:
+                maxMS = 15*60*1000
+            rndsql = "SELECT * FROM shows WHERE (customSectionName NOT LIKE 'playlist' AND duration BETWEEN ? and ?) ORDER BY RANDOM() LIMIT 1"
+            table.execute(rndsql, ("60000", str(maxMS)))
+            the_show = table.fetchone()
+            entryList['duration'] = str("1,"+str(int(the_show[4]) / 60000))
+            entryList['endTime'] = datetime.datetime.fromtimestamp(float(entryList['startTimeUnix']) + the_show[4]/1000).strftime("%H:%M:%S")
+            entryList['title'] = the_show[3]
+            entryList['overlapMax'] = round(int(entryList['duration'].split(',')[1]) * 0.5)
+            print("INFO: Adding "+entryList['startTime']+" - "+entryList['title']+"\033[K",end='\n')
+            sql = "INSERT INTO schedule(id,unix,mediaID,title,duration,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra)  \
+                VALUES(:id,:unix,:mediaID,:title,:duration,:startTime,:endTime,:dayOfWeek,:startTimeUnix,:section,:strictTime,:timeShift,:overlapMax,:xtra)"            
+            if entryList['startTime'] != "00:00:00":
+                table.execute(sql,entryList)
+                print("INFO: "+str(timediff.seconds)+" to midnight\033[K",end='\n') 
+            else:
+                endloop = 1
     else:
         for i in range(0,len(schedule)):
             sql = "INSERT INTO schedule(id,unix,mediaID,title,duration,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra)  \

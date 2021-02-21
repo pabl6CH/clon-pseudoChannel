@@ -41,6 +41,36 @@ def get_channels(channelsDir='.'):
             do = "nothing"
     return channelsList
 
+def generate_daily_schedules(channelsList):
+    #execute PseudoChannel.py -g in specified channel
+    for channel in channelsList:
+        os.chdir('./pseudo-channel_'+channel)
+        print("GENERATING SCHEDULE FOR CHANNEL "+channel)
+        process = subprocess.Popen(["python", "-u", "PseudoChannel.py", "-g"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        while True:
+            output = process.stdout.readline()
+            if process.poll() is not None:
+                break
+            if output:
+                print(output.strip())
+        rc = process.poll()
+        os.chdir('../')
+        
+def randomize_episodes(channelsList):
+    #execute PseudoChannel.py -ep in specified channel
+    for channel in channelsList:
+        os.chdir('./pseudo-channel_'+channel)
+        print("RANDOMIZING STARTING EPISODES FOR ALL SHOWS ON CHANNEL "+channel)
+        process = subprocess.Popen(["python", "-u", "PseudoChannel.py", "-ep"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        while True:
+            output = process.stdout.readline()
+            if process.poll() is not None:
+                break
+            if output:
+                print(output.strip())
+        rc = process.poll()
+        os.chdir('../')
+
 def ps_install(ps_branch='python3', path='./channels'):
     dirCheck = os.path.isdir(path)
     if dirCheck == False:
@@ -209,6 +239,9 @@ def ps_install(ps_branch='python3', path='./channels'):
         shutil.copy('./pseudo_config.py', '../')
         shutil.copy('./plex_token.py', '../')
         global_database_update('./') #run database scan
+        channelsList = get_channels()
+        randomize_episodes(channelsList)
+        generate_daily_schedules(channelsList)
         os.remove('../pseudo_config.py')
         os.remove('../plex_token.py')
 

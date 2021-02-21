@@ -666,11 +666,18 @@ class PseudoChannel():
             for key, val in weekday_dict.items(): 
                 if str(entry[7]) in str(val) and int(weekno) == int(key):
                     if section == "TV Shows":
-                        minmax = entry[4].split(",")
-                        min = int(minmax[0])
-                        min = min * 60000
-                        max = int(minmax[1])
-                        max = max * 60000
+                        try:
+                            minmax = entry[4].split(",")
+                            min = int(minmax[0])
+                            min = min * 60000
+                            max = int(minmax[1])
+                            max = max * 60000
+                        except:
+                            minmax = entry[4]
+                            min = int(minmax)
+                            min = min * 60000
+                            max = int(minmax)
+                            max = max * 60000
                         if str(entry[3]).lower() == "random":
                             sections = self.PLEX.library.sections()
                             shows_list = []
