@@ -176,7 +176,7 @@ for channel_dir in channel_dirs:
             entryList['duration'] = str("1,"+str(int(the_show[4]) / 60000))
             entryList['endTime'] = datetime.datetime.fromtimestamp(float(entryList['startTimeUnix']) + the_show[4]/1000).strftime("%H:%M:%S")
             entryList['title'] = the_show[3]
-            entryList['overlapMax'] = round(int(entryList['duration'].split(',')[1]) * 0.5)
+            entryList['overlapMax'] = round(float(entryList['duration'].split(',')[1]) * 0.5)
             print("INFO: Adding "+entryList['startTime']+" - "+entryList['title']+"\033[K",end='\n')
             sql = "INSERT INTO schedule(id,unix,mediaID,title,duration,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra)  \
                 VALUES(:id,:unix,:mediaID,:title,:duration,:startTime,:endTime,:dayOfWeek,:startTimeUnix,:section,:strictTime,:timeShift,:overlapMax,:xtra)"            
