@@ -20,9 +20,9 @@ def execfile(filename, globals=None, locals=None):
     with open(filename, "r") as fh:
         exec(fh.read()+"\n", globals, locals)
 
-def get_channels(channelsDir='.'):
+def get_channels(channelsDir=os.path.abspath(os.path.dirname(__file__))):
     #get list of available channels and arrange in numerical order
-    dirList = sorted(next(os.walk('.'))[1])
+    dirList = sorted(next(os.walk(channelsDir))[1])
     chanList = []
     channelsList = []
     for dir in dirList:
@@ -135,9 +135,10 @@ def channel_down(channelsList):
     start_channel(next_channel)
     
 def generate_daily_schedules(channelsList):
-    #execute PseudoChannel.py -g in specified channel\
+    #execute PseudoChannel.py -g in specified channel
+    os.chdir(os.path.abspath(os.path.dirname(__file__)))
     for channel in channelsList:
-        os.chdir('./pseudo-channel_'+channel)
+        os.chdir(os.path.abspath(os.path.dirname(__file__))+'/pseudo-channel_'+channel)
         print("GENERATING SCHEDULE FOR CHANNEL "+channel)
         process = subprocess.Popen(["python", "-u", "PseudoChannel.py", "-g"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
         while True:

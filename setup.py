@@ -11,6 +11,7 @@ import shutil
 from git import RemoteProgress
 from datetime import datetime
 from plexapi.server import PlexServer
+from crontab import CronTab
 
 class CloneProgress(RemoteProgress):
     def update(self, op_code, cur_count, max_count=None, message=''):
@@ -71,7 +72,34 @@ def randomize_episodes(channelsList):
         rc = process.poll()
         os.chdir('../')
 
-def ps_install(ps_branch='python3', path='./channels'):
+def ps_install():
+    branchList = ['master','develop','python3']
+    b = 1
+    print("Select Pseudo Channel Repository Branch (default: master)")
+    for branch in branchList:
+        print(str(b)+": "+branch)
+        b = b+1
+    branchSelect = input('>: ')
+    if branchSelect == "":
+        ps_branch = 'master'
+    else:
+        try:
+            branchSelect = int(branchSelect)
+            while 0 > int(branchSelect) > b-1:
+                print("INVALID ENTRY")
+                branchSelect = input('>: ')
+            ps_branch = branchList[branchSelect-1]
+        except:
+            while branchSelect not in branchList:
+                print("INVALID ENTRY")
+                branchSelect = input('>: ')
+            ps_branch = branchSelect
+    print("Enter Install Path (default: ./channels)")
+    pathInput = input('>: ')
+    if pathInput == '':
+        path = "./channels"
+    else:
+        path = pathInput
     dirCheck = os.path.isdir(path)
     if dirCheck == False:
         os.mkdir('channels')
@@ -215,11 +243,24 @@ def ps_install(ps_branch='python3', path='./channels'):
                 commercialPadding = input('>: ')
         print("Enter desired reset hour (between 0 and 23)")
         print("Ideally this should be a time when someone would be least likely to be watching.")
-        dailyUpdateTime = input('>: ')
-        while int(dailyUpdateTime) > 23:
+        dailyUpdateHour = input('>: ')
+        while int(dailyUpdateHour) > 23:
             print("INVALID ENTRY: Enter a number between 0 and 23")
-            dailyUpdateTime = input('>: ')
-        dailyUpdateTime = dailyUpdateTime+':00'
+            dailyUpdateHour = input('>: ')
+        dailyUpdateTime = dailyUpdateHour+':00'
+        #set up daily cron for schedule generation
+        cron = CronTab(user=True)
+        c = 0
+        for job in cron:
+            if job.comment == "Pseudo Channel Daily Schedule Generator":
+                c = 1
+                job.hour.on(dailyUpdateHour)
+                job.minute.on(0)
+        if c == 0:
+            cronJob = cron.new(command = sys.executable+" "+os.getcwd()+"/controls.py -g", comment="Pseudo Channel Daily Schedule Generator")
+            cronJob.hour.on(dailyUpdateHour)
+            cronJob.minute.on(0)
+        cron.write()        
         # write to config file
         configFile = open("pseudo_config.py", 'r')
         configData = configFile.read()
@@ -238,10 +279,12 @@ def ps_install(ps_branch='python3', path='./channels'):
         copyconfig()
         shutil.copy('./pseudo_config.py', '../')
         shutil.copy('./plex_token.py', '../')
+        shutil.copytree('./src', '../src')
         global_database_update('./') #run database scan
         channelsList = get_channels()
         randomize_episodes(channelsList)
         generate_daily_schedules(channelsList)
+        shutil.rmtree('../src')
         os.remove('../pseudo_config.py')
         os.remove('../plex_token.py')
 
@@ -289,7 +332,7 @@ def select_libs(sectionsList):
                 print("Errors detected, re-enter library selections")
                 libraries = input('>:')
     return ps_libraries
-                    
+
 def copyconfig(channel="all"):
     #copy config file to one or more channels
     channelsList = get_channels()
@@ -303,7 +346,6 @@ def copyconfig(channel="all"):
                 chanDir = "pseudo-channel_"+str(chan)+'/'
                 shutil.copy('./pseudo_config.py', chanDir)
 
-
 def copy_tv(client=None):
     print("copy_tv") #make symlinked copy of pseudo channel files to run on another client
 
@@ -312,6 +354,11 @@ def ps_update(branch='main'):
     
 def web_setup(branch='main'):
     print("web_setup") #set up the web interface and api
+    #copy files from web interface git to ./channels/web
+    #insert config details
+    #ask if other web service exists, if so copy to appropriate folder and exit
+    #create script to run http.server and add to startup
+    #run http.server
 
 parser = argparse.ArgumentParser(description='Pseudo Channel Controls')
 try:
@@ -331,7 +378,7 @@ parser.add_argument('-u', '--update',
     choices = ['main','dev'],
     help='Update Pseudo Channel to the Latest Version')
 parser.add_argument('-w', '--web',
-    choices = ['main','dev'],
+    action = 'store',
     help='Install and Set Up Web Interface and API')
 parser.add_argument('-ud', '--updatedatabase',
     action='store_true',
@@ -340,7 +387,7 @@ parser.add_argument('-ud', '--updatedatabase',
 args = parser.parse_args()
 
 if args.install:
-    print("DOWNLOADING AND INSTALLING PSEUDO CHANNEL FROM GIT")
+    print("PSEUDO CHANNEL INSTALL INITIATED")
     ps_install()
 if args.copyconfig:
     if args.copyconfig != 'all':
