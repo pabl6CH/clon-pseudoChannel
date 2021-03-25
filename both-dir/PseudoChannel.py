@@ -632,20 +632,22 @@ class PseudoChannel():
 
     def generate_daily_schedule(self):
 
-        print("#### Generating Daily Schedule")
+        print("ACTION: Generating Daily Schedule")
         #logging.info("##### Dropping previous daily_schedule database")
         #self.db.remove_all_daily_scheduled_items()
-
+        print("NOTICE: Removing Previous Daily Schedule")
         self.db.drop_daily_schedule_table()
-
+        print("NOTICE: Adding New Daily Schedule Table to Database")
         self.db.create_daily_schedule_table()
 
         if self.USING_COMMERCIAL_INJECTION:
             self.commercials = PseudoChannelCommercial(
+                print("NOTICE: Getting Commercials List from Database")
                 self.db.get_commercials(),
                 self.COMMERCIAL_PADDING_IN_SECONDS,
                 self.USE_DIRTY_GAP_FIX
             )
+        print("NOTICE: Getting Base Schedule")
         schedule = self.db.get_schedule_alternate(config.dailyUpdateTime)
         weekday_dict = {
             "0" : ["mondays", "weekdays", "everyday"],
@@ -686,7 +688,7 @@ class PseudoChannel():
                                 for correct_lib_name, user_lib_name in libs_dict.items():
                                     if theSection.title.lower() in [x.lower() for x in user_lib_name]:
                                         if correct_lib_name == "TV Shows" and entry[13] != "":
-                                            print("NOTICE: XTRA ARGS FOUND")
+                                            print("NOTICE: TV SHOW WITH XTRA ARGS FOUND")
                                             shows = self.PLEX.library.section(theSection.title)
                                             xtra = '[]'
                                             d = {}
@@ -699,7 +701,7 @@ class PseudoChannel():
                                                      xtra = xtra.split(';')
                                             try:
                                                 for thestr in xtra:
-                                                    print("ARGUMENT = "+thestr)
+                                                    print("INFO: ARGUMENT = "+thestr)
                                                     strsplit = thestr.split(':')
                                                     if strsplit[0] == "decade":
                                                         decade = strsplit[1]
@@ -710,7 +712,7 @@ class PseudoChannel():
                                                            lastdigit = lastdigit + 1
                                                            if lastdigit < 10:
                                                                thestr = thestr+","
-                                                        print("ARGUMENT = "+thestr)
+                                                        print("INFO: ARGUMENT = "+thestr)
                                                     #d.update(strsplit[0],strsplit[1])
                                                     elif strsplit[0] == "season":
                                                         xtraSeason = strsplit[1]
@@ -912,7 +914,7 @@ class PseudoChannel():
                                     for correct_lib_name, user_lib_name in libs_dict.items():
                                         if theSection.title.lower() in [x.lower() for x in user_lib_name]:
                                             if correct_lib_name == "Movies" and entry[13] != "":
-                                                print("xtra args: ", entry[13])
+                                                print("INFO: Movie Xtra Arguments: ", entry[13])
                                                 movies = self.PLEX.library.section(theSection.title)
                                                 xtra = []
                                                 d = {}
@@ -949,7 +951,7 @@ class PseudoChannel():
                                 """Updating movies table in the db with lastPlayedDate entry"""
                                 self.db.update_movies_table_with_last_played_date(the_movie[3])
                             else:
-                                print("ERROR - xtra args not found, getting random movie")
+                                print("ERROR: xtra args not found, getting random movie")
                                 the_movie = self.db.get_random_movie_duration(int(min), int(max))
                                 movie_duration = the_movie[4]
                                 attempt = 1
@@ -1000,7 +1002,7 @@ class PseudoChannel():
                             )
                             self.MEDIA.append(movie)
                         else:
-                            print(str("Cannot find Movie, {} in the local db".format(entry[3])).encode('UTF-8'))
+                            print(str("ERROR: Cannot find Movie, {} in the local db".format(entry[3])).encode('UTF-8'))
                     elif section == "Music":
                         the_music = self.db.get_music(entry[3])
                         if the_music != None:
@@ -1019,7 +1021,7 @@ class PseudoChannel():
                             )
                             self.MEDIA.append(music)
                         else:
-                            print(str("Cannot find Music, {} in the local db".format(entry[3])).encode('UTF-8'))
+                            print(str("ERROR: Cannot find Music, {} in the local db".format(entry[3])).encode('UTF-8'))
                     elif section == "Video":
                         the_video = self.db.get_video(entry[3])
                         if the_music != None:
@@ -1038,14 +1040,14 @@ class PseudoChannel():
                             )
                             self.MEDIA.append(video)
                         else:
-                            print(str("Cannot find Video, {} in the local db".format(entry[3])).encode('UTF-8'))
+                            print(str("ERROR: Cannot find Video, {} in the local db".format(entry[3])).encode('UTF-8'))
                     else:
                         pass
             """If we reached the end of the scheduled items for today, add them to the daily schedule
 
             """
             if schedule_advance_watcher >= len(schedule):
-                print("INFO: Finished processing time entries, recreating daily_schedule")
+                print("INFO: Finished processing time entries, generating daily_schedule")
                 previous_episode = None
                 for entry in self.MEDIA:
                     if previous_episode != None:
@@ -1078,24 +1080,24 @@ class PseudoChannel():
                             prev_end_time = prev_end_time.strftime(self.APP_TIME_FORMAT_STR)
                             start_time_difference=self.time_diff(str(entry.natural_start_time),str(prev_end_time))
                             start_time_difference=start_time_difference*60
-                            print("Entry Duration = {}".format(str(entry.duration)))
-                            print("Start Time Difference = {}".format(str(start_time_difference)))
+                            print("INFO: Entry Duration = {}".format(str(entry.duration)))
+                            print("INFO: Start Time Difference = {}".format(str(start_time_difference)))
                             if start_time_difference > 0:
                                 running_duration = entry.duration - abs(start_time_difference)
-                                print("Running Duration = {}".format(str(running_duration)))
+                                print("INFO: Running Duration = {}".format(str(running_duration)))
                                 entry.start_time = datetime.datetime.strptime(entry.natural_start_time, self.APP_TIME_FORMAT_STR) + datetime.timedelta(seconds=abs(start_time_difference))
                                 entry.start_time = datetime.datetime.strftime(entry.start_time, self.APP_TIME_FORMAT_STR)
-                                print("New Start Time = {}".format(str(entry.start_time)))
+                                print("INFO: New Start Time = {}".format(str(entry.start_time)))
                                 entry.end_time = self.get_end_time_from_duration(
                                     self.translate_time(natural_start_time.strftime(self.APP_TIME_FORMAT_STR)),
                                     entry.duration
                                 )
-                                print("End Time = {}".format(str(entry.end_time)))
+                                print("INFO: End Time = {}".format(str(entry.end_time)))
                             overlap_max_seconds=int(entry.overlap_max) * 60
-                            print(("Overlap Max is "+str(overlap_max_seconds)))
+                            print(("INFO: Overlap Max is "+str(overlap_max_seconds)))
                             max_end_time=datetime.datetime.strptime(entry.natural_start_time, self.APP_TIME_FORMAT_STR) + datetime.timedelta(seconds=overlap_max_seconds)
                             if datetime.datetime.strptime(entry.start_time, self.APP_TIME_FORMAT_STR) > max_end_time or datetime.datetime.strptime(entry.start_time, self.APP_TIME_FORMAT_STR) > entry.end_time:
-                                print("NOTICE: START TIME PAST MAXIMUM ALLOWED TIME, SKIPPING ENTRY")
+                                print("ALERT: START TIME PAST MAXIMUM ALLOWED TIME, SKIPPING ENTRY")
                                 pass
                             else:
                                 """Get List of Commercials to Inject"""
@@ -1630,7 +1632,7 @@ if __name__ == '__main__':
                     """If prev end time is more then the start time of this media, skip it"""
                     if prev_end_time_to_watch_for > new_start_time:
                         try:
-                            print("NOTICE: Skipping scheduling item do to cached overlap.", item[3])
+                            print("NOTICE: Skipping scheduling item due to cached overlap.", item[3])
                         except:
                             pass
                         continue

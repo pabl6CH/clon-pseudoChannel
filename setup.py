@@ -8,6 +8,7 @@ import argparse
 import subprocess
 import signal
 import shutil
+import socket
 from git import RemoteProgress
 from datetime import datetime
 from plexapi.server import PlexServer
@@ -41,6 +42,17 @@ def get_channels(channelsDir='.'):
         except:
             do = "nothing"
     return channelsList
+
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except Exception:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
 
 def generate_daily_schedules(channelsList):
     #execute PseudoChannel.py -g in specified channel
@@ -250,17 +262,15 @@ def ps_install():
         dailyUpdateTime = dailyUpdateHour+':00'
         #set up daily cron for schedule generation
         cron = CronTab(user=True)
-        c = 0
         for job in cron:
             if job.comment == "Pseudo Channel Daily Schedule Generator":
-                c = 1
-                job.hour.on(dailyUpdateHour)
-                job.minute.on(0)
-        if c == 0:
-            cronJob = cron.new(command = sys.executable+" "+os.getcwd()+"/controls.py -g", comment="Pseudo Channel Daily Schedule Generator")
-            cronJob.hour.on(dailyUpdateHour)
-            cronJob.minute.on(0)
-        cron.write()        
+                print("NOTICE: Removing existing cron job")
+                cron.remove(job)
+        print("ACTION: Creating cron job for Daily Schedule Generator")
+        cronJob = cron.new(command = sys.executable+" "+os.getcwd()+"/controls.py -g", comment="Pseudo Channel Daily Schedule Generator")
+        cronJob.hour.on(dailyUpdateHour)
+        cronJob.minute.on(0)
+        cron.write()
         # write to config file
         configFile = open("pseudo_config.py", 'r')
         configData = configFile.read()
@@ -287,6 +297,8 @@ def ps_install():
         shutil.rmtree('../src')
         os.remove('../pseudo_config.py')
         os.remove('../plex_token.py')
+        web_setup()
+        copy_tv(clientList, clientNumbers, os.getcwd())
 
 def global_database_update(path):
     os.chdir(path)
@@ -346,19 +358,110 @@ def copyconfig(channel="all"):
                 chanDir = "pseudo-channel_"+str(chan)+'/'
                 shutil.copy('./pseudo_config.py', chanDir)
 
-def copy_tv(client=None):
-    print("copy_tv") #make symlinked copy of pseudo channel files to run on another client
+def copy_tv(clientList, clientNumbers, path):
+    print("Adding Additional Pseudo Channel Clients") #make symlinked copy of pseudo channel files to run on another client
+    print("SELECT DESIRED CLIENT")
+    for i, client in enumerate(PLEX.clients()):
+        print(str(i + 1)+":", client.title)
+        clientList.append(client.title)
+        clientNumbers.append(i + 1)
+    selectedClient = input('>:')
+    while int(selectedClient) not in clientNumbers:
+        print("ERROR: INPUT OUTSIDE OF RANGE")
+        selectedClient = input('>:')
+    ps_client = clientList[int(selectedClient)-1]
+    ps_client = ps_client.replace(" ","\ ")
+    if path[-1] == '/':
+        path[-1] = path[-1].replace('/','')
+    newChannelsDir = path+'_'+ps_client
+    print("Copying Files to "+newChannelsDir)
+    #copy all files and directories to a _CLIENT directory
+    files = glob.glob(path+'/*')
+    for file in files: #copy files into new client directory
+        if "pseudo-channel.db" in file: #symlink the database files
+            filePathList = file.split('/')
+            if "pseudo-channel_" in filePathList[-2]:
+                symLinkPath = newChannelsDir+'/'+filePathList[-2]+'/'+filePathList[-1]
+            else:
+                symLinkPath = newChannelsDir+'/'+filePathList[-1]
+            print("Creating symlink to database file")
+            print(file+" --> "+symLinkPath)
+            os.symlink(file,symLinkPath)
+        else:
+            shutil.copy(file, newChannelsDir)    
 
 def ps_update(branch='main'):
     print("ps_update") #download and copy updates from git to all branches and boxes
     
-def web_setup(branch='main'):
-    print("web_setup") #set up the web interface and api
-    #copy files from web interface git to ./channels/web
+def web_setup():
+    print("Setting up the web interface and API...") #set up the web interface and api
+    #copy files from web interface git
+    branchList = ['master','develop']
+    b = 1
+    print("Select Web Interface Repository Branch (default: master)")
+    for branch in branchList:
+        print(str(b)+": "+branch)
+        b = b+1
+    branchSelect = input('>: ')
+    if branchSelect == "":
+        web_branch = 'master'
+    else:
+        try:
+            branchSelect = int(branchSelect)
+            while 0 > int(branchSelect) > b-1:
+                print("INVALID ENTRY")
+                branchSelect = input('>: ')
+            web_branch = branchList[branchSelect-1]
+        except:
+            while branchSelect not in branchList:
+                print("INVALID ENTRY")
+                branchSelect = input('>: ')
+            web_branch = branchSelect
+    print("Is a web server (apache, nginx, etc) running on this device? (Y/N)")
+    web_server = input('Y/N >: ')
+    responses = ['yes','y','n','no']
+    while web_server.lower() not in responses:
+        print("INVALID ENTRY")
+        web_server = input('Y/N >: ')
+    if 'y' in web_server.lower():
+        print("Enter Install Path (default: /var/www/html)")
+        pathInput = input('>: ')
+        if pathInput == '':
+            path = "/var/www/html"
+        else:
+            path = pathInput
+    else:
+        print("Enter port number for web interface (default: 8080)")
+        portNumber = input(">: ")
+        if portNumber == "":
+            portNumber = "8080"
+        while portNumber.isnumeric() == False or portNumber == "80":
+            print("INVALID ENTRY")
+            portNumber = input(">: ")
+        path = os.path.abspath(os.path.dirname(__file__))+'/web'
+        os.mkdir(path)
+        local_ip = get_ip()
+        cron = CronTab(user=True)
+        for job in cron:
+            if job.comment == "PHP Server":
+                print("NOTICE: Removing existing cron job")
+                cron.remove(job)
+        print("ACTION: Adding cron job to run PHP Server on Boot")
+        job = cron.new(command = "/usr/bin/php -S "+local_ip+":"+portNumber+" -t "+path+" &", comment="PHP Server")
+        job.every_reboot()
+        cron.write()
+    try:
+        print("Copying files to "+path)
+        git.Repo.clone_from('https://github.com/FakeTV/Web-Interface-for-Pseudo-Channel', path, branch=web_branch)
+    except Exception as e:
+        print("ERROR GETTING DOWNLOADING FROM GIT")
+        print("e")
     #insert config details
-    #ask if other web service exists, if so copy to appropriate folder and exit
-    #create script to run http.server and add to startup
-    #run http.server
+    configFile = open(path+"/psConfig.php", 'r')
+    configData = configFile.read()
+    configFile = open(path+"/psConfig.php", 'w')
+    configData = configData.replace("$pseudochannel = '/home/pi/channels/';", "$pseudochannel = '"+os.path.abspath(os.path.dirname(__file__))+"';")
+    job.run()
 
 parser = argparse.ArgumentParser(description='Pseudo Channel Controls')
 try:

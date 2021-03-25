@@ -9,7 +9,7 @@ from src import Commercial
 
 class PseudoChannelCommercial():
 
-    MIN_DURATION_FOR_COMMERCIAL = 10 #seconds
+    MIN_DURATION_FOR_COMMERCIAL = 1 #seconds
     COMMERCIAL_PADDING_IN_SECONDS = 0
     daily_schedule = []
 
@@ -29,6 +29,8 @@ class PseudoChannelCommercial():
              random_commercial_dur_seconds = (int(random_commercial[4])/1000)
 #             random_commercial_dur_seconds = (int(random_commercial[4])/1000)%60
         return random_commercial
+
+
 
     def timedelta_milliseconds(self, td):
 
@@ -75,13 +77,9 @@ class PseudoChannelCommercial():
             curr_item_start_time  = curr_item_start_time.replace(day=2)
 
         
-        print("##############################################")
-        print("get_commercials_to_place_between_media DEBUG")
-        print("NOW: %s" % now)
-        print("prev_item_end_time: %s" % prev_item_end_time.replace(microsecond=0))
-        print("curr_item_start_time: %s" % curr_item_start_time)
-        print("time_diff: %s" % time_diff)
-        print("##############################################")
+        print("INFO: Last Item End Time -  %s" % prev_item_end_time.replace(microsecond=0))
+        print("INFO: Next Item Start Time -  %s" % curr_item_start_time)
+        print("INFO: Time to Fill - %s" % time_diff)
         
         count = 0
         commercial_list = []

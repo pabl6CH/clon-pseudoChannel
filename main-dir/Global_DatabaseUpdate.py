@@ -45,6 +45,7 @@ update_call = "python PseudoChannel.py %s" % update_flags
 
 
 # Step ONE: Global database update 
+os.chdir(os.path.abspath(os.path.dirname(__file__)))
 print("ACTION: Doing global update from PLEX: %s" % update_flags)
 try:
     os.rename("pseudo-channel.db", "pseudo-channel.bak")

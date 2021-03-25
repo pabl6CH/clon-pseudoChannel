@@ -12,6 +12,7 @@ OUTPUT_PID_FILE='running.pid'
 OUTPUT_PID_PATH='.'
 OUTPUT_LAST_FILE='last.info'
 
+
 def execfile(filename, globals=None, locals=None):
     if globals is None:
         globals = sys._getframe(1).f_globals
@@ -36,7 +37,7 @@ def get_channels(channelsDir=os.path.abspath(os.path.dirname(__file__))):
 
 def get_playing():
     #check for pid file, if present, identify which channel is running
-    pids = "**/"+OUTPUT_PID_FILE
+    pids = os.path.abspath(os.path.dirname(__file__))+"/**/"+OUTPUT_PID_FILE
     for runningPID in glob.glob(pids):
         with open(runningPID) as f:
             pid = f.readline()
@@ -45,7 +46,9 @@ def get_playing():
 
 def get_last():
     #check for last file, if present identify which channel is 'last'
-    lastFile = '**/'+OUTPUT_LAST_FILE
+    lastFile = os.path.abspath(os.path.dirname(__file__))+'/**/'+OUTPUT_LAST_FILE
+    print(lastFile)
+    print(glob.glob(lastFile))
     for lasts in glob.glob(lastFile):
         pathtofile = lasts.split('/')
         lastDir = pathtofile[-2]
@@ -53,32 +56,45 @@ def get_last():
     return last[1]
 
 def start_channel(channel):
-    #execute PseudoChannel.py -r in specified channel\
-    os.chdir('./pseudo-channel_'+channel)
-    process = subprocess.Popen(["python", "-u", "PseudoChannel.py", "-r"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+    #execute PseudoChannel.py -r in specified channel
+    last = get_last()
+    try:
+        os.remove(os.path.abspath(os.path.dirname(__file__))+'/pseudo-channel_'+last+"/last.info")
+        print("NOTICE: Previous last.info deleted")
+    except:
+        print("NOTICE: last.info not found")
+    os.chdir(os.path.abspath(os.path.dirname(__file__))+'/pseudo-channel_'+channel)
+    process = subprocess.Popen(["python", "-u", "PseudoChannel.py", "-r"], stdout=None, stderr=None, stdin=None)
     #create pid file and write pid into file
     print("NOTICE: Channel Process Running at "+str(process.pid))
     p = open(OUTPUT_PID_FILE, 'w+')
     p.write(str(process.pid))
     p.close()
-    while True:
-        output = process.stdout.readline()
+    '''while True:
+        #output = process.stdout.readline()
         if process.poll() is not None:
             break
         if output:
-            print(output.strip())
+            print(output.strip())'''
     rc = process.poll()    
     
 def stop_channel(channel, pid):
     #kill pid process
-    os.kill(int(pid), signal.SIGTERM)
-    print(pid+" PID TERMINATED")
+    '''ps_dir = channel.replace('running.pid','')
+    script = os.path.abspath(os.path.dirname(__file__))+'/'+ps_dir+'PseudoChannel.py'
+    print(subprocess.Popen.poll(subprocess.Popen(['python',script])))
+    subprocess.Popen.terminate(subprocess.Popen(['python',script]))'''
+    try:
+        os.kill(int(pid), signal.SIGTERM)
+        print(pid+" PID TERMINATED")
+    except:
+        print("PID "+pid+" NOT FOUND")
     #delete pid file
     os.remove(channel)
     print(OUTPUT_PID_FILE+" DELETED")
     #write last.info file
     lastFile = channel.replace(OUTPUT_PID_FILE, OUTPUT_LAST_FILE)
-    i = open('./'+lastFile, 'w')
+    i = open(lastFile, 'w')
     i.write(str(time.time()))
     i.close()
     print(OUTPUT_LAST_FILE+" CREATED")
@@ -96,6 +112,7 @@ def channel_up(channelsList):
         for channelPlaying, pid in getPlaying.items():
             channelNumber = channelPlaying.replace('pseudo-channel_','')
             channelNumber = channelNumber.replace('/'+OUTPUT_PID_FILE,'')
+            channelNumber = channelNumber.split('/')[-1]
             print("NOTICE: Stopping Channel "+str(channelNumber)+" at PID "+str(pid))
             stop_channel(channelPlaying, pid)
     except:
@@ -106,6 +123,7 @@ def channel_up(channelsList):
     for channel in channelsList:
         if isnext == 1:
             next_channel = channel
+            break
         if channel == channelNumber:
             isnext = 1
     print("NOTICE: Starting Channel "+str(next_channel))
@@ -118,6 +136,7 @@ def channel_down(channelsList):
         for channelPlaying, pid in getPlaying.items():
             channelNumber = channelPlaying.replace('pseudo-channel_','')
             channelNumber = channelNumber.replace('/'+OUTPUT_PID_FILE,'')
+            channelNumber = channelNumber.split('/')[-1]
             print("NOTICE: Stopping Channel "+str(channelNumber)+" at PID "+str(pid))
             stop_channel(channelPlaying, pid)
     except:
@@ -129,6 +148,7 @@ def channel_down(channelsList):
     for channel in channelsList:
         if isnext == 1:
             next_channel = channel
+            break
         if channel == channelNumber:
             isnext = 1
     print("NOTICE: Starting Channel "+str(next_channel))
@@ -136,30 +156,23 @@ def channel_down(channelsList):
     
 def generate_daily_schedules(channelsList):
     #execute PseudoChannel.py -g in specified channel
+    print("GENERATING DAILY SCHEDULES FOR ALL CHANNELS")
     os.chdir(os.path.abspath(os.path.dirname(__file__)))
-    for channel in channelsList:
+    process = subprocess.Popen(["python", "-u", "Global_DailySchedule.py"], stdout=None, stderr=None, stdin=None)
+    '''for channel in channelsList:
         os.chdir(os.path.abspath(os.path.dirname(__file__))+'/pseudo-channel_'+channel)
         print("GENERATING SCHEDULE FOR CHANNEL "+channel)
-        process = subprocess.Popen(["python", "-u", "PseudoChannel.py", "-g"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-        while True:
-            output = process.stdout.readline()
-            if process.poll() is not None:
-                break
-            if output:
-                print(output.strip())
-        rc = process.poll()
+        process = subprocess.call(["python", "-u", "PseudoChannel.py", "-g"], stdout=None, stderr=None, stdin=None)
         os.chdir('../')
+    print("ALERT: ALL DAILY SCHEDULE GENERATION COMPLETE")'''
         
 def global_database_update():
-    import Global_DatabaseUpdate
-    '''process = subprocess.Popen(["python", "-u", "Global_DatabaseUpdate.py"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
-    while True:
-        output = process.stdout.readline()
-        if process.poll() is not None:
-            break
-        if output:
-            print(output.strip())
-    rc = process.poll()'''
+    print("UPDATING PSEUDO CHANNEL DATABASE FROM PLEX SERVER")
+    #import Global_DatabaseUpdate
+    workingDir = os.path.abspath(os.path.dirname(__file__))
+    os.chdir(workingDir)
+    print("NOTICE: Working directory changed to "+workingDir)
+    process = subprocess.Popen(["python", "-u", "Global_DatabaseUpdate.py"], stdout=None, stderr=None, stdin=None)
 
 parser = argparse.ArgumentParser(description='Pseudo Channel Controls')
 channelsList = get_channels()
@@ -200,8 +213,8 @@ if args.channel:
 if args.stop:
     playing = get_playing()
     for channel, pid in playing.items():
+        print("STOPPING CHANNEL "+channel.replace('/running.pid','').split('_')[1])
         stop_channel(channel, pid)
-    print("STOPPING ACTIVE CHANNEL AT PID# "+pid)
 if args.stopallboxes:
     print("STOPPING ALL BOXES")
     stop_all_boxes()
@@ -219,7 +232,7 @@ if args.restart:
     playing = get_playing()
     for channel, pid in playing.items():
         stop_channel(channel, pid)
-    print("STOPPING ACTIVE CHANNEL AT PID "+pid)
+        print("STOPPING ACTIVE CHANNEL AT PID "+pid)
     last = get_last()
     print("RESTARTING CHANNEL "+last)
     start_channel(last)    
@@ -227,8 +240,8 @@ if args.generateschedules:
     try:
         playing = get_playing()
         for channel, pid in playing.items():
+            print("STOPPING CHANNEL "+channel.replace('/running.pid','').split('_')[1])
             stop_channel(channel, pid)
-        print("STOPPING ACTIVE CHANNEL AT PID "+pid)
         last = get_last()
         print("GENERATING DAILY SCHEDULES")
         generate_daily_schedules(channelsList)

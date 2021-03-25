@@ -292,8 +292,6 @@ class PseudoChannelDatabase():
             customSectionName
             ):
 
-        print("INFO: sectionType "+str(sectionType))
-        print("INFO: customSectionName"+str(customSectionName))
         unix = int(time.time())
         try:
             self.cursor.execute("INSERT OR REPLACE INTO daily_schedule "
@@ -325,11 +323,10 @@ class PseudoChannelDatabase():
     def add_media_to_daily_schedule(self, media):
 
         try:
-            print(str("NOTICE: Adding media to db: {} {}".format(media.title, media.start_time)).encode('UTF-8'))
+            print(str("{}: {} - {}".format(media.start_time, media.title, media.custom_section_name)).encode('UTF-8'))
         except:
             print("ERROR: Not outputting media info due to ascii code issues.")
 
-        print("INFO: media.custom_section_name", media.custom_section_name)
         self.add_daily_schedule_to_db(
                 0,
                 media.title,
@@ -524,6 +521,11 @@ class PseudoChannelDatabase():
         self.cursor.execute("SELECT * FROM commercials ORDER BY duration ASC")
         datalist = list(self.cursor.fetchall())
         return datalist
+        
+    def get_random_commercial_duration(self,min,max):
+        sql = "SELECT * FROM commercials WHERE (duration BETWEEN ? and ?) ORDER BY RANDOM() LIMIT 1"
+        self.cursor.execute(sql, (min, max, ))
+        return self.cursor.fetchone()        
 
     def get_movies(self):
 
