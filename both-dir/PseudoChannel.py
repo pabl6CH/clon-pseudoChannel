@@ -641,8 +641,8 @@ class PseudoChannel():
         self.db.create_daily_schedule_table()
 
         if self.USING_COMMERCIAL_INJECTION:
+            print("NOTICE: Getting Commercials List from Database")
             self.commercials = PseudoChannelCommercial(
-                print("NOTICE: Getting Commercials List from Database")
                 self.db.get_commercials(),
                 self.COMMERCIAL_PADDING_IN_SECONDS,
                 self.USE_DIRTY_GAP_FIX
