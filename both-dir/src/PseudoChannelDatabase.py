@@ -321,9 +321,13 @@ class PseudoChannelDatabase():
             raise e
 
     def add_media_to_daily_schedule(self, media):
-
         try:
-            print(str("{}: {} - {}".format(media.start_time, media.title, media.custom_section_name)).encode('UTF-8'))
+            mediaPrint = media.start_time + ": " + media.show_series_title + " - " + media.title + " | " + media.custom_section_name
+        except:
+            mediaPrint = media.start_time + ": " + media.title + " | " + media.custom_section_name
+        try:
+            print(mediaPrint)
+            #print(str("{}: {} - {}".format(media.start_time, media.title, media.custom_section_name)).encode('UTF-8'))
         except:
             print("ERROR: Not outputting media info due to ascii code issues.")
 

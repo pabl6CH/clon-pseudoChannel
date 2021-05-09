@@ -106,10 +106,10 @@ def ps_install():
                 print("INVALID ENTRY")
                 branchSelect = input('>: ')
             ps_branch = branchSelect
-    print("Enter Install Path (default: ./channels)")
+    print("Enter Install Path (default: "+os.getcwd()+"/channels)")
     pathInput = input('>: ')
     if pathInput == '':
-        path = "./channels"
+        path = os.getcwd()+"/channels"
     else:
         path = pathInput
     dirCheck = os.path.isdir(path)
@@ -298,7 +298,16 @@ def ps_install():
         os.remove('../pseudo_config.py')
         os.remove('../plex_token.py')
         web_setup()
-        copy_tv(clientList, clientNumbers, os.getcwd())
+        add_client = 'y'
+        while 'y' in add_client.lower():
+            print("Add another Plex client?")
+            add_client = input('Y/N >: ')
+            responses = ['yes','y','n','no']
+            while add_client.lower() not in responses:
+                print("INVALID ENTRY")
+                add_client = input('Y/N >: ')
+            if 'y' in add_client.lower():        
+                copy_tv(clientList, path, os.getcwd())
 
 def global_database_update(path):
     os.chdir(path)
@@ -358,12 +367,12 @@ def copyconfig(channel="all"):
                 chanDir = "pseudo-channel_"+str(chan)+'/'
                 shutil.copy('./pseudo_config.py', chanDir)
 
-def copy_tv(clientList, clientNumbers, path):
+def copy_tv(clientList, installDir, path):
     print("Adding Additional Pseudo Channel Clients") #make symlinked copy of pseudo channel files to run on another client
     print("SELECT DESIRED CLIENT")
-    for i, client in enumerate(PLEX.clients()):
-        print(str(i + 1)+":", client.title)
-        clientList.append(client.title)
+    clientNumbers = []
+    for i, client in enumerate(clientList):
+        print(str(i + 1)+":", client)
         clientNumbers.append(i + 1)
     selectedClient = input('>:')
     while int(selectedClient) not in clientNumbers:
@@ -373,25 +382,170 @@ def copy_tv(clientList, clientNumbers, path):
     ps_client = ps_client.replace(" ","\ ")
     if path[-1] == '/':
         path[-1] = path[-1].replace('/','')
-    newChannelsDir = path+'_'+ps_client
+    newChannelsDir = installDir+'_'+ps_client
     print("Copying Files to "+newChannelsDir)
+    #os.mkdir(newChannelsDir)
     #copy all files and directories to a _CLIENT directory
-    files = glob.glob(path+'/*')
+    files = glob.glob(installDir+'/**', recursive=True)
+    for file in files:
+        isDirectory = os.path.isdir(file)
+        if isDirectory == True:
+            newDir = file.replace(installDir.split('/')[-1],installDir.split('/')[-1]+'_'+ps_client)
+            print("ACTION: Creating Directory "+newDir)
+            os.mkdir(newDir)
     for file in files: #copy files into new client directory
-        if "pseudo-channel.db" in file: #symlink the database files
-            filePathList = file.split('/')
-            if "pseudo-channel_" in filePathList[-2]:
-                symLinkPath = newChannelsDir+'/'+filePathList[-2]+'/'+filePathList[-1]
+        isFile = os.path.isfile(file)
+        newDir = file.replace(installDir.split('/')[-1],installDir.split('/')[-1]+'_'+ps_client)
+        if isFile == True:
+            if "pseudo-channel.db" in file: #symlink the database files
+                print("ACTION: Creating symlink to "+file)
+                filePathList = file.split('/')
+                if "pseudo-channel_" in filePathList[-2]:
+                    symLinkPath = newChannelsDir+'/'+filePathList[-2]+'/'+filePathList[-1]
+                else:
+                    symLinkPath = newChannelsDir+'/'+filePathList[-1]
+                print("Creating symlink to database file")
+                print(file+" --> "+symLinkPath)
+                os.symlink(file,symLinkPath)
             else:
-                symLinkPath = newChannelsDir+'/'+filePathList[-1]
-            print("Creating symlink to database file")
-            print(file+" --> "+symLinkPath)
-            os.symlink(file,symLinkPath)
-        else:
-            shutil.copy(file, newChannelsDir)    
+                if isFile == True:
+                    print("ACTION: Copying "+file)
+                    shutil.copy(file, newDir)
 
-def ps_update(branch='main'):
-    print("ps_update") #download and copy updates from git to all branches and boxes
+def ps_update():
+    print("Updating Pseudo Channel") #download and copy updates from git to all branches and boxes
+    branchList = ['master','develop','python3']
+    b = 1
+    print("Select Pseudo Channel Repository Branch (default: master)")
+    for branch in branchList:
+        print(str(b)+": "+branch)
+        b = b+1
+    branchSelect = input('>: ')
+    if branchSelect == "":
+        ps_branch = 'master'
+    else:
+        try:
+            branchSelect = int(branchSelect)
+            while 0 > int(branchSelect) > b-1:
+                print("INVALID ENTRY")
+                branchSelect = input('>: ')
+            ps_branch = branchList[branchSelect-1]
+        except:
+            while branchSelect not in branchList:
+                print("INVALID ENTRY")
+                branchSelect = input('>: ')
+            ps_branch = branchSelect
+    os.mkdir('../temp') #create temp directory to download files into
+    try:
+        git.Repo.clone_from('https://github.com/FakeTV/pseudo-channel', '../temp', branch=ps_branch)
+    except Exception as e:
+        print("ERROR GETTING DOWNLOADING FROM GIT")
+        print("e")
+    mainFiles = glob.glob('../temp/main-dir/*')
+    bothFiles = glob.glob('../temp/both-dir/*')
+    srcFiles = glob.glob('../temp/both-dir/src/*')
+    chanFiles = glob.glob('../temp/channel-dir/*')
+    filesList = [mainFiles,bothFiles,srcFiles,chanFiles]
+    fL = 1
+    for files in filesList:
+        for file in files:
+            fileName = file.split('/')[-1]
+            if fileName != 'pseudo_config.py' and fileName != 'src':
+                oldFiles = glob.glob('./**/'+fileName,recursive=True)
+                if len(oldFiles) == 0:
+                    #Figure out where to copy new files
+                    psDirs = glob.glob("./pseudo-channel_*")
+                    if fL == 1:
+                        try:
+                            shutil.copyfile(file, os.getcwd()+'/'+fileName)
+                            try:
+                                clearLine = " " * len(printLine)
+                                print(clearLine,end='\r')       
+                            except:
+                                pass
+                            printLine = "NOTICE: Copying " + fileName + " to " + os.getcwd()
+                            print(printLine,end='\r')
+                        except Exception as e:
+                            print("\nERROR: Copy Failed - " + fileName + " to " + os.getcwd())
+                            print(e)
+                    elif fL == 2:
+                        try:
+                            shutil.copyfile(file, os.getcwd()+'/'+fileName)
+                            try:
+                                clearLine = " " * len(printLine)
+                                print(clearLine,end='\r')       
+                            except:
+                                pass
+                            printLine = "NOTICE: Copying " + fileName + " to " + os.getcwd()+'/'+fileName
+                            print(printLine,end='\r')
+                        except:
+                            print("\nERROR: Copy Failed - " + fileName + " to " + os.getcwd()+'/'+fileName)
+                        for psDir in psDirs:
+                            try:
+                                shutil.copyfile(file, psDir+'/'+fileName)
+                                try:
+                                    clearLine = " " * len(printLine)
+                                    print(clearLine,end='\r')       
+                                except:
+                                    pass
+                                printLine = "NOTICE: Copying " + fileName + " to " + psDir+'/'+fileName
+                                print(printLine,end='\r')
+                            except:
+                                print("\nERROR: Copy Failed - " + fileName + " to " + psDir+'/'+fileName)
+                    elif fL == 3:
+                        try:
+                            shutil.copyfile(file, os.getcwd()+'/src/'+fileName)
+                            try:
+                                clearLine = " " * len(printLine)
+                                print(clearLine,end='\r')       
+                            except:
+                                pass
+                            printLine = "NOTICE: Copying " + fileName + " to " + os.getcwd()+'/src/'+fileName
+                            print(printLine,end='\r')
+                        except:
+                            print("\nERROR: Copy Failed - " + fileName + " to " + os.getcwd()+'/src/'+fileName)
+                        for psDir in psDirs:
+                            try:
+                                shutil.copyfile(file, psDir+'/src/'+fileName)
+                                try:
+                                    clearLine = " " * len(printLine)
+                                    print(clearLine,end='\r')       
+                                except:
+                                    pass
+                                printLine = "NOTICE: Copying " + fileName + " to " + psDir+'/src/'+fileName
+                                print(printLine,end='\r')
+                            except:
+                                print("\nERROR: Copy Failed - " + fileName + " to " + psDir+'/src/'+fileName)
+                    elif fL == 4:
+                        for psDir in psDirs:
+                            try:
+                                shutil.copyfile(file, psDir+'/src/'+fileName)
+                                try:
+                                    clearLine = " " * len(printLine)
+                                    print(clearLine,end='\r')       
+                                except:
+                                    pass
+                                printLine = "NOTICE: Copying " + fileName + " to " + psDir+'/src/'+fileName
+                                print(printLine,end='\r')
+                            except:
+                                print("\nERROR: Copy Failed - " + fileName + " to " + psDir+'/src/'+fileName)
+                else:
+                    for old in oldFiles:
+                        try:
+                            shutil.copyfile(file, old)
+                            try:
+                                clearLine = " " * len(printLine)
+                                print(clearLine,end='\r')       
+                            except:
+                                pass
+                            printLine = "NOTICE: Copying " + fileName + " to " + old
+                            print(printLine,end='\r')                            
+                        except:
+                            print("\nERROR: Copy Failed - " + fileName + " to " + old)
+
+        fL = fL + 1
+    shutil.rmtree('../temp')
+    print("\nNOTICE: Temp Files Deleted")
     
 def web_setup():
     print("Setting up the web interface and API...") #set up the web interface and api
@@ -459,9 +613,12 @@ def web_setup():
     #insert config details
     configFile = open(path+"/psConfig.php", 'r')
     configData = configFile.read()
-    configFile = open(path+"/psConfig.php", 'w')
     configData = configData.replace("$pseudochannel = '/home/pi/channels/';", "$pseudochannel = '"+os.path.abspath(os.path.dirname(__file__))+"';")
-    job.run()
+    configFile.close()
+    configFile = open(path+"/psConfig.php", 'w')
+    configFile.write(configData)
+    configFile.close()
+    #job.run()
 
 parser = argparse.ArgumentParser(description='Pseudo Channel Controls')
 try:
@@ -475,10 +632,10 @@ parser.add_argument('-cc', '--copyconfig',
     choices = channelsList,
     help='Copy root config file to one or all channels')
 parser.add_argument('-tv', '--tv',
-    action = 'store',
+    action = 'store_true',
     help='Add another TV with linked database')
 parser.add_argument('-u', '--update',
-    choices = ['main','dev'],
+    action = 'store_true',
     help='Update Pseudo Channel to the Latest Version')
 parser.add_argument('-w', '--web',
     action = 'store',
@@ -500,11 +657,20 @@ if args.copyconfig:
         print("COPYING CONFIG TO ALL CHANNELS")
         copyconfig()
 if args.tv:
-    print("SETTING UP PSUEDO CHANNEL FOR CLIENT "+str(args.tv))
-    #copy_tv(args.tv)
+    print("SETTING UP PSUEDO CHANNEL FOR CLIENT")
+    import plex_token as plex_token
+    PLEX = PlexServer(plex_token.baseurl, plex_token.token)
+    clientList = []
+    for i, client in enumerate(PLEX.clients()):
+        clientList.append(client.title)
+    installDir = os.getcwd()
+    print(installDir)
+    parentDir = os.path.abspath(os.path.join(installDir, os.pardir))
+    print(parentDir)
+    copy_tv(clientList, installDir, parentDir)
 if args.update:
-    print("UPDATING PSEUDO CHANNEL FROM GIT BRANCH "+str(args.update))
-    #ps_update(args.update)
+    print("UPDATING PSEUDO CHANNEL FROM GIT")
+    ps_update()
 if args.web:
     print("SETTING UP PSEUDO CHANNEL WEB INTERFACE AND API FROM GIT BRANCH "+str(args.web))
     #web_setup(args.web)

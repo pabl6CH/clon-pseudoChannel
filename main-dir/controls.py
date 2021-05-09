@@ -57,8 +57,8 @@ def get_last():
 
 def start_channel(channel):
     #execute PseudoChannel.py -r in specified channel
-    last = get_last()
     try:
+        last = get_last()        
         os.remove(os.path.abspath(os.path.dirname(__file__))+'/pseudo-channel_'+last+"/last.info")
         print("NOTICE: Previous last.info deleted")
     except:

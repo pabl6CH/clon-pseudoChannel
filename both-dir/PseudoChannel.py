@@ -1514,7 +1514,7 @@ if __name__ == '__main__':
 
             #dates_list = [datetime.datetime.strptime(''.join(str(date[8])), pseudo_channel.APP_TIME_FORMAT_STR) for date in daily_schedule]
             now = datetime.datetime.now()
-            now = now.replace(year=1900, month=1, day=1)
+            #now = now.replace(year=1900, month=1, day=1)
             #closest_media = nearest(dates_list, now)
             #print closest_media
             prevItem = None
@@ -1559,7 +1559,7 @@ if __name__ == '__main__':
             print(str("NOTICE: Readying media: '{}'".format(item[3])).encode('UTF-8'))
             next_start_time = datetime.datetime.strptime(item[8], pseudo_channel.APP_TIME_FORMAT_STR)
             now = datetime.datetime.now()
-            now = now.replace(year=1900, month=1, day=1)
+            #now = now.replace(year=1900, month=1, day=1)
             time_diff = next_start_time - now
             nat_start = datetime.datetime.strptime(item[9], '%Y-%m-%d %H:%M:%S.%f') - datetime.timedelta(milliseconds=item[7])
             schedule_offset = nat_start - datetime.datetime.strptime(item[8], pseudo_channel.APP_TIME_FORMAT_STR)
@@ -1606,7 +1606,7 @@ if __name__ == '__main__':
 
             print("NOTICE: Generating Memory Schedule.")
             now = datetime.datetime.now()
-            now = now.replace(year=1900, month=1, day=1)
+            #now = now.replace(year=1900, month=1, day=1)
             pseudo_cache = pseudo_channel.get_daily_schedule_cache_as_json()
             prev_end_time_to_watch_for = None
             if pseudo_channel.USE_OVERRIDE_CACHE and isforupdate:

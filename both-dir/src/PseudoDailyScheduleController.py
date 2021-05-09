@@ -294,7 +294,7 @@ class PseudoDailyScheduleController():
     def get_html_from_daily_schedule(self, currentTime, bgImageURL, datalist, nowPlayingTitle):
 
         now = datetime.now()
-        now = now.replace(year=1900, month=1, day=1)
+        #now = now.replace(year=1900, month=1, day=1)
         midnight = now.replace(hour=23, minute=59, second=59)
         #mutto233 put this here, because to be honest, isn't the current time always now?
         if currentTime != None:
@@ -399,19 +399,19 @@ class PseudoDailyScheduleController():
                                     continue
                                 numberIncrease += 1
                                 with tag('tbody'):
-                                    if currentTime != None:
-                                        currentTime = currentTime.replace(year=1900, month=1, day=1)
+                                    #if currentTime != None:
+                                        #currentTime = currentTime.replace(year=1900, month=1, day=1)
                                     try:
                                         timeBStart = datetime.strptime(row[8], '%I:%M:%S %p')
                                     except:
                                         timeBStart = datetime.strptime(row[8], '%H:%M:%S')
-                                    timeBStart = timeBStart.replace(year=1900, month=1, day=1)
+                                    #timeBStart = timeBStart.replace(year=1900, month=1, day=1)
                                     try:
                                         timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S.%f')
-                                        timeBEnd = timeBEnd.replace(day=1)
+                                        #timeBEnd = timeBEnd.replace(day=1)
                                     except:
                                         timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S')
-                                        timeBEnd = timeBEnd.replace(day=1)
+                                        #timeBEnd = timeBEnd.replace(day=1)
                                     if currentTime == None:
                                         with tag('tr'):
                                             with tag('th', scope='row'):
@@ -799,7 +799,7 @@ class PseudoDailyScheduleController():
 
     def manually_get_now_playing_bg_image(self, currentTime, datalist):
         now = datetime.now()
-        now = now.replace(year=1900, month=1, day=1)
+        #now = now.replace(year=1900, month=1, day=1)
         midnight = now.replace(hour=23, minute=59, second=59)
         increase_var = 0
 
@@ -812,13 +812,13 @@ class PseudoDailyScheduleController():
                 timeBStart = datetime.strptime(row[8], '%I:%M:%S %p')
             except:
                 timeBStart = datetime.strptime(row[8], '%H:%M:%S')
-            timeBStart = timeBStart.replace(year=1900, month=1, day=1)
+            #timeBStart = timeBStart.replace(year=1900, month=1, day=1)
             try:
                 timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S.%f')
-                timeBEnd = timeBEnd.replace(day=1)
+                #timeBEnd = timeBEnd.replace(day=1)
             except:
                 timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S')
-                timeBEnd = timeBEnd.replace(day=1)
+                #timeBEnd = timeBEnd.replace(day=1)
             if ((currentTime - timeBStart).total_seconds() >= 0 and \
                  (timeBEnd - currentTime).total_seconds() >= 0) or \
                  ((timeBStart - timeBEnd).total_seconds() >= 0 and \
@@ -847,7 +847,7 @@ class PseudoDailyScheduleController():
 
     def manually_get_now_playing_title(self, currentTime, datalist):
         now = datetime.now()
-        now = now.replace(year=1900, month=1, day=1)
+        #now = now.replace(year=1900, month=1, day=1)
         midnight = now.replace(hour=23, minute=59, second=59)
         increase_var = 0
 
@@ -858,7 +858,7 @@ class PseudoDailyScheduleController():
                 timeBStart = datetime.strptime(row[8], '%I:%M:%S %p')
             except:
                 timeBStart = datetime.strptime(row[8], '%H:%M:%S')
-            timeBStart = timeBStart.replace(year=1900, month=1, day=1)
+            #timeBStart = timeBStart.replace(year=1900, month=1, day=1)
             try:
                 timeBEnd = datetime.strptime(row[9], '%Y-%m-%d %H:%M:%S.%f')
                 timeBEnd = timeBEnd.replace(day=1)
@@ -892,7 +892,7 @@ class PseudoDailyScheduleController():
 
         print("NOTICE: ", "Writing XML / HTML to file.")
         now = datetime.now()
-        now = now.replace(year=1900, month=1, day=1)
+        #now = now.replace(year=1900, month=1, day=1)
 
         bgImage = self.manually_get_now_playing_bg_image(now, datalist)
 

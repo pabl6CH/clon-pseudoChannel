@@ -51,30 +51,34 @@ class PseudoChannelCommercial():
             curr_item_start_time = datetime.strptime(now_ep.start_time, '%H:%M:%S')
         else:
             curr_item_start_time = reset_time
-            if(curr_item_start_time < prev_item_end_time):
-                curr_item_start_time = curr_item_start_time.replace(day=1)
-            else:
-                curr_item_start_time = curr_item_start_time.replace(day=2)
+            curr_item_start_time += timedelta(days=1)
+            #if(curr_item_start_time < reset_time):
+                #curr_item_start_time = curr_item_start_time.replace(day=1)
+            #else:
+                #curr_item_start_time = curr_item_start_time.replace(day=2)
 
         # mutto233 has added some logic at this point
         # - All dates are now changed to 1/1/90 so midnight doesn't cause issues
         # - Issues with day skips again being adressed
         now = datetime.now()
-        now = now.replace(year=1900, month=1, day=1)
+        #now = now.replace(year=1900, month=1, day=1)
         midnight = now.replace(hour=0,minute=0,second=0) 
         if(curr_item_start_time < reset_time):
-            curr_item_start_time = curr_item_start_time.replace(day=2)
+            #curr_item_start_time = curr_item_start_time.replace(day=2)
+            curr_item_start_time += timedelta(days=1)
         if(prev_item_end_time < reset_time):
-            prev_item_end_time = prev_item_end_time.replace(day=2)
-        else:
-            prev_item_end_time = prev_item_end_time.replace(day=1)
+            #prev_item_end_time = prev_item_end_time.replace(day=2)
+            prev_item_end_time += timedelta(days=1)
+        #else:
+            #prev_item_end_time = prev_item_end_time.replace(day=1)
         time_diff = (curr_item_start_time - prev_item_end_time)
         
         if prev_item_end_time.replace(microsecond=0) > curr_item_start_time and strict_time == "false":
             # NOTE: This is just for the logic of this function, I have noticed that this 
             # may cause other issues in other functions, since now the day is off.
             print("NOTICE: WE MUST BE SKIPPING A DAY, ADDING A DAY TO THE START TIME")
-            curr_item_start_time  = curr_item_start_time.replace(day=2)
+            #curr_item_start_time  = curr_item_start_time.replace(day=2)
+            curr_item_start_time  += timedelta(days=1)
 
         
         print("INFO: Last Item End Time -  %s" % prev_item_end_time.replace(microsecond=0))
