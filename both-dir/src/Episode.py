@@ -32,6 +32,7 @@ class Episode(Media):
             overlap_max,
             plex_media_id,
             custom_section_name,
+            media_id,
             show_series_title, 
             episode_number, 
             season_number,
@@ -49,6 +50,7 @@ class Episode(Media):
                 overlap_max,
                 plex_media_id,
                 custom_section_name,
+                media_id
                 )
 
         self.show_series_title = show_series_title

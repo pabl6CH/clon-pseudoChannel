@@ -28,7 +28,9 @@ class Movie(Media):
             time_shift, 
             overlap_max,
             plex_media_id,
-            custom_section_name
+            custom_section_name,
+            media_id,
+            show_series_title
             ):
 
         super(Movie, self).__init__( 
@@ -42,5 +44,8 @@ class Movie(Media):
                 time_shift, 
                 overlap_max,
                 plex_media_id,
-                custom_section_name
+                custom_section_name,
+                media_id
                 )
+        
+        self.show_series_title = show_series_title

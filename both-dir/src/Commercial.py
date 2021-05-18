@@ -28,7 +28,8 @@ class Commercial(Media):
             time_shift, 
             overlap_max,
             plex_media_id,
-            custom_section_name
+            custom_section_name,
+            media_id
             ):
 
         super(Commercial, self).__init__(
@@ -42,5 +43,6 @@ class Commercial(Media):
                 time_shift, 
                 overlap_max,
                 plex_media_id,
-                custom_section_name
+                custom_section_name,
+                media_id
                 )

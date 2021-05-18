@@ -33,7 +33,8 @@ class Media(object):
             time_shift, 
             overlap_max,
             plex_media_id,
-            custom_section_name
+            custom_section_name,
+            media_id
             ):
 
         self.section_type = section_type
@@ -47,6 +48,7 @@ class Media(object):
         self.overlap_max = overlap_max
         self.plex_media_id = plex_media_id
         self.custom_section_name = custom_section_name
+        self.media_id = media_id
 
         self.start_time = natural_start_time
         self.end_time = natural_end_time

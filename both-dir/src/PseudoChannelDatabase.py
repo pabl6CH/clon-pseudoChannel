@@ -330,13 +330,18 @@ class PseudoChannelDatabase():
             #print(str("{}: {} - {}".format(media.start_time, media.title, media.custom_section_name)).encode('UTF-8'))
         except:
             print("ERROR: Not outputting media info due to ascii code issues.")
-
+        if media.__class__.__name__ == "Episode":
+            seriesTitle = media.show_series_title
+        elif media.media_id == 112:
+            seriesTitle = media.show_series_title
+        else:
+            seriesTitle = ''
         self.add_daily_schedule_to_db(
-                0,
+                media.media_id if media.__class__.__name__ == "Movie" else 0,
                 media.title,
                 media.episode_number if media.__class__.__name__ == "Episode" else 0,
                 media.season_number if media.__class__.__name__ == "Episode" else 0,
-                media.show_series_title if media.__class__.__name__ == "Episode" else '',
+                seriesTitle,
                 media.duration,
                 media.start_time,
                 media.end_time,
@@ -470,6 +475,17 @@ class PseudoChannelDatabase():
         else:
             pass
 
+    def get_media_by_id(self, plex_media_id, mediaType):
+        print("INFO: plex_media_id:", plex_media_id)
+        if(plex_media_id is not None):
+            media = mediaType
+            sql = "SELECT * FROM "+media+" WHERE (plexMediaID LIKE ?) COLLATE NOCASE"
+            self.cursor.execute(sql, (plex_media_id, ))
+            media_item = self.cursor.fetchone()
+            return media_item
+        else:
+            pass
+
     def get_schedule(self):
 
         self.cursor.execute("SELECT * FROM schedule ORDER BY datetime(startTime) ASC")
@@ -499,6 +515,11 @@ class PseudoChannelDatabase():
 
         media = "movies"
         return self.get_media(title, media)
+
+    def get_movie_by_id(self, plex_media_id):
+
+        media = "movies"
+        return self.get_media_by_id(plex_media_id, media)
 
     def get_shows(self, title):
 
