@@ -112,11 +112,27 @@ class PseudoChannel():
                     if correct_lib_name == "Movies":
                         sectionMedia = self.PLEX.library.section(section.title).all()
                         for i, media in enumerate(sectionMedia):
-                            self.db.add_movies_to_db(1, media.title, media.duration, media.key, section.title)
+                            fetchMedia = self.PLEX.fetchItem(media.key)
+                            try:
+                                genres = [genre.tag for genre in fetchMedia.genres]
+                            except:
+                                genres = ''
+                            try:
+                                actors = [actor.tag for actor in fetchMedia.actors]
+                            except:
+                                actors = ''
+                            try:
+                                collections = [collection.tag for collection in fetchMedia.collections]
+                            except:
+                                collections = ''
+                            #actors = {}
+                            #for actor in fetchMedia.actors:
+                            #    actors[actor.tag] = str(actor.id)
+                            self.db.add_movies_to_db(media.ratingKey, media.title, media.duration, media.key, section.title, media.contentRating, media.summary, media.originallyAvailableAt, str(genres), str(actors), str(collections), media.studio)
                             self.print_progress(
                                     i + 1, 
                                     len(sectionMedia), 
-                                    prefix = 'Progress '+section.title+": ", 
+                                    prefix = section.title+" "+str(i+1)+' of '+str(len(sectionMedia))+": ", 
                                     suffix = 'Complete ['+media.title+']', 
                                     bar_length = 40
                                 )
@@ -124,48 +140,79 @@ class PseudoChannel():
                     elif correct_lib_name == "TV Shows":
                         sectionMedia = self.PLEX.library.section(section.title).all()
                         for i, media in enumerate(sectionMedia):
+                            fetchMedia = self.PLEX.fetchItem(media.key)
+                            try:
+                                genres = [genre.tag for genre in fetchMedia.genres]
+                            except:
+                                genres = ''
+                            try:
+                                actors = [actor.tag for actor in fetchMedia.actors]
+                            except:
+                                actors = ''
+                            try:
+                                similars = [similar.tag for similar in fetchMedia.similar]
+                            except:
+                                similars = ''
+
                             self.db.add_shows_to_db(
-                                2, 
+                                media.ratingKey, 
                                 media.title, 
                                 media.duration if media.duration else 1, 
                                 '', 
-                                '', 
+                                media.originallyAvailableAt, 
                                 media.key, 
-                                section.title
+                                section.title,
+                                media.contentRating,
+                                str(genres),
+                                str(actors),
+                                str(similars),
+                                media.studio
                             )
-                            #add all episodes of each tv show to episodes table
+                            self.print_progress(
+                                    i + 1,
+                                    len(sectionMedia),
+                                    prefix = 'TV Show '+str(i+1)+' of '+str(len(sectionMedia))+': ',
+                                    suffix = 'Complete ['+media.title[0:40]+']',
+                                    bar_length = 40
+                                )
+                        #add all episodes of each tv show to episodes table
+                        for i, media in enumerate(sectionMedia):
                             episodes = self.PLEX.library.section(section.title).get(media.title).episodes()
-                
-                
                             for j, episode in enumerate(episodes):
                                 duration = episode.duration
                                 if duration:
                                     self.db.add_episodes_to_db(
-                                            4, 
+                                            media.ratingKey, 
                                             episode.title, 
                                             duration, 
                                             episode.index, 
                                             episode.parentIndex, 
                                             media.title,
                                             episode.key,
-                                            section.title
+                                            section.title,
+                                            episode.contentRating,
+                                            episode.originallyAvailableAt,
+                                            episode.summary
                                         )
                                 else:
                                     self.db.add_episodes_to_db(
-                                            4, 
+                                            episode.ratingKey, 
                                             episode.title, 
                                             0, 
                                             episode.index, 
                                             episode.parentIndex, 
                                             media.title,
                                             episode.key,
-                                            section.title
+                                            section.title,
+                                            episode.contentRating,
+                                            episode.originallyAvailableAt,
+                                            episode.summary
                                         )
                                 self.print_progress(
                                         j + 1,
                                         len(episodes),
-                                        prefix = 'Progress TV Show '+str(i+1)+' of '+str(len(sectionMedia))+': ',
-                                        suffix = 'Complete ['+media.title+']',
+                                        prefix = str(i+1)+' of '+str(len(sectionMedia))+" "+media.title+': ',
+                                        suffix = 'Complete ['+episode.title[0:40]+']',
                                         bar_length = 40
                                     )
                         #print('')
@@ -177,8 +224,8 @@ class PseudoChannel():
                             self.print_progress(
                                 i + 1, 
                                 media_length, 
-                                prefix = 'Progress '+section.title+":", 
-                                suffix = 'Complete['+media.title[0:12]+']', 
+                                prefix = section.title+" "+str(i+1)+' of '+str(len(sectionMedia))+":", 
+                                suffix = 'Complete['+media.title[0:40]+']', 
                                 bar_length = 40
                             )
                         #print('')
@@ -187,14 +234,20 @@ class PseudoChannel():
             playlists = self.PLEX.playlists()
             for i, playlist in enumerate(playlists):
                 duration_average = playlist.duration / playlist.leafCount
+                playlist_added = playlist.addedAt.strftime("%Y-%m-%d %H:%M:%S")
                 self.db.add_shows_to_db(
-                    2,
+                    playlist.ratingKey,
                     playlist.title,
                     duration_average,
                     '',
-                    '',
+                    playlist_added,
                     playlist.key,
-                    playlist.type
+                    playlist.type,
+                    '',
+                    '',
+                    '',
+                    '',
+                    ''
                 )
                 # add all entries of playlist to episodes table
                 episodes = self.PLEX.playlist(playlist.title).items()
@@ -213,31 +266,37 @@ class PseudoChannel():
                         plTitle = episode.title + " ("+str(episode.year)+")"
                     if duration:
                         self.db.add_playlist_entries_to_db(
-                            5,
+                            episode.ratingKey,
                             plTitle,
                             duration,
                             eNo,
                             sNo,
                             playlist.title,
                             episode.key,
-                            sectionTitle
+                            sectionTitle,
+                            episode.contentRating,
+                            episode.originallyAvailableAt,
+                            episode.summary
                         )
                     else:
                         self.db.add_playlist_entries_to_db(
-                            5,
+                            episode.ratingKey,
                             episode.title,
                             0,
                             eNo,
                             sNo,
                             playlist.title,
                             episode.key,
-                            sectionTitle
+                            sectionTitle,
+                            episode.contentRating,
+                            episode.originallyAvailableAt,
+                            episode.summary
                         )
                     self.print_progress(
                         j + 1,
                         len(episodes),
-                        prefix = 'Progress Playlist '+str(i+1)+' of '+str(len(playlists))+': ',
-                        suffix = 'Complete ['+playlist.title+']',
+                        prefix = 'Playlist '+str(i+1)+' of '+str(len(playlists))+': ',
+                        suffix = 'Complete ['+playlist.title[0:40]+']',
                         bar_length = 40
                     )
                 print('', end='\r')
@@ -310,7 +369,7 @@ class PseudoChannel():
 
     def update_db_movies(self):
 
-        print("NOTICE: Updating Local Database, MOVIES ONLY")
+        print("NOTICE: Updating Local Movies Database")
         self.db.create_tables()
         libs_dict = config.plexLibraries
         sections = self.PLEX.library.sections()
@@ -320,7 +379,23 @@ class PseudoChannel():
                     if correct_lib_name == "Movies":
                         sectionMedia = self.PLEX.library.section(section.title).all()
                         for i, media in enumerate(sectionMedia):
-                            self.db.add_movies_to_db(1, media.title, media.duration, media.key, section.title)
+                            fetchMedia = self.PLEX.fetchItem(media.key)
+                            try:
+                                genres = [genre.tag for genre in fetchMedia.genres]
+                            except:
+                                genres = ''
+                            try:
+                                actors = [actor.tag for actor in fetchMedia.actors]
+                            except:
+                                actors = ''
+                            try:
+                                collections = [collection.tag for collection in fetchMedia.collections]
+                            except:
+                                collections = ''
+                            #actors = {}
+                            #for actor in fetchMedia.actors:
+                            #    actors[actor.tag] = str(actor.id)
+                            self.db.add_movies_to_db(media.key.replace('/library/metadata/',''), media.title, media.duration, media.key, section.title, media.contentRating, media.summary, media.originallyAvailableAt, str(genres), str(actors), str(collections), media.studio)
                             self.print_progress(
                                     i + 1, 
                                     len(sectionMedia), 
@@ -328,10 +403,6 @@ class PseudoChannel():
                                     suffix = 'Complete ['+media.title+']', 
                                     bar_length = 40
                                 )
-                        print('', end='\r')
-        sys.stdout.write("\033[K")
-        print('NOTICE: Movies Database Update Complete!')
-        print('')
     def update_db_tv(self):
 
         print("NOTICE: Updating Local Database, TV ONLY")
@@ -670,7 +741,9 @@ class PseudoChannel():
             section = entry[9]
             for key, val in weekday_dict.items(): 
                 if str(entry[7]) in str(val) and int(weekno) == int(key):
+                    media_id = entry[2]
                     if section == "TV Shows":
+                        next_episode = None
                         try:
                             minmax = entry[4].split(",")
                             min = int(minmax[0])
@@ -684,177 +757,94 @@ class PseudoChannel():
                             max = int(minmax)
                             max = max * 60000
                         if str(entry[3]).lower() == "random":
+                            media_id = 999
+                            advance_episode = "no"
                             sections = self.PLEX.library.sections()
                             shows_list = []
                             libs_dict = config.plexLibraries
                             for theSection in sections:
                                 for correct_lib_name, user_lib_name in libs_dict.items():
                                     if theSection.title.lower() in [x.lower() for x in user_lib_name]:
-                                        if correct_lib_name == "TV Shows" and entry[13] != "":
-                                            print("NOTICE: TV SHOW WITH XTRA ARGS FOUND")
-                                            shows = self.PLEX.library.section(theSection.title)
-                                            xtra = '[]'
-                                            d = {}
-                                            #thestr = entry[13]
-                                            if ";" in xtra:
-                                                 xtra = entry[13].split(';')
-                                            else:
-                                                 if xtra != None:
-                                                     xtra = str(entry[13]) + ';'
-                                                     xtra = xtra.split(';')
-                                            try:
-                                                for thestr in xtra:
-                                                    print("INFO: ARGUMENT = "+thestr)
-                                                    strsplit = thestr.split(':')
-                                                    if strsplit[0] == "decade":
-                                                        decade = strsplit[1]
-                                                        lastdigit = 0
-                                                        thestr = "year:"
-                                                        while lastdigit <= 9:
-                                                           thestr = thestr+decade[0]+decade[1]+decade[2]+str(lastdigit)
-                                                           lastdigit = lastdigit + 1
-                                                           if lastdigit < 10:
-                                                               thestr = thestr+","
-                                                        print("INFO: ARGUMENT = "+thestr)
-                                                    #d.update(strsplit[0],strsplit[1])
-                                                    elif strsplit[0] == "season":
-                                                        xtraSeason = strsplit[1]
-                                                        thestr = ""
-                                                    elif strsplit[0] == "episode":
-                                                        xtraEpisode = strsplit[1]
-                                                        thestr = ""
-                                                    if thestr != "":
-                                                        regex = re.compile(r"\b(\w+)\s*:\s*([^:]*)(?=\s+\w+\s*:|$)")
-                                                        d.update(regex.findall(thestr))
-                                                #d = dict(regex.findall(thestr))
-                                                print(d)
-                                                #turn values into a list
-                                                for key, val in d.items():
-                                                    d[key] = val.split(',')
-                                                for show in shows.search(None, **d):
-                                                    shows_list.append(show)
-                                            except:
-                                                pass
-                            if (len(shows_list) > 0):
-                                #print shows_list
-                                print("ACTION: Using xtra args to choose a random show")
-                                the_show = self.db.get_shows(random.choice(shows_list).title)
-                            else:
-                                print("ACTION: Getting random show")
-                                the_show = self.db.get_random_show_duration(int(min), int(max))
-                                try:
-                                    print("INFO: "+str(the_show[3]))
-                                except:
-                                    print("NOTICE: FAILED TO GET RANDOM SHOW")
-                            if (the_show is None):
-                                print("ACTION: Getting random episode of random show")
-                                next_episode = self.db.get_random_episode_duration(int(min), int(max))
-                                attempt = 1
-                                episode_duration = next_episode[4]
-                                while episode_duration < min or episode_duration > max:
-                                    print("NOTICE: EPISODE LENGTH OUTSIDE PARAMETERS")
-                                    print("ACTION: Getting random episode of random show")
-                                    next_episode = self.db.get_random_episode_duration(int(min), int(max))
-                                    episode_duration = int(next_episode[4])
-                                    attempt = attempt + 1
-                                    if attempt > 1000:
-                                        episode_duration = max
-                                    else:
-                                        episode_duration = int(next_episode[4])
-                                print("INFO: Random Selection: "+next_episode[7]+" - S"+str(next_episode[6])+"E"+str(next_episode[5])+" - "+next_episode[3])
-                            else:
-                                i = 0
-                                while i < 1000:
-                                    i += 1
-                                    try:
-                                        if xtraSeason is None and xtraEpisode is None:
-                                            print("ACTION: Choosing random episode of "+the_show[3].upper())
-                                            next_episode = self.db.get_random_episode_of_show(the_show[3])
-                                        elif xtraEpisode is None:
-                                            print("ACTION: Choosing random episode of "+the_show[3].upper()+" Season "+xtraSeason)
-                                            next_episode = self.db.get_specific_episode(the_show[3], xtraSeason)
-                                        elif xtraSeason is None:
-                                            print("ACTION: Choosing random episode of "+the_show[3].upper()+" Episode "+xtraEpisode)
-                                            next_episode = self.db.get_specific_episode(the_show[3], None, xtraEpisode)
-                                        else:
-                                            print("ACTION: Choosing random episode of "+the_show[3].upper()+" Season "+xtraSeason+" Episode "+xtraEpisode)
-                                            next_episode = self.db.get_specific_episode(the_show[3], xtraSeason, xtraEpisode)
-                                        print("INFO: Episode Selected: S"+str(next_episode[6])+"E"+str(next_episode[5])+" "+next_episode[3].upper())
-                                        break
-                                    except TypeError as e:
-                                        print (e)
-                                        if (len(shows_list) > 0):
-                                        #print shows_list
-                                            print("ACTION: Using xtra args to choose a random show")
-                                            the_show = self.db.get_shows(random.choice(shows_list).title)
-                                        else:
-                                            print("ACTION: Getting random show")
-                                            the_show = self.db.get_random_show_duration(int(min), int(max))
-                                            print("INFO: "+str(the_show[3]))
-                                        if (the_show is None):
-                                            print("ACTION: Getting random episode of random show")
-                                            next_episode = self.db.get_random_episode_duration(int(min), int(max))
-                                        continue
-                                episode_duration = int(next_episode[4])
-                                attempt = 1
-                                while episode_duration < min or episode_duration > max or next_episode == None:
-                                    i = 0
-                                    while i < 1000:
-                                        i += 1
-                                        try:
-                                            print("NOTICE: DURATION OUTSIDE PARAMETERS")
-                                            if (len(shows_list) > 0):
-                                                print("ACTION: Using xtra args to choose a random show")
-                                                the_show = self.db.get_shows(random.choice(shows_list).title)
-                                            else:
-                                                print("ACTION: Getting random show")
-                                                the_show = self.db.get_random_show_duration(int(min), int(max))
-                                                print("INFO: "+str(the_show))
-                                            if xtraSeason is None and xtraEpisode is None:
-                                                print("ACTION: Choosing random episode of "+the_show[3].upper())
-                                                next_episode = self.db.get_random_episode_of_show(the_show[3])
-                                            elif xtraEpisode is None:
-                                                print("ACTION: Choosing random episode of "+the_show[3].upper()+" Season "+xtraSeason)
-                                                next_episode = self.db.get_specific_episode(the_show[3], xtraSeason)
-                                            elif xtraSeason is None:
-                                                print("ACTION: Choosing random episode of "+the_show[3].upper()+" Episode "+xtraEpisode)
-                                                next_episode = self.db.get_specific_episode(the_show[3], None, xtraEpisode)
-                                            else:
-                                                print("ACTION: Choosing random episode of "+the_show[3].upper()+" Season "+xtraSeason+" Episode "+xtraEpisode)
-                                                next_episode = self.db.get_specific_episode(the_show[3], xtraSeason, xtraEpisode)
-                                            print("INFO: Episode Selected: S"+str(next_episode[6])+"E"+str(next_episode[5])+" "+next_episode[3].upper())   
-                                            break
-                                        except TypeError as e:
-                                            print(e)
-                                            if (len(shows_list) > 0):
-                                                #print shows_list
-                                                print("ACTION: Using xtra args to choose a random show")
-                                                the_show = self.db.get_shows(random.choice(shows_list).title)
-                                            else:
-                                                print("ACTION: Getting random show")
-                                                the_show = self.db.get_random_show_duration(int(min), int(max))
-                                                print("INFO: "+the_show[3])
-                                            if (the_show is None):
-                                                next_episode = self.db.get_random_episode_duration(int(min), int(max))
-                                            continue
-                                    attempt = attempt + 1
-                                    episode_duration = int(next_episode[4])
-                                    if attempt > 1000:
-                                        episode_duration = max
-                                    else:
-                                        episode_duration = int(next_episode[4])
-                            show_title = next_episode[7]
-                            xtraSeason = None
-                            xtraEpisode = None
+                                        if correct_lib_name == "TV Shows":
+                                            while next_episode is None:
+                                                print("----------------------------------")
+                                                shows = self.PLEX.library.section(theSection.title)
+                                                print("NOTICE: Getting Show That Matches Data Filters")
+                                                the_show = self.db.get_random_show_data("TV Shows",int(min),int(max),entry[15],entry[16],entry[17],entry[18],entry[19],entry[20])
+                                                if (the_show == None):
+                                                    print("NOTICE: Failed to get shows with data filters, trying with less")
+                                                    the_show = self.db.get_random_show_data("TV Shows",int(min),int(max),entry[15],None,None,None,entry[19],None)
+                                                    #the_show = self.db.get_shows(random.choice(shows_list).title)
+                                                    try:
+                                                        print("INFO: "+str(the_show[3]))
+                                                    except:
+                                                        print("NOTICE: FAILED TO GET RANDOM SHOW")
+                                                if (the_show is None):
+                                                    print("ACTION: Getting random episode of random show")
+                                                    next_episode = self.db.get_random_episode_duration(int(min), int(max))
+                                                    attempt = 1
+                                                    episode_duration = next_episode[4]
+                                                    while episode_duration < min or episode_duration > max:
+                                                        print("NOTICE: EPISODE LENGTH OUTSIDE PARAMETERS")
+                                                        print("ACTION: Getting random episode of random show")
+                                                        next_episode = self.db.get_random_episode_duration(int(min), int(max))
+                                                        episode_duration = int(next_episode[4])
+                                                        attempt = attempt + 1
+                                                        if attempt > 1000:
+                                                            episode_duration = max
+                                                        else:
+                                                            episode_duration = int(next_episode[4])
+                                                    print("INFO: Random Selection: "+next_episode[7]+" - S"+str(next_episode[6])+"E"+str(next_episode[5])+" - "+next_episode[3])
+                                                else:
+                                                    if entry[2] == 999:
+                                                        media_id = 999
+                                                        print("ACTION: Choosing random episode of "+the_show[3].upper())
+                                                        try:
+                                                            next_episode = self.db.get_random_episode_of_show_by_data(the_show[2],int(min),int(max),entry[15],entry[21].split(',')[0],entry[21].split(',')[1])
+                                                        except:
+                                                            next_episode = self.db.get_random_episode_of_show_by_data(the_show[2],int(min),int(max),entry[15])
+                                                    elif entry[2] == 998:
+                                                        media_id = 998
+                                                        if entry[14] == 1:
+                                                            print("ACTION: Choosing last episode of " +the_show[3].upper())
+                                                            advance_episode = "no"
+                                                            next_episode = self.db.get_last_episode(the_show[2]) #get last episode
+                                                            try:
+                                                                print("INFO: Scheduled: "+next_episode[7]+" - (S"+str(next_episode[6])+"E"+str(next_episode[5])+") "+next_episode[3])
+                                                            except:
+                                                                pass
+                                                        else:
+                                                            print("ACTION: Choosing next episode of " +the_show[3].upper())
+                                                            advance_episode = "yes"
+                                                            next_episode = self.db.get_next_episode(the_show[3]) #get next episode
+                                                            try:
+                                                                print("INFO: Scheduled: "+next_episode[7]+" - (S"+str(next_episode[6])+"E"+str(next_episode[5])+") "+next_episode[3])
+                                                            except:
+                                                                pass
+                                            episode_duration = int(next_episode[4])
+                                            show_title = next_episode[7]
+                                            xtraSeason = None
+                                            xtraEpisode = None
+                                            print("INFO: " + next_episode[7] + " - " + next_episode[3] + " (S" + str(next_episode[6]) + "E" + str(next_episode[5]) + ")")
                             print("----------------------------------")
-
                         elif entry[2] == 9999:
+                            media_id = 9999
+                            advance_episode = "no"
                             print("ACTION: Getting random episode of "+entry[3])
+                            if entry[15] != None:
+                                if entry[15][3] == '*':
+                                    print("INFO: Decade = " + str(entry[15]))
+                                    airDate=entry[15][0:3]
+                                else:
+                                    print("INFO: Air Date = " + str(entry[15]))
+                                    airDate=entry[15]
+                            else:
+                                airDate=None
                             try:
-                                next_episode = self.db.get_random_episode_of_show_alt(entry[3])
-                            except TypeError as e:
-                                print(e)
-                                next_episode = self.db.get_random_episode_of_show_alt(entry[3])
+                                next_episode = self.db.get_random_episode_of_show_by_data_alt(entry[3], int(min), int(max), airDate, entry[21].split(',')[0], entry[21].split(',')[1])
+                            except Exception as e:
+                                print("ERROR: " + str(e))
+                                next_episode = self.db.get_random_episode_of_show_by_data_alt(entry[3], int(min), int(max), airDate)
                             print("INFO: Episode Selected: S"+str(next_episode[6])+"E"+str(next_episode[5])+" "+next_episode[3].upper())
                             show_title = next_episode[7]
                             episode_duration = next_episode[4]
@@ -870,7 +860,34 @@ class PseudoChannel():
                                     episode_duration = next_episode[4]
                             show_title = next_episode[7]
                         else:
-                            next_episode = self.db.get_next_episode(entry[3]) #get next episode
+                            print("----------------------------------")
+                            if entry[14] == 1:
+                                advance_episode = "no"
+                                #check for same show in MEDIA list
+                                for m in self.MEDIA:
+                                    try:
+                                        seriesTitle = m.show_series_title
+                                    except:
+                                        seriesTitle = None
+                                    if seriesTitle == entry[3]:
+                                        next_episode = self.db.get_episode_from_plexMediaID(m.plex_media_id)
+                                if next_episode == None:
+                                    next_episode = self.db.get_last_episode_alt(entry[3]) #get last episode
+                            else:
+                                advance_episode = "yes"
+                                #check for same show in MEDIA list
+                                episodeID = None
+                                for m in self.MEDIA:
+                                    try:
+                                        seriesTitle = m.show_series_title
+                                    except:
+                                        seriesTitle = None
+                                    if seriesTitle == entry[3] and m.media_id == 2:
+                                        episodeID = self.db.get_episode_id_alternate(m.plex_media_id,seriesTitle)[0]
+                                if episodeID != None:
+                                    next_episode = self.db.get_next_episode_alt(seriesTitle, episodeID)
+                                if next_episode == None:
+                                    next_episode = self.db.get_next_episode(entry[3]) #get next episode
                             try:
                                 print("INFO: Scheduled: "+next_episode[7]+" - (S"+str(next_episode[6])+"E"+str(next_episode[5])+") "+next_episode[3])
                             except:
@@ -889,12 +906,13 @@ class PseudoChannel():
                                 entry[11], # time_shift
                                 entry[12], # overlap_max
                                 #next_episode[8] if len(next_episode) >= 9 else '', # plex id
-                                next_episode[8], #plex id
+                                next_episode[8], # plex_media_id
                                 customSectionName, # custom lib name
-                                2, #media_id
+                                media_id, #media_id
                                 show_title, # show_series_title
                                 next_episode[5], # episode_number
                                 next_episode[6], # season_number
+                                advance_episode, # advance_episode
                                 )
                             self.MEDIA.append(episode)
                         else:
@@ -932,14 +950,18 @@ class PseudoChannel():
                                                         xtra = xtra.split(';')
                                                 print(xtra)
                             try:
-                                for thestr in xtra:
+                                """for thestr in xtra:
                                     print ("INFO: "+thestr)
                                     regex = re.compile(r"\b(\w+)\s*:\s*([^:]*)(?=\s+\w+\s*:|$)")
                                     d.update(regex.findall(thestr))
                                 # turn values into list
                                 for key, val in d.items():
-                                    d[key] = val.split(',')
-                                for movie in movies.search(None, **d):
+                                    d[key] = val.split(',')"""
+                                if entry[13] != "" and entry[13] != None:
+                                    movie_search = self.db.get_movies_xtra(correct_lib_name,int(min),int(max),xtra)
+                                else:
+                                    movie_search = self.db.get_movies_data("Movies",int(min),int(max),entry[15],entry[16],entry[17],entry[18],entry[19],entry[20])
+                                for movie in movie_search:
                                     movies_list.append(movie)
                             except:
                                 pass
@@ -947,26 +969,26 @@ class PseudoChannel():
                                 movie_get = random.choice(movies_list)
                                 movies_list.remove(movie_get)
                                 try:
-                                    print("INFO: Movie Title -  " + movie_get.title)
-                                    the_movie = self.db.get_movie_by_id(movie_get.key)
+                                    print("INFO: Movie Title -  " + movie_get[3])
+                                    the_movie = self.db.get_movie_by_id(movie_get[6])
                                 except Exception as e:
                                     print("ERROR: Key not found")
                                     print(e)
-                                    print("INFO: " + movie_get.title)
-                                    the_movie = self.db.get_movie(movie_get.title)
+                                    print("INFO: " + movie_get[3])
+                                    the_movie = self.db.get_movie(movie_get[3])
                                 movie_duration = the_movie[4]
                                 attempt = 1
                                 while int(movie_duration) < min or movie_duration > max:
                                     movie_get = random.choice(movies_list)
                                     movies_list.remove(movie_get)
                                     try:
-                                        print("INFO: Movie Title -  " + movie_get.title)
-                                        the_movie = self.db.get_movie_by_id(movie_get.key)
+                                        print("INFO: Movie Title -  " + movie_get[3])
+                                        the_movie = self.db.get_movie_by_id(movie_get[6])
                                     except Exception as e:
                                         print("ERROR: Key not found")
                                         print(e)
-                                        print("INFO: " + movie_get.title)
-                                        the_movie = self.db.get_movie(movie_get.title)
+                                        print("INFO: " + movie_get[3])
+                                        the_movie = self.db.get_movie(movie_get[6])
                                     attempt = attempt + 1
                                     if attempt > 500:
                                         movie_duration = max
@@ -976,7 +998,20 @@ class PseudoChannel():
                                 self.db.update_movies_table_with_last_played_date(the_movie[3])
                             else:
                                 print("ERROR: xtra args not found, getting random movie")
-                                the_movie = self.db.get_random_movie_duration(int(min), int(max))
+                                movie_search = self.db.get_movies_data("Movies",int(min),int(max),None,None,None,None,entry[19],None)
+                                for movie in movie_search:
+                                    if movie not in movies_list and movie[3] not in last_movie:
+                                        movies_list.append(movie)
+                                movie_get = random.choice(movies_list)
+                                movies_list.remove(movie_get)
+                                try:
+                                    print("INFO: Movie Title -  " + movie_get[3])
+                                    the_movie = self.db.get_movie_by_id(movie_get[6])
+                                except Exception as e:
+                                    print("ERROR: Key not found")
+                                    print(e)
+                                    print("INFO: " + movie_get[3])
+                                    the_movie = self.db.get_movie(movie_get[6])
                                 print("INFO: Movie Title - " + str(the_movie[3]))
                                 movie_duration = the_movie[4]
                                 attempt = 1
@@ -1032,89 +1067,71 @@ class PseudoChannel():
                                     if theSection.title.lower() in [x.lower() for x in user_lib_name]:
                                         if correct_lib_name == "Movies":
                                             movies = self.PLEX.library.section(theSection.title)
-                            if(entry[13] != '' or len(actors_list) > 0): # xtra params
+                            '''if(entry[13] != None or len(actors_list) > 0): # xtra params
                                 xtra = []
                                 try:
                                     print("INFO: Movie Xtra Arguments: ", entry[13])
                                 except:
                                     print("INFO: Xtra Arguments Not Found")
-                                d = {}
-                                if len(actors_list) > 0:
-                                    for actorName in actors_list:
-                                        xtra = []
-                                        if ";" in entry[13]:
-                                            xtra = entry[13].split(';')
-                                        elif entry[13] != '':
-                                            xtra.append(str(entry[13]))
-                                            #xtra = xtra.split(';')
-                                        else:
-                                            xtra = []
-                                        actorID = actors_list[actorName]
-                                        print("----------------------------------")
-                                        print("INFO: Actor from " + last_movie + " selected - " + actorName)
-                                        try:
-                                            #print("NOTICE: Appending " + actorName + " to xtra args")
-                                            xtra.append("actor:"+str(actorID))
-                                        except:
-                                            #print("ERROR: Appending failed, creating new list with actor name")
-                                            xtra = ["actor:"+str(actorID)]
-                                        print("INFO: xtra args: " + str(xtra))
-                                        try:
-                                            for thestr in xtra:
-                                                #print ("INFO: "+thestr)
-                                                regex = re.compile(r"\b(\w+)\s*:\s*([^:]*)(?=\s+\w+\s*:|$)")
-                                                d.update(regex.findall(thestr))
-                                        except Exception as e:
-                                            print("ERROR: " + str(e))
-                                            pass
-                                        #print("NOTICE: turning xtra values into a dict")
-                                        try:
-                                            for key, val in d.items():
-                                                d[key] = val.split(',')
-                                        except Exception as e:
-                                            print("ERROR: " + str(e))
-                                            pass
-                                        print("NOTICE: Executing movies search for matches")
-                                        try:
-                                            movie_search = movies.search(None, **d)
-                                            print("INFO: " + str(len(movie_search)) + " results found")
-                                        except Exception as e:
-                                            print(e)
-                                        for movie in movie_search:
-                                            if movie not in movies_list and movie.title not in last_movie:
-                                                print(str(movie.title))
-                                                movies_list.append(movie)
-                                            #print("INFO: Match Found - " + str(movie))
-                                        #for movie in movies.search(None, **d):
-                                        #    movies_list.append(movie)
-                                        #    print("INFO: Match Found - " + str(movie))
-                                        #except Exception as e:
-                                        #    print("ERROR: " + str(e))
-                                        #    pass
-                                        #print("INFO: Movies List: " + str(movies_list))
-                                else:
-                                    print("NOTICE: No previous actor data, skipping...")
-                                    if ";" in entry[13]:
-                                        xtra = entry[13].split(';')
-                                    else:
-                                        if entry[13] != None:
-                                            xtra = str(entry[13]) + ';'
-                                            xtra = xtra.split(';')
-                                    print(xtra)
-                                    try:
-                                        for thestr in xtra:
-                                            print ("INFO: "+thestr)
-                                            regex = re.compile(r"\b(\w+)\s*:\s*([^:]*)(?=\s+\w+\s*:|$)")
-                                            d.update(regex.findall(thestr))
-                                        # turn values into list
-                                        for key, val in d.items():
-                                            d[key] = val.split(',')
-                                        for movie in movies.search(None, **d):
+                                d = {}'''
+                            if len(actors_list) > 0:
+                                xtra_actors = []
+                                if entry[17] != None and ',' in entry[17]:
+                                    xtra_actors = entry[17].split(',')
+                                elif entry[17] != None and ',' not in entry[17]:
+                                    xtra_actors.append(entry[17])
+                                for actorName in actors_list:
+                                    the_actors = []
+                                    for xActor in xtra_actors:
+                                        print("INFO: xtra actor = " + xActor)
+                                        the_actors.append(xActor)
+                                    the_actors.append(actorName)
+                                    aLoop = 1
+                                    actor_data = ''
+                                    print("----------------------------------")
+                                    print("INFO: Actor from " + last_movie + " selected - " + actorName)
+                                    print("NOTICE: Executing movies search for matches")
+                                    print("INFO: " + str(entry[15]) + ', ' + str(entry[16]) + ', ' + str(the_actors) + ', ' + str(entry[18]) + ', ' + str(entry[19]) + ', ' + str(entry[20]))
+                                    movie_search = self.db.get_movies_data("Movies",int(min),int(max),entry[15],entry[16],the_actors,entry[18],entry[19],entry[20])
+                                    print("INFO: " + str(len(movie_search)) + " results found")
+                                    #except Exception as e:
+                                        #print(e)
+                                    for movie in movie_search:
+                                        if movie not in movies_list and movie[3] not in last_movie:
+                                            print(str(movie[3]))
                                             movies_list.append(movie)
-                                            #print("INFO: Match Found - " + movie)
-                                    except Exception as e:
-                                        print("ERROR: " + str(e))
-                                        pass
+                                        #print("INFO: Match Found - " + str(movie))
+                                    #for movie in movies.search(None, **d):
+                                    #    movies_list.append(movie)
+                                    #    print("INFO: Match Found - " + str(movie))
+                                    #except Exception as e:
+                                    #    print("ERROR: " + str(e))
+                                    #    pass
+                                    #print("INFO: Movies List: " + str(movies_list))
+                            else:
+                                print("NOTICE: No previous actor data, skipping...")
+                                '''if ";" in entry[13]:
+                                    xtra = entry[13].split(';')
+                                else:
+                                    if entry[13] != None:
+                                        xtra = str(entry[13]) + ';'
+                                        xtra = xtra.split(';')
+                                print(xtra)'''
+                                try:
+                                    """for thestr in xtra:
+                                        print ("INFO: "+thestr)
+                                        regex = re.compile(r"\b(\w+)\s*:\s*([^:]*)(?=\s+\w+\s*:|$)")
+                                        d.update(regex.findall(thestr))
+                                    # turn values into list
+                                    for key, val in d.items():
+                                        d[key] = val.split(',')"""
+                                    movie_search = self.db.get_movies_data("Movies",int(min),int(max),entry[15],entry[16],entry[17],entry[18],entry[19],entry[20])
+                                    for movie in movie_search:
+                                        movies_list.append(movie)
+                                        #print("INFO: Match Found - " + movie)
+                                except Exception as e:
+                                    print("ERROR: " + str(e))
+                                    pass
                             #print(xtra)
                             
                             if (len(movies_list) > 0):
@@ -1123,24 +1140,24 @@ class PseudoChannel():
                                 movie_get = random.choice(movies_list)
                                 movies_list.remove(movie_get)
                                 try:
-                                    print("INFO: Movie Title -  " + movie_get.title)
-                                    the_movie = self.db.get_movie_by_id(movie_get.key)
+                                    print("INFO: Movie Title -  " + movie_get[3])
+                                    the_movie = self.db.get_movie_by_id(movie_get[6])
                                 except Exception as e:
                                     print("ERROR: Key not found")
                                     print(e)
-                                    print("INFO: " + movie_get.title)
-                                    the_movie = self.db.get_movie(movie_get.title)
+                                    print("INFO: " + movie_get[3])
+                                    the_movie = self.db.get_movie(movie_get[3])
                                 attempt = 1
                                 while the_movie[6] in prev_movies and last_movie in the_movie[3] and attempt < 500:
                                     movie_get = random.choice(movies_list)
                                     try:
-                                        print("INFO: Movie Title -  " + movie_get.title)
-                                        the_movie = self.db.get_movie_by_id(movie_get.key)
+                                        print("INFO: Movie Title -  " + movie_get[3])
+                                        the_movie = self.db.get_movie_by_id(movie_get[6])
                                     except Exception as e:
                                         print("ERROR: Key not found")
                                         print(e)
-                                        print("INFO: " + movie_get.title)
-                                        the_movie = self.db.get_movie(movie_get.title)
+                                        print("INFO: " + movie_get[3])
+                                        the_movie = self.db.get_movie(movie_get[3])
                                     attempt = attempt + 1
                                 movie_duration = the_movie[4]
                                 attempt = 1
@@ -1149,13 +1166,13 @@ class PseudoChannel():
                                         movie_get = random.choice(movies_list)
                                         movies_list.remove(movie_get)
                                         try:
-                                            print("INFO: Movie Title -  " + movie_get.title)
-                                            the_movie = self.db.get_movie_by_id(movie_get.key)
+                                            print("INFO: Movie Title -  " + movie_get[3])
+                                            the_movie = self.db.get_movie_by_id(movie_get[6])
                                         except Exception as e:
                                             print("ERROR: Key not found")
                                             print(e)
-                                            print("INFO: " + movie_get.title)
-                                            the_movie = self.db.get_movie(movie_get.title)
+                                            print("INFO: " + movie_get[3])
+                                            the_movie = self.db.get_movie(movie_get[3])
                                     else:
                                         the_movie = self.db.get_random_movie_duration(int(min), int(max))
                                         print("ERROR: Falling back to random movie that fits in the duration window")
@@ -1168,29 +1185,29 @@ class PseudoChannel():
                                 """Updating movies table in the db with lastPlayedDate entry"""
                                 self.db.update_movies_table_with_last_played_date(the_movie[3])
                             else:
+                                print("----------------------------------")
                                 print("ERROR: No movies found, re-rolling without xtra args")
                                 d = {}
                                 if len(actors_list) > 0:
                                     for actorName in actors_list:
-                                        actorID = actors_list[actorName]
+                                        actorID = actorName
                                         print("INFO: Actor from " + last_movie + " selected - " + actorName)
                                         try:
                                             xtra = xtra.append("actor:"+str(actorID))
                                         except:
                                             xtra = ["actor:"+str(actorID)]
                                         try:
-                                            for thestr in xtra:
+                                            """for thestr in xtra:
                                                 print ("INFO: "+thestr)
                                                 regex = re.compile(r"\b(\w+)\s*:\s*([^:]*)(?=\s+\w+\s*:|$)")
                                                 d.update(regex.findall(thestr))
                                             # turn values into list
                                             for key, val in d.items():
-                                                d[key] = val.split(',')
-                                            movie_search = movies.search(None, **d)
+                                                d[key] = val.split(',')"""
+                                            movie_search = self.db.get_movies_data("Movies",int(min),int(max),None,None,actor_data,None,entry[19],None)
+                                            #movie_search = movies.search(None, **d)
                                             for movie in movie_search:
-                                                print(str(movie.title))
-                                                if movie not in movies_list and movie.title not in last_movie:
-                                                    print(str(movie.title))
+                                                if movie not in movies_list and movie[3] not in last_movie:
                                                     movies_list.append(movie)
                                                 #print("INFO: Match Found - " + movie)
                                         except Exception as e:
@@ -1204,25 +1221,25 @@ class PseudoChannel():
                                     movie_get = random.choice(movies_list)
                                     movies_list.remove(movie_get)
                                     try:
-                                        print("INFO: Movie Title -  " + movie_get.title)
-                                        the_movie = self.db.get_movie_by_id(movie_get.key)
+                                        print("INFO: Movie Title -  " + movie_get[3])
+                                        the_movie = self.db.get_movie_by_id(movie_get[6])
                                     except Exception as e:
                                         print("ERROR: Key not found")
                                         print(e)
-                                        print("INFO: " + movie_get.title)
-                                        the_movie = self.db.get_movie(movie_get.title)
+                                        print("INFO: " + movie_get[3])
+                                        the_movie = self.db.get_movie(movie_get[3])
                                     attempt = 1
-                                    while the_movie[6] in prev_movies and last_movie in the_movie[3]and attempt < 500:
+                                    while the_movie[6] in prev_movies and last_movie in the_movie[3] and attempt < 500:
                                         movie_get = random.choice(movies_list)
                                         movies_list.remove(movie_get)
                                         try:
-                                            print("INFO: Movie Title -  " + movie_get.title)
-                                            the_movie = self.db.get_movie_by_id(movie_get.key)
+                                            print("INFO: Movie Title -  " + movie_get[3])
+                                            the_movie = self.db.get_movie_by_id(movie_get[6])
                                         except Exception as e:
                                             print("ERROR: Key not found")
                                             print(e)
-                                            print("INFO: " + movie_get.title)
-                                            the_movie = self.db.get_movie(movie_get.title)
+                                            print("INFO: " + movie_get[3])
+                                            the_movie = self.db.get_movie(movie_get[6])
                                         attempt = attempt + 1
                                     attempt = 1
                                     movie_duration = the_movie[4]
@@ -1235,13 +1252,13 @@ class PseudoChannel():
                                                 print(e)
                                             movie_get = random.choice(movies_list)
                                             try:
-                                                print("INFO: Movie Title -  " + movie_get.title)
-                                                the_movie = self.db.get_movie_by_id(movie_get.key)
+                                                print("INFO: Movie Title -  " + movie_get[3])
+                                                the_movie = self.db.get_movie_by_id(movie_get[6])
                                             except Exception as e:
                                                 print("ERROR: Key not found")
                                                 print(e)
-                                                print("INFO: " + movie_get.title)
-                                                the_movie = self.db.get_movie(movie_get.title)
+                                                print("INFO: " + movie_get[3])
+                                                the_movie = self.db.get_movie(movie_get[3])
                                         else:
                                             the_movie = self.db.get_random_movie_duration(int(min), int(max))
                                             print("ERROR: Falling back to random movie that fits in the duration window")
@@ -1253,8 +1270,32 @@ class PseudoChannel():
                                             movie_duration = the_movie[4]
                                 else:
                                     print("ERROR: Kevin Bacon Mode failed to find a match, selecting random movie")
-                                    the_movie = self.db.get_random_movie_duration(int(min), int(max))
+                                    movies_list = []
+                                    movie_search = self.db.get_movies_data("Movies",int(min),int(max),entry[14],entry[15],entry[16],entry[17],entry[18],entry[19])
+                                    for movie in movie_search:
+                                        if movie not in movies_list and movie[3] not in last_movie:
+                                            movies_list.append(movie)
+                                    if len(movies_list) < 1:
+                                        print("ERROR: xtra args not found, getting random movie")
+                                        movie_search = self.db.get_movies_data("Movies",int(min),int(max),None,None,None,None,entry[19],None)
+                                        try:
+                                            for movie in movie_search:
+                                                if movie not in movies_list and movie[3] not in last_movie:
+                                                    movies_list.append(movie)
+                                        except:
+                                            movies_list.append(movie)
+                                        movie_get = random.choice(movies_list)
+                                        movies_list.remove(movie_get)
+                                        try:
+                                            print("INFO: Movie Title -  " + movie_get[3])
+                                            the_movie = self.db.get_movie_by_id(movie_get[6])
+                                        except Exception as e:
+                                            print("ERROR: Key not found")
+                                            print(e)
+                                            print("INFO: " + movie_get[3])
+                                            the_movie = self.db.get_movie(movie_get[6])
                                     print("INFO: Movie Title - " + str(the_movie[3]))
+                                    print("----------------------------------")
                                     movie_duration = the_movie[4]
                                     attempt = 1
                                     while int(movie_duration) < min or movie_duration > max:
@@ -1285,6 +1326,7 @@ class PseudoChannel():
                             print("NOTICE: Movie Selected - " + the_movie[3])
                             #get plex metadata
                             plex_movie = self.PLEX.fetchItem(the_movie[6])
+                            last_data = ""
                             if str(entry[3]).lower() == "kevinbacon":
                                 actors_list_old = actors_list
                                 actors_list = {}
@@ -1315,7 +1357,7 @@ class PseudoChannel():
                             the_movie[6], # plex id
                             the_movie[7], # custom lib name
                             media_id, # media_id
-                            last_data # show_series_title (for storing kevin bacon data)
+                            last_data # notes (for storing kevin bacon data)
                             )
                             self.MEDIA.append(movie)
                         else:
@@ -1388,6 +1430,8 @@ class PseudoChannel():
                                     self.db.add_media_to_daily_schedule(commercial)
                             self.db.add_media_to_daily_schedule(entry)
                             previous_episode = entry
+                            if entry.custom_section_name == "TV Shows" and entry.advance_episode != "no":
+                                self.db.update_shows_table_with_last_episode(entry.show_series_title, entry.plex_media_id)
                         elif entry.is_strict_time.lower() == "secondary": #This mode starts a show "already in progress" if the previous episode or movie runs past the start time of this one
                             print("INFO Pre-empt Allowed: {}".format(str(entry.title)))
                             try:
@@ -1429,6 +1473,8 @@ class PseudoChannel():
                                         self.db.add_media_to_daily_schedule(commercial)
                                 self.db.add_media_to_daily_schedule(entry)
                                 previous_episode = entry
+                                if entry.custom_section_name == "TV Shows" and entry.advance_episode != "no":
+                                    self.db.update_shows_table_with_last_episode(entry.show_series_title, entry.plex_media_id)
                         else:
                             try:
                                 print("INFO: Variable Time: {}".format(str(entry.title).encode(sys.stdout.encoding, errors='replace')))
@@ -1458,10 +1504,13 @@ class PseudoChannel():
                                     self.db.add_media_to_daily_schedule(commercial)
                             self.db.add_media_to_daily_schedule(entry)
                             previous_episode = entry
+                            if entry.custom_section_name == "TV Shows" and entry.advance_episode != "no":
+                                self.db.update_shows_table_with_last_episode(entry.show_series_title, entry.plex_media_id)
                     else:
                         self.db.add_media_to_daily_schedule(entry)
                         previous_episode = entry
-                
+                        if entry.custom_section_name == "TV Shows" and entry.advance_episode != "no":
+                                self.db.update_shows_table_with_last_episode(entry.show_series_title, entry.plex_media_id)
                 if self.USING_COMMERCIAL_INJECTION:
                     list_of_commercials = self.commercials.get_commercials_to_place_between_media(
                         previous_episode,

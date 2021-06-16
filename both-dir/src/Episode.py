@@ -36,6 +36,7 @@ class Episode(Media):
             show_series_title, 
             episode_number, 
             season_number,
+            advance_episode
             ):
 
         super(Episode, self).__init__( 
@@ -56,3 +57,4 @@ class Episode(Media):
         self.show_series_title = show_series_title
         self.episode_number = episode_number
         self.season_number = season_number
+        self.advance_episode = advance_episode

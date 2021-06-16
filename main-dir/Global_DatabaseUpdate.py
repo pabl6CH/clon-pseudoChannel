@@ -188,14 +188,19 @@ for channel_dir in channel_dirs:
                 endloop = 1
     else:
         for i in range(0,len(schedule)):
-            sql = "INSERT INTO schedule(id,unix,mediaID,title,duration,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra)  \
-                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+            sql = "INSERT INTO schedule(id,unix,mediaID,title,duration,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra,rerun,year,genres,actors,collections,rating,studio,seasonEpisode)  \
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
             table.execute(sql,schedule[i])
     for i in range(0,len(daily_schedule)):
-        sql = "INSERT INTO daily_schedule(id,unix,mediaID,title,episodeNumber,seasonNumber,showTitle,duration,startTime,endTime,dayOfWeek,sectionType,plexMediaID,customSectionName)  \
-            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-        table.execute(sql,daily_schedule[i])
-    
+        try:
+            sql = "INSERT INTO daily_schedule(id,unix,mediaID,title,episodeNumber,seasonNumber,showTitle,duration,startTime,endTime,dayOfWeek,sectionType,plexMediaID,customSectionName,notes)  \
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+            table.execute(sql,daily_schedule[i])
+        except Exception as e:
+            print("ERROR: "+str(e))
+            sql = "INSERT INTO daily_schedule(id,unix,mediaID,title,episodeNumber,seasonNumber,showTitle,duration,startTime,endTime,dayOfWeek,sectionType,plexMediaID,customSectionName)  \
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+            table.execute(sql,daily_schedule[i])
         
     # Step FIVE: Remove any media not in the directories set of commerical archives
     print("NOTICE: Trimming database at " + db_path)

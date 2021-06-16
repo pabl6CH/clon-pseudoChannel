@@ -30,7 +30,7 @@ class Movie(Media):
             plex_media_id,
             custom_section_name,
             media_id,
-            show_series_title
+            notes,
             ):
 
         super(Movie, self).__init__( 
@@ -48,4 +48,4 @@ class Movie(Media):
                 media_id
                 )
         
-        self.show_series_title = show_series_title
+        self.notes = notes
