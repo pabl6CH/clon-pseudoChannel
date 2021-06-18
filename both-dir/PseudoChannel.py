@@ -1418,6 +1418,10 @@ class PseudoChannel():
                                     self.translate_time(entry.start_time),
                                     entry.duration
                                 )
+                            if entry.end_time.hour >= 0 and entry.end_time.hour < int(config.dailyUpdateTime[0]):
+                                entry.end_time = entry.end_time + datetime.timedelta(days=1)
+                            if natural_start_time.hour < int(config.dailyUpdateTime[0]) and entry.end_time.hour >= int(config.dailyUpdateTime[0]):
+                                entry.end_time = datetime.datetime.strptime('1900-01-02 0' + str(int(config.dailyUpdateTime[0])-1) + ':59:59.999999', '%y-%m-%d %H:%M:%S.%f')
                             """Get List of Commercials to inject"""
                             if self.USING_COMMERCIAL_INJECTION:
                                 list_of_commercials = self.commercials.get_commercials_to_place_between_media(
@@ -1453,6 +1457,10 @@ class PseudoChannel():
                                     self.translate_time(natural_start_time.strftime(self.APP_TIME_FORMAT_STR)),
                                     entry.duration
                                 )
+                                if entry.end_time.hour >= 0 and entry.end_time.hour < int(config.dailyUpdateTime[0]):
+                                    entry.end_time = entry.end_time + datetime.timedelta(days=1)
+                                if natural_start_time.hour < int(config.dailyUpdateTime[0]) and entry.end_time.hour >= int(config.dailyUpdateTime[0]):
+                                    entry.end_time = datetime.datetime.strptime('1900-01-02 0' + str(int(config.dailyUpdateTime[0])-1) + ':59:59.999999', '%y-%m-%d %H:%M:%S.%f')
                                 print("INFO: End Time = {}".format(str(entry.end_time)))
                             overlap_max_seconds=int(entry.overlap_max) * 60
                             print(("INFO: Overlap Max is "+str(overlap_max_seconds)))
@@ -1492,6 +1500,10 @@ class PseudoChannel():
                             print("INFO: New start time:", new_starttime)
                             entry.start_time = datetime.datetime.strptime(new_starttime, self.APP_TIME_FORMAT_STR).strftime(self.APP_TIME_FORMAT_STR)
                             entry.end_time = self.get_end_time_from_duration(entry.start_time, entry.duration)
+                            if entry.end_time.hour >= 0 and entry.end_time.hour < int(config.dailyUpdateTime[0]):
+                                entry.end_time = entry.end_time + datetime.timedelta(days=1)
+                            if natural_start_time.hour < int(config.dailyUpdateTime[0]) and entry.end_time.hour >= int(config.dailyUpdateTime[0]):
+                                entry.end_time = datetime.datetime.strptime('1900-01-02 0' + str(int(config.dailyUpdateTime[0])-1) + ':59:59.999999', '%y-%m-%d %H:%M:%S.%f')
                             """Get List of Commercials to inject"""
                             if self.USING_COMMERCIAL_INJECTION:
                                 list_of_commercials = self.commercials.get_commercials_to_place_between_media(

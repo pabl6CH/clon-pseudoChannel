@@ -47,6 +47,7 @@ class PseudoChannelCommercial():
 
         reset_time = datetime.strptime(reset_time,'%H:%M')
         prev_item_end_time = datetime.strptime(last_ep.end_time.strftime('%Y-%m-%d %H:%M:%S.%f'), '%Y-%m-%d %H:%M:%S.%f')
+        prev_item_start_time = datetime.strptime(last_ep.start_time, '%H:%M:%S')
         if(now_ep != "reset"):
             curr_item_start_time = datetime.strptime(now_ep.start_time, '%H:%M:%S')
         else:
@@ -71,6 +72,8 @@ class PseudoChannelCommercial():
             prev_item_end_time += timedelta(days=1)
         #else:
             #prev_item_end_time = prev_item_end_time.replace(day=1)
+        if prev_item_start_time.hour < reset_time.hour and prev_item_end_time.hour >= reset_time.hour:
+            prev_item_end_time = datetime.strptime('1900-01-02 0' + str(int(reset_time.hour)-1) + ':59:59.999999', '%Y-%m-%d %H:%M:%S.%f')
         time_diff = (curr_item_start_time - prev_item_end_time)
         
         if prev_item_end_time.replace(microsecond=0) > curr_item_start_time and strict_time == "false":
