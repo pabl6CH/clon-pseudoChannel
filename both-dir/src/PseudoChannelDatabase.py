@@ -359,7 +359,7 @@ class PseudoChannelDatabase():
             #print(str("{}: {} - {}".format(media.start_time, media.title, media.custom_section_name)).encode('UTF-8'))
         except:
             print("ERROR: Not outputting media info due to ascii code issues.")
-        if media.media_id == 112:
+        if media.media_id != 3:
             notes = media.notes
         else:
             notes = ""
@@ -368,7 +368,7 @@ class PseudoChannelDatabase():
         else:
             seriesTitle = ''
         self.add_daily_schedule_to_db(
-                media.media_id if media.__class__.__name__ == "Movie" else 0,
+                media.media_id,
                 media.title,
                 media.episode_number if media.__class__.__name__ == "Episode" else 0,
                 media.season_number if media.__class__.__name__ == "Episode" else 0,

@@ -893,6 +893,7 @@ class PseudoChannel():
                             except:
                                 pass
                             show_title = entry[3]
+                        notes_data = "Rated " + str(next_episode[10]) +  "</br>" + str(next_episode[12])
                         if next_episode != None:
                             customSectionName = next_episode[9]
                             episode = Episode(
@@ -913,6 +914,7 @@ class PseudoChannel():
                                 next_episode[5], # episode_number
                                 next_episode[6], # season_number
                                 advance_episode, # advance_episode
+                                notes_data #notes
                                 )
                             self.MEDIA.append(episode)
                         else:
@@ -1327,6 +1329,7 @@ class PseudoChannel():
                             #get plex metadata
                             plex_movie = self.PLEX.fetchItem(the_movie[6])
                             last_data = ""
+                            notes_data = ""
                             if str(entry[3]).lower() == "kevinbacon":
                                 actors_list_old = actors_list
                                 actors_list = {}
@@ -1340,10 +1343,12 @@ class PseudoChannel():
                                         if actor_match == "":
                                             actor_match = actor.tag
                                 if actor_match != "":
-                                    last_data = actor_match + "," + last_movie
+                                    notes_data = "This movie derived from " + last_movie + " through " + actor_match + "\n"
                                 else:
-                                    last_data = ""
+                                    notes_data = ""
                                 last_movie = the_movie[3]
+                            actors_data = the_movie[12].strip('][').split(',')
+                            notes_data = notes_data + "Rated " + the_movie[8] + "</br>Starring: " + actors_data[0] + ", " + actors_data[1] + " and " + actors_data[2] + "</br>" + the_movie[10] + "</br>" + the_movie[14]
                             movie = Movie(
                             section, # section_type
                             the_movie[3], # title
@@ -1357,7 +1362,7 @@ class PseudoChannel():
                             the_movie[6], # plex id
                             the_movie[7], # custom lib name
                             media_id, # media_id
-                            last_data # notes (for storing kevin bacon data)
+                            notes_data # notes (for storing kevin bacon data)
                             )
                             self.MEDIA.append(movie)
                         else:

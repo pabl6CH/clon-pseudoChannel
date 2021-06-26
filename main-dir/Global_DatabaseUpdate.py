@@ -145,10 +145,18 @@ for channel_dir in channel_dirs:
         entryList['endTime'] = datetime.datetime.fromtimestamp(float(entryList['startTimeUnix']) + the_show[4]/1000).strftime("%H:%M:%S")
         entryList['timeShift'] = 15
         entryList['overlapMax'] = 15
-        entryList['xtra'] = ""
+        entryList['xtra'] = None
+        entryList['rerun'] = 0
+        entryList['year'] = None
+        entryList['genres'] = None
+        entryList['actors'] = None
+        entryList['collections'] = None
+        entryList['rating'] = None
+        entryList['studio'] = None
+        entryList['seasonEpisode'] = None
         print("INFO: Adding "+entryList['startTime']+" - "+entryList['title']+"\033[K",end='\n')
-        sql = "INSERT INTO schedule(id,unix,mediaID,title,duration,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra)  \
-            VALUES(:id,:unix,:mediaID,:title,:duration,:startTime,:endTime,:dayOfWeek,:startTimeUnix,:section,:strictTime,:timeShift,:overlapMax,:xtra)"
+        sql = "INSERT INTO schedule(id,unix,mediaID,title,duration,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra,rerun,year,genres,actors,collections,rating,studio,seasonEpisode)  \
+            VALUES(:id,:unix,:mediaID,:title,:duration,:startTime,:endTime,:dayOfWeek,:startTimeUnix,:section,:strictTime,:timeShift,:overlapMax,:xtra,:genres,:actors,:collections,:rating,:studio,:seasonEpisode)"
         table.execute(sql,entryList)
         timediff = datetime.datetime.strptime("23:59:59", "%H:%M:%S") - datetime.datetime.strptime(entryList['startTime'], "%H:%M:%S")
         print("INFO: "+str(timediff.seconds)+" to midnight\033[K",end='\n')

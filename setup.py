@@ -440,7 +440,7 @@ def ps_update():
         git.Repo.clone_from('https://github.com/FakeTV/pseudo-channel', '../temp', branch=ps_branch)
     except Exception as e:
         print("ERROR GETTING DOWNLOADING FROM GIT")
-        print("e")
+        print(e)
     mainFiles = glob.glob('../temp/main-dir/*')
     bothFiles = glob.glob('../temp/both-dir/*')
     srcFiles = glob.glob('../temp/both-dir/src/*')

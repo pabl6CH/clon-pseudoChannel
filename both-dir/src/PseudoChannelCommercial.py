@@ -124,7 +124,8 @@ class PseudoChannelCommercial():
                 "0", # overlap_max
                 random_commercial[5], # plex_media_id
                 random_commercial[6], # custom lib name
-                "3" #media_id
+                "3", #media_id,
+                None #notes
             )
             last_commercial = new_commercial
             if new_commercial_end_time > curr_item_start_time:
@@ -169,7 +170,8 @@ class PseudoChannelCommercial():
                                     "0", # overlap_max
                                     random_final_comm[5], # plex_media_id
                                     random_final_comm[6], # custom lib name
-                                    "3" #media_id
+                                    "3", #media_id
+                                    None #notes
                                 )
                                 commercial_list.append(final_commercial)
                                 break

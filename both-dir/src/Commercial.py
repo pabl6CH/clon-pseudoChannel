@@ -29,7 +29,8 @@ class Commercial(Media):
             overlap_max,
             plex_media_id,
             custom_section_name,
-            media_id
+            media_id,
+            notes
             ):
 
         super(Commercial, self).__init__(
@@ -46,3 +47,4 @@ class Commercial(Media):
                 custom_section_name,
                 media_id
                 )
+        self.notes = notes
