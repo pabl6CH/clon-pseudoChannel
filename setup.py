@@ -9,6 +9,7 @@ import subprocess
 import signal
 import shutil
 import socket
+import getpass
 from git import RemoteProgress
 from datetime import datetime
 from plexapi.server import PlexServer
@@ -595,7 +596,8 @@ def web_setup():
         path = os.path.abspath(os.path.dirname(__file__))+'/web'
         os.mkdir(path)
         local_ip = get_ip()
-        cron = CronTab(user=True)
+        php_binary = shutil.which('php')
+        '''cron = CronTab(user=True)
         for job in cron:
             if job.comment == "PHP Server":
                 print("NOTICE: Removing existing cron job")
@@ -603,7 +605,14 @@ def web_setup():
         print("ACTION: Adding cron job to run PHP Server on Boot")
         job = cron.new(command = "/usr/bin/php -S "+local_ip+":"+portNumber+" -t "+path+" &", comment="PHP Server")
         job.every_reboot()
-        cron.write()
+        cron.write()'''
+        systemctlFileText = "[Unit]\nDescription=PHP Start\n\n[Service]\nType=simple\nTimeoutSec=0\nPIDFile=~/\nExecStart="+php_binary+" -S "+local_ip+":"+portNumber+" -t "+path+"\nKillMode=process\nRestart=on=failure\nRestartSec=12s\n\n[Install]\nWantedBy=default.target"
+        if (os.path.isdir('~/.config/systemd/user/') == False):
+            os.mkdir('~/.config/systemd/user/')
+        if (os.path.isfile('~/.config/systemd/user/php.service') == False):
+            f=open('~/.config/systemd/user/php.service','w+')
+            f.write(systemctlFileText)
+            f.close
     try:
         print("Copying files to "+path)
         git.Repo.clone_from('https://github.com/FakeTV/Web-Interface-for-Pseudo-Channel', path, branch=web_branch)
