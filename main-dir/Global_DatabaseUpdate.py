@@ -41,7 +41,7 @@ else:
         update_flags+=' -uc'
 
 
-update_call = "python PseudoChannel.py %s" % update_flags
+update_call = "python3 PseudoChannel.py %s" % update_flags
 
 
 # Step ONE: Global database update 
@@ -156,7 +156,7 @@ for channel_dir in channel_dirs:
         entryList['seasonEpisode'] = None
         print("INFO: Adding "+entryList['startTime']+" - "+entryList['title']+"\033[K",end='\n')
         sql = "INSERT INTO schedule(id,unix,mediaID,title,duration,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra,rerun,year,genres,actors,collections,rating,studio,seasonEpisode)  \
-            VALUES(:id,:unix,:mediaID,:title,:duration,:startTime,:endTime,:dayOfWeek,:startTimeUnix,:section,:strictTime,:timeShift,:overlapMax,:xtra,:rerun,:year,:genres,:actors,:collections,:rating,:studio,:seasonEpisode)"
+            VALUES(:id,:unix,:mediaID,:title,:duration,:startTime,:endTime,:dayOfWeek,:startTimeUnix,:section,:strictTime,:timeShift,:overlapMax,:xtra,:genres,:actors,:collections,:rating,:studio,:seasonEpisode)"
         table.execute(sql,entryList)
         timediff = datetime.datetime.strptime("23:59:59", "%H:%M:%S") - datetime.datetime.strptime(entryList['startTime'], "%H:%M:%S")
         print("INFO: "+str(timediff.seconds)+" to midnight\033[K",end='\n')
@@ -187,8 +187,8 @@ for channel_dir in channel_dirs:
             entryList['title'] = the_show[3]
             entryList['overlapMax'] = round(float(entryList['duration'].split(',')[1]) * 0.5)
             print("INFO: Adding "+entryList['startTime']+" - "+entryList['title']+"\033[K",end='\n')
-            sql = "INSERT INTO schedule(id,unix,mediaID,title,duration,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra,rerun,year,genres,actors,collections,rating,studio,seasonEpisode)  \
-            VALUES(:id,:unix,:mediaID,:title,:duration,:startTime,:endTime,:dayOfWeek,:startTimeUnix,:section,:strictTime,:timeShift,:overlapMax,:xtra,:rerun,:year,:genres,:actors,:collections,:rating,:studio,:seasonEpisode)"
+            sql = "INSERT INTO schedule(id,unix,mediaID,title,duration,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra)  \
+                VALUES(:id,:unix,:mediaID,:title,:duration,:startTime,:endTime,:dayOfWeek,:startTimeUnix,:section,:strictTime,:timeShift,:overlapMax,:xtra)"            
             if entryList['startTime'] != "00:00:00":
                 table.execute(sql,entryList)
                 print("INFO: "+str(timediff.seconds)+" to midnight\033[K",end='\n') 
