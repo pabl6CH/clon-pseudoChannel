@@ -299,9 +299,9 @@ class PseudoChannel():
                         suffix = 'Complete ['+playlist.title[0:40]+']',
                         bar_length = 40
                     )
-                print('', end='\r')
+                #print('', end='\r')
             sys.stdout.write("\033[K")
-            sys.stdout.write('NOTICE: Database Update Complete!')
+            sys.stdout.write('\rNOTICE: Database Update Complete!')
             print('')
     def update_db_playlist(self):
         dothething = "yes"
@@ -362,9 +362,9 @@ class PseudoChannel():
                         suffix = 'Complete ['+playlist.title+']',
                         bar_length = 40
                     )
-                print('', end='\r')
+                #print('', end='\r')
             sys.stdout.write("\033[K")
-            sys.stdout.write('NOTICE: Playlist Database Update Complete!')
+            sys.stdout.write('\rNOTICE: Playlist Database Update Complete!')
             print('')
 
     def update_db_movies(self):
@@ -461,9 +461,9 @@ class PseudoChannel():
                                         suffix = 'Complete ['+media.title+']',
                                         bar_length = 40
                                     )
-            print('', end='\r')
+            #print('', end='\r')
         sys.stdout.write("\033[K")
-        sys.stdout.write('NOTICE: TV Shows Database Update Complete!')
+        sys.stdout.write('\rNOTICE: TV Shows Database Update Complete!')
         print('')
     def update_db_comm(self):
 
@@ -486,9 +486,9 @@ class PseudoChannel():
                                 suffix = 'Complete ['+media.title[0:12]+']', 
                                 bar_length = 40
                             )
-            print('', end='\r')
+            #print('', end='\r')
         sys.stdout.write("\033[K")
-        sys.stdout.write('NOTICE: Commercials Database Update Complete!')
+        sys.stdout.write('\rNOTICE: Commercials Database Update Complete!')
         print('')
     def update_schedule(self):
 
