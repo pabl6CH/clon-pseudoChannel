@@ -14,6 +14,7 @@ from git import RemoteProgress
 from datetime import datetime
 from plexapi.server import PlexServer
 from crontab import CronTab
+from pathlib import Path
 
 class CloneProgress(RemoteProgress):
     def update(self, op_code, cur_count, max_count=None, message=''):
@@ -607,10 +608,10 @@ def web_setup():
         job.every_reboot()
         cron.write()'''
         systemctlFileText = "[Unit]\nDescription=PHP Start\n\n[Service]\nType=simple\nTimeoutSec=0\nPIDFile=~/\nExecStart="+php_binary+" -S "+local_ip+":"+portNumber+" -t "+path+"\nKillMode=process\nRestart=on=failure\nRestartSec=12s\n\n[Install]\nWantedBy=default.target"
-        if (os.path.isdir('~/.config/systemd/user/') == False):
-            os.mkdir('~/.config/systemd/user/')
-        if (os.path.isfile('~/.config/systemd/user/php.service') == False):
-            f=open('~/.config/systemd/user/php.service','w+')
+        if (os.path.isdir(str(Path.home())+'/.config/systemd/user/') == False):
+            os.mkdir(str(Path.home())+'/.config/systemd/user/')
+        if (os.path.isfile(str(Path.home())+'/.config/systemd/user/php.service') == False):
+            f=open(str(Path.home())+'/.config/systemd/user/php.service','w+')
             f.write(systemctlFileText)
             f.close
     try:
