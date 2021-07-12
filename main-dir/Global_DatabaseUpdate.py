@@ -196,9 +196,16 @@ for channel_dir in channel_dirs:
                 endloop = 1
     else:
         for i in range(0,len(schedule)):
-            sql = "INSERT INTO schedule(id,unix,mediaID,title,duration,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra,rerun,year,genres,actors,collections,rating,studio,seasonEpisode)  \
+            try:
+                sql = "INSERT INTO schedule(id,unix,mediaID,title,duration,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra,rerun,year,genres,actors,collections,rating,studio,seasonEpisode)  \
                 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-            table.execute(sql,schedule[i])
+                table.execute(sql,schedule[i])
+            except Exception as e:
+                print("ERROR: "+str(e))
+                print("INFO: Importing Legacy Database")
+                sql = "INSERT INTO schedule(id,unix,mediaID,title,duration,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra)  \
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+                table.execute(sql,schedule[i])
     for i in range(0,len(daily_schedule)):
         try:
             sql = "INSERT INTO daily_schedule(id,unix,mediaID,title,episodeNumber,seasonNumber,showTitle,duration,startTime,endTime,dayOfWeek,sectionType,plexMediaID,customSectionName,notes)  \
@@ -206,6 +213,7 @@ for channel_dir in channel_dirs:
             table.execute(sql,daily_schedule[i])
         except Exception as e:
             print("ERROR: "+str(e))
+            print("INFO: Importing Legacy Database")
             sql = "INSERT INTO daily_schedule(id,unix,mediaID,title,episodeNumber,seasonNumber,showTitle,duration,startTime,endTime,dayOfWeek,sectionType,plexMediaID,customSectionName)  \
                 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
             table.execute(sql,daily_schedule[i])
