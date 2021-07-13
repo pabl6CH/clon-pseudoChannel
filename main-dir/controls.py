@@ -64,7 +64,7 @@ def start_channel(channel):
     except:
         print("NOTICE: last.info not found")
     os.chdir(os.path.abspath(os.path.dirname(__file__))+'/pseudo-channel_'+channel)
-    process = subprocess.Popen(["python", "-u", "PseudoChannel.py", "-r"], stdout=None, stderr=None, stdin=None)
+    process = subprocess.Popen(["python3", "-u", "PseudoChannel.py", "-r"], stdout=None, stderr=None, stdin=None)
     #create pid file and write pid into file
     print("NOTICE: Channel Process Running at "+str(process.pid))
     p = open(OUTPUT_PID_FILE, 'w+')
@@ -158,7 +158,7 @@ def generate_daily_schedules(channelsList):
     #execute PseudoChannel.py -g in specified channel
     print("GENERATING DAILY SCHEDULES FOR ALL CHANNELS")
     os.chdir(os.path.abspath(os.path.dirname(__file__)))
-    process = subprocess.Popen(["python", "-u", "Global_DailySchedule.py"], stdout=None, stderr=None, stdin=None)
+    process = subprocess.Popen(["python3", "-u", "Global_DailySchedule.py"], stdout=None, stderr=None, stdin=None)
     '''for channel in channelsList:
         os.chdir(os.path.abspath(os.path.dirname(__file__))+'/pseudo-channel_'+channel)
         print("GENERATING SCHEDULE FOR CHANNEL "+channel)
@@ -172,7 +172,7 @@ def global_database_update():
     workingDir = os.path.abspath(os.path.dirname(__file__))
     os.chdir(workingDir)
     print("NOTICE: Working directory changed to "+workingDir)
-    process = subprocess.Popen(["python", "-u", "Global_DatabaseUpdate.py"], stdout=None, stderr=None, stdin=None)
+    process = subprocess.Popen(["python3", "-u", "Global_DatabaseUpdate.py"], stdout=None, stderr=None, stdin=None)
 
 parser = argparse.ArgumentParser(description='Pseudo Channel Controls')
 channelsList = get_channels()
