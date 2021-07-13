@@ -61,7 +61,7 @@ def generate_daily_schedules(channelsList):
     for channel in channelsList:
         os.chdir('./pseudo-channel_'+channel)
         print("GENERATING SCHEDULE FOR CHANNEL "+channel)
-        process = subprocess.Popen(["python", "-u", "PseudoChannel.py", "-g"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        process = subprocess.Popen(["python3", "-u", "PseudoChannel.py", "-g"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
         while True:
             output = process.stdout.readline()
             if process.poll() is not None:
@@ -76,7 +76,7 @@ def randomize_episodes(channelsList):
     for channel in channelsList:
         os.chdir('./pseudo-channel_'+channel)
         print("RANDOMIZING STARTING EPISODES FOR ALL SHOWS ON CHANNEL "+channel)
-        process = subprocess.Popen(["python", "-u", "PseudoChannel.py", "-ep"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        process = subprocess.Popen(["python3", "-u", "PseudoChannel.py", "-ep"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
         while True:
             output = process.stdout.readline()
             if process.poll() is not None:
