@@ -893,7 +893,17 @@ class PseudoChannel():
                             except:
                                 pass
                             show_title = entry[3]
-                        notes_data = "Rated " + str(next_episode[10]) +  "</br>" + str(next_episode[12])
+                        try:
+                            episode_rating = str(next_episode[10])
+                        except TypeError as e:
+                            print(e)
+                            episode_rating = "None"
+                        try:
+                            episode_notes = str(next_episode[12])
+                        except TypeError as e:
+                            print(e)
+                            episode_notes = ""
+                        notes_data = "Rated " + episode_rating +  "</br>" + episode_notes
                         if next_episode != None:
                             customSectionName = next_episode[9]
                             episode = Episode(
