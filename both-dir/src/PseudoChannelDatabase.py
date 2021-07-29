@@ -9,7 +9,7 @@ class PseudoChannelDatabase():
 
     def __init__(self, db):
 
-        self = db
+        self.db = db
         self.conn = sqlite3.connect(self.db, check_same_thread=False)
         self.cursor = self.conn.cursor()
 
