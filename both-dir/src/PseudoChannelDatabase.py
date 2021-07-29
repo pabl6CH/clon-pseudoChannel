@@ -9,7 +9,7 @@ class PseudoChannelDatabase():
 
     def __init__(self, db):
 
-        self.db = db
+        self = db
         self.conn = sqlite3.connect(self.db, check_same_thread=False)
         self.cursor = self.conn.cursor()
 
@@ -457,6 +457,7 @@ class PseudoChannelDatabase():
     """Database functions.
         Updaters, etc.
     """
+
     def update_shows_table_with_last_episode(self, showTitle, lastEpisodeTitle):
         sql1 = "UPDATE shows SET lastEpisodeTitle = ? WHERE title LIKE ? COLLATE NOCASE"
         self.cursor.execute(sql1, (lastEpisodeTitle, showTitle, ))
@@ -817,18 +818,18 @@ class PseudoChannelDatabase():
         return media_item
 
     def get_first_episode(self, tvshow):
-        sql = ("SELECT * FROM episodes WHERE ( showTitle LIKE ? AND "
-                "episodeNumber LIKE (SELECT MIN(episodeNumber) FROM episodes WHERE (showTitle LIKE ?)) AND "
-                "seasonNumber LIKE (SELECT MIN(seasonNumber) FROM episodes WHERE (showTitle LIKE ?))) COLLATE NOCASE")
-        self.cursor.execute(sql, (tvshow, tvshow, tvshow, ))
+
+        sql = ("SELECT id, unix, mediaID, title, duration, MIN(episodeNumber), MIN(seasonNumber), "
+                "showTitle, plexMediaID, customSectionName FROM episodes WHERE ( showTitle LIKE ?) COLLATE NOCASE")
+        self.cursor.execute(sql, (tvshow, ))
         first_episode = self.cursor.fetchone()
         return first_episode
 
     def get_first_episode_by_id(self, tvshow):
-        sql = ("SELECT * FROM episodes WHERE ( mediaID LIKE ? AND "
-                "episodeNumber LIKE (SELECT MIN(episodeNumber) FROM episodes WHERE (mediaID LIKE ?)) AND "
-                "seasonNumber LIKE (SELECT MIN(seasonNumber) FROM episodes WHERE (mediaID LIKE ?))) COLLATE NOCASE")
-        self.cursor.execute(sql, (tvshow, tvshow, tvshow, ))
+
+        sql = ("SELECT id, unix, mediaID, title, duration, MIN(episodeNumber), MIN(seasonNumber), "
+                "showTitle, plexMediaID, customSectionName FROM episodes WHERE ( mediaID LIKE ?) COLLATE NOCASE")
+        self.cursor.execute(sql, (tvshow, ))
         first_episode = self.cursor.fetchone()
         return first_episode
 

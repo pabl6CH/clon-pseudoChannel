@@ -757,7 +757,10 @@ class PseudoChannel():
                             max = int(minmax)
                             max = max * 60000
                         if str(entry[3]).lower() == "random":
-                            media_id = 999
+                            if entry[14] == 0:
+                                media_id = 998
+                            else:
+                                media_id = 999
                             advance_episode = "no"
                             sections = self.PLEX.library.sections()
                             shows_list = []
@@ -771,6 +774,7 @@ class PseudoChannel():
                                                 shows = self.PLEX.library.section(theSection.title)
                                                 print("NOTICE: Getting Show That Matches Data Filters")
                                                 the_show = self.db.get_random_show_data("TV Shows",int(min),int(max),entry[15],entry[16],entry[17],entry[18],entry[19],entry[20])
+                                                print("INFO: " + the_show[3])
                                                 if (the_show == None):
                                                     print("NOTICE: Failed to get shows with data filters, trying with less")
                                                     the_show = self.db.get_random_show_data("TV Shows",int(min),int(max),entry[15],None,None,None,entry[19],None)
@@ -796,14 +800,16 @@ class PseudoChannel():
                                                             episode_duration = int(next_episode[4])
                                                     print("INFO: Random Selection: "+next_episode[7]+" - S"+str(next_episode[6])+"E"+str(next_episode[5])+" - "+next_episode[3])
                                                 else:
-                                                    if entry[2] == 999:
+                                                    print("INFO: entry[2] = " + str(entry[2]))
+                                                    print("INFO: media_id = " + str(media_id))
+                                                    if entry[2] == 999 or media_id == 999:
                                                         media_id = 999
                                                         print("ACTION: Choosing random episode of "+the_show[3].upper())
                                                         try:
                                                             next_episode = self.db.get_random_episode_of_show_by_data(the_show[2],int(min),int(max),entry[15],entry[21].split(',')[0],entry[21].split(',')[1])
                                                         except:
                                                             next_episode = self.db.get_random_episode_of_show_by_data(the_show[2],int(min),int(max),entry[15])
-                                                    elif entry[2] == 998:
+                                                    elif entry[2] == 998 or media_id == 998:
                                                         media_id = 998
                                                         if entry[14] == 1:
                                                             print("ACTION: Choosing last episode of " +the_show[3].upper())

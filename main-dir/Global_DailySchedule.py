@@ -20,6 +20,6 @@ os.chdir(os.path.abspath(os.path.dirname(__file__)))
 for channel in channelsList:
     os.chdir(os.path.abspath(os.path.dirname(__file__))+'/pseudo-channel_'+channel)
     print("GENERATING SCHEDULE FOR CHANNEL "+channel)
-    process = subprocess.call(["python", "-u", "PseudoChannel.py", "-g"], stdout=None, stderr=None, stdin=None)
+    process = subprocess.call(["python3", "-u", "PseudoChannel.py", "-g"], stdout=None, stderr=None, stdin=None)
     os.chdir('../')
 print("ALERT: ALL DAILY SCHEDULE GENERATION COMPLETE")
