@@ -733,6 +733,7 @@ class PseudoChannel():
         schedule_advance_watcher = 0
         xtraSeason = None
         xtraEpisode = None
+        last_movie = ""
         actors_list = {}
         prev_actors = []
         prev_movies = []
