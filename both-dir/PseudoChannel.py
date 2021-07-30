@@ -1365,7 +1365,7 @@ class PseudoChannel():
                                     notes_data = ""
                                 last_movie = the_movie[3]
                             actors_data = the_movie[12].strip('][').split(',')
-                            notes_data = notes_data + "Rated " + the_movie[8] + "</br>Starring: " + actors_data[0] + ", " + actors_data[1] + " and " + actors_data[2] + "</br>" + the_movie[10] + "</br>" + the_movie[14]
+                            notes_data = notes_data + "Rated " + str(the_movie[8]) + "</br>Starring: " + str(actors_data[0]) + ", " + str(actors_data[1]) + " and " + str(actors_data[2]) + "</br>" + str(the_movie[10]) + "</br>" + str(the_movie[14])
                             movie = Movie(
                             section, # section_type
                             the_movie[3], # title
