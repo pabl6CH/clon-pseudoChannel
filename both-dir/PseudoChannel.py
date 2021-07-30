@@ -902,7 +902,7 @@ class PseudoChannel():
                             show_title = entry[3]
                         try:
                             episode_rating = str(next_episode[10])
-                        except TypeError as e:
+                        except Exception as e:
                             print(e)
                             episode_rating = "None"
                         try:
@@ -1443,7 +1443,7 @@ class PseudoChannel():
                             if entry.end_time.hour >= 0 and entry.end_time.hour < int(config.dailyUpdateTime[0]):
                                 entry.end_time = entry.end_time + datetime.timedelta(days=1)
                             if natural_start_time.hour < int(config.dailyUpdateTime[0]) and entry.end_time.hour >= int(config.dailyUpdateTime[0]):
-                                entry.end_time = datetime.datetime.strptime('1900-01-02 0' + str(int(config.dailyUpdateTime[0])-1) + ':59:59.999999', '%y-%m-%d %H:%M:%S.%f')
+                                entry.end_time = datetime.datetime.strptime('1900-01-02 0' + str(int(config.dailyUpdateTime[0])-1) + ':59:59.99999', '%y-%m-%d %H:%M:%S.%f')
                             """Get List of Commercials to inject"""
                             if self.USING_COMMERCIAL_INJECTION:
                                 list_of_commercials = self.commercials.get_commercials_to_place_between_media(
