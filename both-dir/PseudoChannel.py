@@ -907,7 +907,7 @@ class PseudoChannel():
                             episode_rating = "None"
                         try:
                             episode_notes = str(next_episode[12])
-                        except TypeError as e:
+                        except Exception as e:
                             print(e)
                             episode_notes = ""
                         notes_data = "Rated " + episode_rating +  "</br>" + episode_notes
