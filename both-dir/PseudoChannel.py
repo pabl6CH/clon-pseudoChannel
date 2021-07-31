@@ -2024,7 +2024,11 @@ if __name__ == '__main__':
                             pass
                         prev_end_time_to_watch_for = prev_end_time
             for item in schedulelist:
-                trans_time = datetime.datetime.strptime(item[8], pseudo_channel.APP_TIME_FORMAT_STR).strftime("%H:%M")
+                try:
+                    trans_time = datetime.datetime.strptime(item[8], pseudo_channel.APP_TIME_FORMAT_STR).strftime("%H:%M:%S")
+                except Exception as e:
+                    print("ERROR: " + str(e))
+                    trans_time = datetime.datetime.strptime(item[8], pseudo_channel.APP_TIME_FORMAT_STR).strftime("%H:%M")
                 new_start_time = datetime.datetime.strptime(item[8], pseudo_channel.APP_TIME_FORMAT_STR)
                 if prev_end_time_to_watch_for == None:
                     schedule.every().day.at(trans_time).do(job_that_executes_once, item, schedulelist).tag('daily-tasks')
@@ -2067,7 +2071,7 @@ if __name__ == '__main__':
             go_generate_daily_sched
         ).tag('daily-update')"""
 
-        sleep_before_triggering_play_now = 1
+        sleep_before_triggering_play_now = 0.1
 
         '''When the process is killed, stop any currently playing media & cleanup'''
         signal.signal(signal.SIGTERM, pseudo_channel.signal_term_handler)
