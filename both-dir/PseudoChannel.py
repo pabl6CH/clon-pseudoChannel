@@ -1914,9 +1914,9 @@ if __name__ == '__main__':
 
             #dates_list = [datetime.datetime.strptime(''.join(str(date[8])), pseudo_channel.APP_TIME_FORMAT_STR) for date in daily_schedule]
             now = datetime.datetime.now()
-            #now = now.replace(year=1900, month=1, day=1)
+            now = now.replace(year=1900, month=1, day=1)
             #closest_media = nearest(dates_list, now)
-            #print closest_media
+            #print(closest_media)
             prevItem = None
             db = PseudoChannelDatabase("pseudo-channel.db")
             item = db.get_now_playing()
