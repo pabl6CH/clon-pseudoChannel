@@ -351,9 +351,9 @@ class PseudoChannelDatabase():
 
     def add_media_to_daily_schedule(self, media):
         try:
-            mediaPrint = media.start_time + ": " + media.show_series_title + " - " + media.title + " | " + media.custom_section_name
+            mediaPrint = media.start_time + ": " + media.show_series_title + " - " + media.title + " | " + str(media.duration/1000) + " | " + media.custom_section_name
         except:
-            mediaPrint = media.start_time + ": " + media.title + " | " + media.custom_section_name
+            mediaPrint = media.start_time + ": " + media.title + " | " + str(media.duration/1000) + " | " + media.custom_section_name
         try:
             print(mediaPrint)
             #print(str("{}: {} - {}".format(media.start_time, media.title, media.custom_section_name)).encode('UTF-8'))

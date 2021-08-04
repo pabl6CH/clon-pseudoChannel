@@ -6,6 +6,7 @@ import copy
 from datetime import datetime
 from datetime import timedelta
 from src import Commercial
+from src import PseudoChannelDatabase
 
 class PseudoChannelCommercial():
 
@@ -16,6 +17,7 @@ class PseudoChannelCommercial():
     def __init__(self, commercials, commercialPadding, useDirtyGapFix):
 
         self.commercials = commercials
+        self.db = PseudoChannelDatabase("pseudo-channel.db")
         self.COMMERCIAL_PADDING_IN_SECONDS = commercialPadding
         self.USE_DIRTY_GAP_FIX = useDirtyGapFix
 
@@ -62,7 +64,7 @@ class PseudoChannelCommercial():
         # - All dates are now changed to 1/1/90 so midnight doesn't cause issues
         # - Issues with day skips again being adressed
         now = datetime.now()
-        #now = now.replace(year=1900, month=1, day=1)
+        now = now.replace(year=1900, month=1, day=1)
         midnight = now.replace(hour=0,minute=0,second=0) 
         if(curr_item_start_time < reset_time):
             #curr_item_start_time = curr_item_start_time.replace(day=2)
@@ -73,7 +75,7 @@ class PseudoChannelCommercial():
         #else:
             #prev_item_end_time = prev_item_end_time.replace(day=1)
         if prev_item_start_time.hour < reset_time.hour and prev_item_end_time.hour >= reset_time.hour:
-            prev_item_end_time = datetime.strptime('1900-01-02 0' + str(int(reset_time.hour)-1) + ':59:59.999999', '%Y-%m-%d %H:%M:%S.%f')
+            prev_item_end_time = datetime.strptime('1900-01-02 0' + str(int(reset_time.hour)-1) + ':59:59', '%Y-%m-%d %H:%M:%S')
         time_diff = (curr_item_start_time - prev_item_end_time)
         
         if prev_item_end_time.replace(microsecond=0) > curr_item_start_time and strict_time == "false":
@@ -96,12 +98,16 @@ class PseudoChannelCommercial():
         time_watch = prev_item_end_time 
         new_commercial_start_time = prev_item_end_time + timedelta(seconds=1)
         while curr_item_start_time > new_commercial_start_time:
-            random_commercial_without_pad = self.get_random_commercial()
+            time_diff = (curr_item_start_time - new_commercial_start_time)
+            time_diff_milli = self.timedelta_milliseconds(time_diff)
+            #random_commercial_without_pad = self.get_random_commercial()
+            random_commercial_without_pad = self.db.get_random_commercial_duration(self.MIN_DURATION_FOR_COMMERCIAL,time_diff_milli)
             """
             Padding the duration of commercials as per user specified padding.
             """
             random_commercial = self.pad_the_commercial_dur(random_commercial_without_pad)
             new_commercial_milli = int(random_commercial[4])
+            commercial_dur_sum += new_commercial_milli
             if last_commercial != None:
                 new_commercial_start_time = last_commercial.end_time + timedelta(seconds=1)
                 new_commercial_end_time = new_commercial_start_time + \
@@ -110,7 +116,7 @@ class PseudoChannelCommercial():
                 new_commercial_start_time = prev_item_end_time + timedelta(seconds=1)
                 new_commercial_end_time = new_commercial_start_time + \
                                           timedelta(milliseconds=int(new_commercial_milli))
-            commercial_dur_sum += new_commercial_milli
+            print("INFO: Time Left to Fill - " + str((time_diff_milli)/1000))
             formatted_time_for_new_commercial = new_commercial_start_time.strftime('%H:%M:%S')
             new_commercial = Commercial(
                 "Commercials",
@@ -128,7 +134,38 @@ class PseudoChannelCommercial():
                 None #notes
             )
             last_commercial = new_commercial
-            if new_commercial_end_time > curr_item_start_time:
+            if last_commercial != None:
+                new_commercial_start_time = last_commercial.end_time + timedelta(seconds=1)
+                new_commercial_end_time = new_commercial_start_time + \
+                                          timedelta(milliseconds=int(new_commercial_milli))
+            else:
+                new_commercial_start_time = prev_item_end_time + timedelta(seconds=1)
+                new_commercial_end_time = new_commercial_start_time + \
+                                          timedelta(milliseconds=int(new_commercial_milli))
+            while new_commercial_end_time > curr_item_start_time:
+                time_diff_milli = time_diff_milli - 250
+                if time_diff_milli <= 100:
+                    break
+                random_commercial = self.db.get_random_commercial_duration(self.MIN_DURATION_FOR_COMMERCIAL,time_diff_milli)
+                new_commercial = Commercial(
+                    "Commercials",
+                    random_commercial[3],
+                    formatted_time_for_new_commercial, # natural_start_time
+                    new_commercial_end_time,
+                    random_commercial[4],
+                    "everyday", # day_of_week
+                    "true", # is_strict_time
+                    "1", # time_shift 
+                    "0", # overlap_max
+                    random_commercial[5], # plex_media_id
+                    random_commercial[6], # custom lib name
+                    "3", #media_id,
+                    None #notes
+                )
+                if random_commercial != None:
+                    break
+            
+            '''if new_commercial_end_time > curr_item_start_time:
 
                 # Fill up gap with commercials even if the last commercial gets cutoff
                 if self.USE_DIRTY_GAP_FIX:
@@ -147,35 +184,36 @@ class PseudoChannelCommercial():
                         print("NOTICE: Finding correct FINAL commercial to add to List.")
 
                         last_comm = None
-                        for comm in self.commercials:
+                        #for comm in self.commercials:
 
-                            if int(comm[4]) >= self.timedelta_milliseconds(gapToFill) and last_comm != None:
+                        #if int(comm[4]) >= self.timedelta_milliseconds(gapToFill) and last_comm != None:
 
-                                random_final_comm = last_comm
+                        #random_final_comm = last_comm
+                        random_final_comm = self.db.get_random_commercial_duration(self.timedelta_milliseconds(gapToFill)-1000,self.timedelta_milliseconds(gapToFill))
 
-                                formatted_time_for_final_commercial = datetime.strptime(new_commercial.natural_start_time, '%H:%M:%S').strftime('%H:%M:%S')
+                        formatted_time_for_final_commercial = datetime.strptime(new_commercial.natural_start_time, '%H:%M:%S').strftime('%H:%M:%S')
 
-                                final_commercial_end_time = datetime.strptime(new_commercial.natural_start_time, '%H:%M:%S') + \
-                                              timedelta(milliseconds=int(random_final_comm[4])) 
+                        final_commercial_end_time = datetime.strptime(new_commercial.natural_start_time, '%H:%M:%S') + \
+                                      timedelta(milliseconds=int(random_final_comm[4])) 
 
-                                final_commercial = Commercial(
-                                    "Commercials",
-                                    random_final_comm[3],
-                                    formatted_time_for_final_commercial, # natural_start_time
-                                    final_commercial_end_time,
-                                    random_final_comm[4],
-                                    "everyday", # day_of_week
-                                    "true", # is_strict_time
-                                    "1", # time_shift 
-                                    "0", # overlap_max
-                                    random_final_comm[5], # plex_media_id
-                                    random_final_comm[6], # custom lib name
-                                    "3", #media_id
-                                    None #notes
-                                )
-                                commercial_list.append(final_commercial)
-                                break
-                            last_comm = comm
-                break
+                        final_commercial = Commercial(
+                            "Commercials",
+                            random_final_comm[3],
+                            formatted_time_for_final_commercial, # natural_start_time
+                            final_commercial_end_time,
+                            random_final_comm[4],
+                            "everyday", # day_of_week
+                            "true", # is_strict_time
+                            "1", # time_shift 
+                            "0", # overlap_max
+                            random_final_comm[5], # plex_media_id
+                            random_final_comm[6], # custom lib name
+                            "3", #media_id
+                            None #notes
+                        )
+                        commercial_list.append(final_commercial)
+                        #break
+                        #last_comm = comm
+                break'''
             commercial_list.append(new_commercial)
         return commercial_list
