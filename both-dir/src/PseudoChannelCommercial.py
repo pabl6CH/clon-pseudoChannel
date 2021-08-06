@@ -101,11 +101,21 @@ class PseudoChannelCommercial():
             time_diff = (curr_item_start_time - new_commercial_start_time)
             time_diff_milli = self.timedelta_milliseconds(time_diff)
             #random_commercial_without_pad = self.get_random_commercial()
-            random_commercial_without_pad = self.db.get_random_commercial_duration(self.MIN_DURATION_FOR_COMMERCIAL,time_diff_milli)
+            random_commercial_without_pad = self.db.get_random_commercial_duration(self.MIN_DURATION_FOR_COMMERCIAL*1000,time_diff_milli)
             """
             Padding the duration of commercials as per user specified padding.
             """
-            random_commercial = self.pad_the_commercial_dur(random_commercial_without_pad)
+            try:
+                random_commercial = self.pad_the_commercial_dur(random_commercial_without_pad)
+            except Exception as e:
+                print("ERROR: " + str(e))
+                random_commercial_without_pad = self.db.get_random_commercial_duration(1,time_diff_milli)
+                try:
+                    random_commercial = self.pad_the_commercial_dur(random_commercial_without_pad)
+                except Exception as e:
+                    print("ERROR: " + str(e))
+                    break
+            raw_commercial_milli = int(random_commercial_without_pad[4])
             new_commercial_milli = int(random_commercial[4])
             commercial_dur_sum += new_commercial_milli
             if last_commercial != None:
@@ -116,8 +126,9 @@ class PseudoChannelCommercial():
                 new_commercial_start_time = prev_item_end_time + timedelta(seconds=1)
                 new_commercial_end_time = new_commercial_start_time + \
                                           timedelta(milliseconds=int(new_commercial_milli))
-            print("INFO: Time Left to Fill - " + str((time_diff_milli)/1000))
             formatted_time_for_new_commercial = new_commercial_start_time.strftime('%H:%M:%S')
+            print("INFO: Time Left to Fill - " + str(time_diff))
+            print("INFO: " + str(formatted_time_for_new_commercial) + " - " + str(random_commercial[3]) + " | " + str(random_commercial[4]/1000))
             new_commercial = Commercial(
                 "Commercials",
                 random_commercial[3],
@@ -142,11 +153,26 @@ class PseudoChannelCommercial():
                 new_commercial_start_time = prev_item_end_time + timedelta(seconds=1)
                 new_commercial_end_time = new_commercial_start_time + \
                                           timedelta(milliseconds=int(new_commercial_milli))
-            while new_commercial_end_time > curr_item_start_time:
+            while new_commercial_end_time - timedelta(seconds=self.COMMERCIAL_PADDING_IN_SECONDS) > curr_item_start_time:
+                print("NOTICE: Commercial Runs Too Long. Rerolling")
                 time_diff_milli = time_diff_milli - 250
                 if time_diff_milli <= 100:
                     break
-                random_commercial = self.db.get_random_commercial_duration(self.MIN_DURATION_FOR_COMMERCIAL,time_diff_milli)
+                random_commercial = self.db.get_random_commercial_duration(self.MIN_DURATION_FOR_COMMERCIAL*1000,time_diff_milli)
+                if last_commercial != None:
+                    new_commercial_start_time = last_commercial.end_time + timedelta(seconds=1)
+                    new_commercial_end_time = new_commercial_start_time + \
+                                              timedelta(milliseconds=int(new_commercial_milli))
+                else:
+                    new_commercial_start_time = prev_item_end_time + timedelta(seconds=1)
+                    new_commercial_end_time = new_commercial_start_time + \
+                                              timedelta(milliseconds=int(new_commercial_milli))
+                print("INFO: Time Left to Fill - " + str(time_diff))
+                try:
+                    print("INFO: " + str(formatted_time_for_new_commercial) + " - " + str(random_commercial[3]) + " | " + str(random_commercial[4]/1000))
+                except Exception as e:
+                    print("ERROR: " + str(e))
+                    break
                 new_commercial = Commercial(
                     "Commercials",
                     random_commercial[3],
