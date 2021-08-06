@@ -1365,7 +1365,10 @@ class PseudoChannel():
                                     notes_data = ""
                                 last_movie = the_movie[3]
                             actors_data = the_movie[12].strip('][').split(',')
-                            notes_data = notes_data + "Rated " + str(the_movie[8]) + "</br>Starring: " + str(actors_data[0]) + ", " + str(actors_data[1]) + " and " + str(actors_data[2]) + "</br>" + str(the_movie[10]) + "</br>" + str(the_movie[14])
+                            try:
+                                notes_data = notes_data + "Rated " + str(the_movie[8]) + "</br>Starring: " + str(actors_data[0]) + ", " + str(actors_data[1]) + " and " + str(actors_data[2]) + "</br>" + str(the_movie[10]) + "</br>" + str(the_movie[14])
+                            except:
+                                notes_data = notes_data
                             movie = Movie(
                             section, # section_type
                             the_movie[3], # title
@@ -1517,8 +1520,15 @@ class PseudoChannel():
                                     previous_episode.time_shift,
                                     ""
                                 )
-                            except:
+                            except Exception as e:
                                 print("ERROR: Error in calculate_start_time")
+                                print(e)
+                                new_starttime = self.calculate_start_time(
+                                    previous_episode.end_time,
+                                    entry.natural_start_time,
+                                    5,
+                                    ""
+                                )
                             print("INFO: New start time:", new_starttime)
                             entry.start_time = datetime.datetime.strptime(new_starttime, self.APP_TIME_FORMAT_STR).strftime(self.APP_TIME_FORMAT_STR)
                             entry.end_time = self.get_end_time_from_duration(entry.start_time, entry.duration)
