@@ -41,7 +41,10 @@ def get_playing():
     for runningPID in glob.glob(pids):
         with open(runningPID) as f:
             pid = f.readline()
-    playing = { runningPID : pid }
+    try:
+        playing = { runningPID : pid }
+    except:
+        playing = None
     return playing
 
 def get_last():
@@ -208,7 +211,14 @@ parser.add_argument('-u', '--updatedatabase',
 args = parser.parse_args()
 
 if args.channel:
-    print("STARTING CHANNEL "+args.channel)
+    print("CHECKING IF PSEUDO CHANNEL IS ALREADY RUNNING")
+    playing = get_playing()
+    try:
+        for channel, pid in playing.items():
+            print("STOPPING CHANNEL "+channel.replace('/running.pid','').split('_')[1])
+            stop_channel(channel, pid)
+    except:
+        print("NOTICE: Pseudo Channel Not Already Running, STARTING CHANNEL "+args.channel)
     start_channel(args.channel)
 if args.stop:
     playing = get_playing()

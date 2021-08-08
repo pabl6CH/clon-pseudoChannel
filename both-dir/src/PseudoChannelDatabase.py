@@ -930,13 +930,16 @@ class PseudoChannelDatabase():
 
     def get_random_show_data(self,section,min,max,airDate,genres,actors,similar,rating,studios):
         print("INFO: " + str(min) + ', ' + str(max) + ', ' + str(airDate) + ', ' + str(genres) + ', ' + str(actors) + ', ' + str(similar) + ', ' + str(rating) + ', ' + str(studios))
-        if airDate != None:
-            if str(airDate)[3] == '*':
-                print("INFO: Decade = " + str(airDate)[0:3])
-                datestring=str(airDate)[0:3]
-            else:
-                print("INFO: Air Date = " + str(airDate))
-                datestring=airDate
+        if airDate != None or airDate != '':
+            try:
+                if str(airDate)[3] == '*':
+                    print("INFO: Decade = " + str(airDate)[0:3])
+                    datestring=str(airDate)[0:3]
+                else:
+                    print("INFO: Air Date = " + str(airDate))
+                    datestring=airDate
+            except:
+                datestring = None
         else:
             datestring = None
         genresList = []
@@ -949,37 +952,40 @@ class PseudoChannelDatabase():
         tvRatingsUK = ['U','12A','15','18','R18']
         print("INFO: "+section)
         if rating != None:
-            ratingsAllowed = []
-            rating=rating.split(',')
-            if rating[0] == 'US':
-                ratingsList = tvRatingsUS
-            elif rating[0] == 'AUS':
-                ratingsList = tvRatingsAUS
-            elif rating[0] == 'CA':
-                ratingsList = tvRatingsCA
-            elif rating[0] == 'UK':
-                ratingsList  = tvRatingsUK
-            else:
-                ratingsList = tvRatingsUS
-            if rating[2] == '=':
-                print("INFO: Rating = " + rating[0] +', ' + rating[1])
-                ratingsAllowed.append(rating[1])
-            elif rating[2] == '<':
-                ratingPos = ratingsList.index(rating[1])
-                ratings = ''
-                while ratingPos >= 0:
-                    ratings = ratings + ', ' + ratingsList[ratingPos]
-                    ratingsAllowed.append(ratingsList[ratingPos])
-                    ratingPos = ratingPos - 1
-            elif rating[2] == '>':
-                ratingPos = ratingsList.index(rating[1])
-                ratings = ''
-                ratingsListLength = len(ratingsList)
-                print("INFO: Rating = " + rating[0] +', '+rating[1])
-                while ratingPos < ratingsListLength:
-                    ratings = ratings + ', ' + ratingsList[ratingPos]
-                    ratingsAllowed.append(ratingsList[ratingPos])
-                    ratingPos = ratingPos + 1
+            try:
+                ratingsAllowed = []
+                rating=rating.split(',')
+                if rating[0] == 'US':
+                    ratingsList = tvRatingsUS
+                elif rating[0] == 'AUS':
+                    ratingsList = tvRatingsAUS
+                elif rating[0] == 'CA':
+                    ratingsList = tvRatingsCA
+                elif rating[0] == 'UK':
+                    ratingsList  = tvRatingsUK
+                else:
+                    ratingsList = tvRatingsUS
+                if rating[2] == '=':
+                    print("INFO: Rating = " + rating[0] +', ' + rating[1])
+                    ratingsAllowed.append(rating[1])
+                elif rating[2] == '<':
+                    ratingPos = ratingsList.index(rating[1])
+                    ratings = ''
+                    while ratingPos >= 0:
+                        ratings = ratings + ', ' + ratingsList[ratingPos]
+                        ratingsAllowed.append(ratingsList[ratingPos])
+                        ratingPos = ratingPos - 1
+                elif rating[2] == '>':
+                    ratingPos = ratingsList.index(rating[1])
+                    ratings = ''
+                    ratingsListLength = len(ratingsList)
+                    print("INFO: Rating = " + rating[0] +', '+rating[1])
+                    while ratingPos < ratingsListLength:
+                        ratings = ratings + ', ' + ratingsList[ratingPos]
+                        ratingsAllowed.append(ratingsList[ratingPos])
+                        ratingPos = ratingPos + 1
+            except:
+                ratingsAllowed = []
         if genres != None and ',' in genres:
             genres=genres.replace("'",r"''").replace('"',r'""').split(',')
             for genre in genres:
@@ -1016,9 +1022,12 @@ class PseudoChannelDatabase():
                 print("INFO: Studio = " + studio)
                 studiosList.append(studio)
         elif studios != None:
-            studios=studio.replace("'",r"''").replace('"',r'""')
-            print("INFO: Studio = " + studios)
-            studiosList.append(studios)
+            try:
+                studios=studio.replace("'",r"''").replace('"',r'""')
+                print("INFO: Studio = " + studios)
+                studiosList.append(studios)
+            except:
+                pass
         cursor_execute = "SELECT * FROM shows WHERE (customSectionName LIKE \"TV Shows\")"
         leading_and = True
         if rating != None:
@@ -1123,9 +1132,12 @@ class PseudoChannelDatabase():
         if episode != None:
             cursor_execute = cursor_execute + " and episodeNumber LIKE \""+str(episode)+"\""
         if date != None:
-            if str(date)[3] == '*':
-                date = str(date)[0:3]
-            cursor_execute = cursor_execute + " and airDate LIKE \""+str(date)+"%\""
+            try:
+                if str(date)[3] == '*':
+                    date = str(date)[0:3]
+                cursor_execute = cursor_execute + " and airDate LIKE \""+str(date)+"%\""
+            except:
+                pass
         cursor_execute = cursor_execute + " ORDER BY RANDOM() LIMIT 1"
         print("INFO: " + cursor_execute)
         self.cursor.execute(cursor_execute)
