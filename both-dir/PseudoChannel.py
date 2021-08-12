@@ -870,6 +870,7 @@ class PseudoChannel():
                             print("----------------------------------")
                             if entry[14] == 1:
                                 advance_episode = "no"
+                                print("ACTION: RERUNNING LAST SCHEDULED EPISODE")
                                 #check for same show in MEDIA list
                                 for m in self.MEDIA:
                                     try:
@@ -882,6 +883,7 @@ class PseudoChannel():
                                     next_episode = self.db.get_last_episode_alt(entry[3]) #get last episode
                             else:
                                 advance_episode = "yes"
+                                #print("ACTION: GETTING NEXT EPISODE")
                                 #check for same show in MEDIA list
                                 episodeID = None
                                 for m in self.MEDIA:
@@ -891,9 +893,13 @@ class PseudoChannel():
                                         seriesTitle = None
                                     if seriesTitle == entry[3] and m.media_id == 2:
                                         episodeID = self.db.get_episode_id_alternate(m.plex_media_id,seriesTitle)[0]
+                                        #print("INFO: episode ID = "+str(episodeID))
+                                        #print("INFO: plex_media_id = "+str(m.plex_media_id))
                                 if episodeID != None:
+                                    print("ACTION: GETTING NEXT EPISODE FROM SERIES TITLE ["+seriesTitle+"] AND EPISODE ID ["+str(episodeID)+"]")
                                     next_episode = self.db.get_next_episode_alt(seriesTitle, episodeID)
                                 if next_episode == None:
+                                    print("ACTION: GETTING NEXT EPISODE FROM SERIES TITLE["+entry[3]+"]")
                                     next_episode = self.db.get_next_episode(entry[3]) #get next episode
                             try:
                                 print("INFO: Scheduled: "+next_episode[7]+" - (S"+str(next_episode[6])+"E"+str(next_episode[5])+") "+next_episode[3])
@@ -1461,6 +1467,8 @@ class PseudoChannel():
                             previous_episode = entry
                             if entry.custom_section_name == "TV Shows" and entry.advance_episode != "no":
                                 self.db.update_shows_table_with_last_episode(entry.show_series_title, entry.plex_media_id)
+                            elif entry.custom_section_name == "Playlists" and entry.advance_episode != "no":
+                                self.db.update_shows_table_with_last_episode(entry.show_series_title, entry.plex_media_id)
                         elif entry.is_strict_time.lower() == "secondary": #This mode starts a show "already in progress" if the previous episode or movie runs past the start time of this one
                             print("INFO Pre-empt Allowed: {}".format(str(entry.title)))
                             try:
@@ -1508,6 +1516,8 @@ class PseudoChannel():
                                 previous_episode = entry
                                 if entry.custom_section_name == "TV Shows" and entry.advance_episode != "no":
                                     self.db.update_shows_table_with_last_episode(entry.show_series_title, entry.plex_media_id)
+                                elif entry.custom_section_name == "Playlists" and entry.advance_episode != "no":
+                                    self.db.update_shows_table_with_last_episode(entry.show_series_title, entry.plex_media_id)
                         else:
                             try:
                                 print("INFO: Variable Time: {}".format(str(entry.title).encode(sys.stdout.encoding, errors='replace')))
@@ -1550,11 +1560,15 @@ class PseudoChannel():
                             previous_episode = entry
                             if entry.custom_section_name == "TV Shows" and entry.advance_episode != "no":
                                 self.db.update_shows_table_with_last_episode(entry.show_series_title, entry.plex_media_id)
+                            elif entry.custom_section_name == "Playlists" and entry.advance_episode != "no":
+                                self.db.update_shows_table_with_last_episode(entry.show_series_title, entry.plex_media_id)
                     else:
                         self.db.add_media_to_daily_schedule(entry)
                         previous_episode = entry
                         if entry.custom_section_name == "TV Shows" and entry.advance_episode != "no":
-                                self.db.update_shows_table_with_last_episode(entry.show_series_title, entry.plex_media_id)
+                            self.db.update_shows_table_with_last_episode(entry.show_series_title, entry.plex_media_id)
+                        elif entry.custom_section_name == "Playlists" and entry.advance_episode != "no":
+                            self.db.update_shows_table_with_last_episode(entry.show_series_title, entry.plex_media_id)
                 if self.USING_COMMERCIAL_INJECTION:
                     list_of_commercials = self.commercials.get_commercials_to_place_between_media(
                         previous_episode,
