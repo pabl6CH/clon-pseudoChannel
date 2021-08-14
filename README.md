@@ -1,10 +1,9 @@
 # PseudoChannel.py - Your Home-Brewed TV Channels
 
-![Generated HTML schedule](https://i.imgur.com/CUgxb1W.gif)
+![Generated HTML schedule](https://i.imgur.com/3NoZVBJ.jpg)
 
 ## How to Use:
-
-- The instructions below are all for configuring the **"controller"** device (i.e. a laptop or raspberry pi running linux). This is the device this app runs on to control the Plex client. The **"client"** device should be a Raspberry Pi running Rasplex hooked up to your TV via HDMI - although I'm sure other clients work great too. 
+- Pseudo Channel is a script that interfaces with the Plex API, it runs independently of both server and client. Current supported clients are those that show on in the plex API clients page (http://<your-plex-ip-and-port>/clients?X-Plex-Token=<your-plex-token>). Pseudo Channel is capable of managing schedules for multiple channels. When a channel is activated, Pseudo Channel directs Plex, through the API, to play movies and shows according to a schedule. The script also supports filling time between media with any libraries defined as 'commercials'. The ![web interface](https://github.com/FakeTV/Web-Interface-for-Pseudo-Channel) allows for easy 
 
 0. Update:
 
