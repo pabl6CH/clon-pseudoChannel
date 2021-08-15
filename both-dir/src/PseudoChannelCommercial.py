@@ -98,10 +98,11 @@ class PseudoChannelCommercial():
         time_watch = prev_item_end_time 
         new_commercial_start_time = prev_item_end_time + timedelta(seconds=1)
         while curr_item_start_time > new_commercial_start_time:
+            print("-------------------------------------------")
             time_diff = (curr_item_start_time - new_commercial_start_time)
             time_diff_milli = self.timedelta_milliseconds(time_diff)
             #random_commercial_without_pad = self.get_random_commercial()
-            random_commercial_without_pad = self.db.get_random_commercial_duration(self.MIN_DURATION_FOR_COMMERCIAL*1000,time_diff_milli)
+            random_commercial_without_pad = self.db.get_random_commercial_duration(self.MIN_DURATION_FOR_COMMERCIAL*1000,time_diff_milli-(self.COMMERCIAL_PADDING_IN_SECONDS*1000))
             """
             Padding the duration of commercials as per user specified padding.
             """
@@ -109,7 +110,7 @@ class PseudoChannelCommercial():
                 random_commercial = self.pad_the_commercial_dur(random_commercial_without_pad)
             except Exception as e:
                 print("ERROR: " + str(e))
-                random_commercial_without_pad = self.db.get_random_commercial_duration(1,time_diff_milli)
+                random_commercial_without_pad = self.db.get_random_commercial_duration(1,time_diff_milli-(self.COMMERCIAL_PADDING_IN_SECONDS*1000))
                 try:
                     random_commercial = self.pad_the_commercial_dur(random_commercial_without_pad)
                 except Exception as e:
@@ -123,12 +124,13 @@ class PseudoChannelCommercial():
                 new_commercial_end_time = new_commercial_start_time + \
                                           timedelta(milliseconds=int(new_commercial_milli))
             else:
-                new_commercial_start_time = prev_item_end_time + timedelta(seconds=1)
+                new_commercial_start_time = prev_item_end_time
                 new_commercial_end_time = new_commercial_start_time + \
                                           timedelta(milliseconds=int(new_commercial_milli))
             formatted_time_for_new_commercial = new_commercial_start_time.strftime('%H:%M:%S')
             print("INFO: Time Left to Fill - " + str(time_diff))
-            print("INFO: " + str(formatted_time_for_new_commercial) + " - " + str(random_commercial[3]) + " | " + str(random_commercial[4]/1000))
+            print("INFO: " + str(formatted_time_for_new_commercial) + " - " + str(random_commercial[3]) + " - " + str(random_commercial[4]/1000)) 
+            print(new_commercial_end_time)
             new_commercial = Commercial(
                 "Commercials",
                 random_commercial[3],
@@ -144,17 +146,22 @@ class PseudoChannelCommercial():
                 "3", #media_id,
                 None #notes
             )
-            last_commercial = new_commercial
+            
             if last_commercial != None:
                 new_commercial_start_time = last_commercial.end_time + timedelta(seconds=1)
                 new_commercial_end_time = new_commercial_start_time + \
                                           timedelta(milliseconds=int(new_commercial_milli))
             else:
-                new_commercial_start_time = prev_item_end_time + timedelta(seconds=1)
+                new_commercial_start_time = prev_item_end_time
                 new_commercial_end_time = new_commercial_start_time + \
                                           timedelta(milliseconds=int(new_commercial_milli))
-            while new_commercial_end_time - timedelta(seconds=self.COMMERCIAL_PADDING_IN_SECONDS) > curr_item_start_time:
+            last_commercial = new_commercial
+            while new_commercial_end_time - timedelta(seconds=self.COMMERCIAL_PADDING_IN_SECONDS)> curr_item_start_time:
                 print("NOTICE: Commercial Runs Too Long. Rerolling")
+                print("-------------------------------------------")
+                print("INFO: New Commercial End Time -  %s" % new_commercial_end_time)
+                print("INFO: Next Item Start Time -  %s" % curr_item_start_time)
+                print("-------------------------------------------")
                 time_diff_milli = time_diff_milli - 250
                 if time_diff_milli <= 100:
                     break
@@ -164,7 +171,7 @@ class PseudoChannelCommercial():
                     new_commercial_end_time = new_commercial_start_time + \
                                               timedelta(milliseconds=int(new_commercial_milli))
                 else:
-                    new_commercial_start_time = prev_item_end_time + timedelta(seconds=1)
+                    new_commercial_start_time = prev_item_end_time
                     new_commercial_end_time = new_commercial_start_time + \
                                               timedelta(milliseconds=int(new_commercial_milli))
                 print("INFO: Time Left to Fill - " + str(time_diff))
@@ -191,6 +198,7 @@ class PseudoChannelCommercial():
                 if random_commercial != None:
                     break
             
+            new_commercial_start_time = last_commercial.end_time + timedelta(seconds=1)
             '''if new_commercial_end_time > curr_item_start_time:
 
                 # Fill up gap with commercials even if the last commercial gets cutoff
