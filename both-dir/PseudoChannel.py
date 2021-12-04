@@ -698,7 +698,7 @@ class PseudoChannel():
     def get_end_time_from_duration(self, startTime, duration):
 
         time = datetime.datetime.strptime(startTime, self.APP_TIME_FORMAT_STR)
-        show_time_plus_duration = time + datetime.timedelta(milliseconds=duration)
+        show_time_plus_duration = time + datetime.timedelta(milliseconds=int(duration))
         return show_time_plus_duration
 
     def generate_daily_schedule(self):
@@ -823,7 +823,7 @@ class PseudoChannel():
                                                         else:
                                                             print("ACTION: Choosing next episode of " +the_show[3].upper())
                                                             advance_episode = "yes"
-                                                            next_episode = self.db.get_next_episode(the_show[3]) #get next episode
+                                                            next_episode = self.db.get_next_episode(the_show[3],entry) #get next episode
                                                             try:
                                                                 print("INFO: Scheduled: "+next_episode[7]+" - (S"+str(next_episode[6])+"E"+str(next_episode[5])+") "+next_episode[3])
                                                             except:
@@ -897,15 +897,15 @@ class PseudoChannel():
                                         #print("INFO: plex_media_id = "+str(m.plex_media_id))
                                 if episodeID != None:
                                     print("ACTION: GETTING NEXT EPISODE FROM SERIES TITLE ["+seriesTitle+"] AND EPISODE ID ["+str(episodeID)+"]")
-                                    next_episode = self.db.get_next_episode_alt(seriesTitle, episodeID)
+                                    next_episode = self.db.get_next_episode_alt(seriesTitle, episodeID, entry)
                                 if next_episode == None:
                                     print("ACTION: GETTING NEXT EPISODE FROM SERIES TITLE["+entry[3]+"]")
-                                    next_episode = self.db.get_next_episode(entry[3]) #get next episode
+                                    next_episode = self.db.get_next_episode(entry[3],entry) #get next episode
                             try:
                                 print("INFO: Scheduled: "+next_episode[7]+" - (S"+str(next_episode[6])+"E"+str(next_episode[5])+") "+next_episode[3])
                             except:
                                 pass
-                            show_title = entry[3]
+                            show_title = next_episode[7]
                         try:
                             episode_rating = str(next_episode[10])
                         except Exception as e:

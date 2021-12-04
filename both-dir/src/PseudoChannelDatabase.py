@@ -4,6 +4,8 @@ import sqlite3
 import datetime
 import time
 import random
+import json
+import ast
 
 class PseudoChannelDatabase():
 
@@ -479,6 +481,16 @@ class PseudoChannelDatabase():
         lastPlayedDate = now.strftime('%Y-%m-%d')
         sql = "UPDATE movies SET lastPlayedDate = ? WHERE title LIKE ? COLLATE NOCASE"
         self.cursor.execute(sql, (lastPlayedDate, movieTitle, ))
+        self.conn.commit()
+
+    def update_schedule_entry_with_new_show(self, showTitle, entryID):
+        sql1 = "UPDATE schedule SET title = ? WHERE id LIKE ? COLLATE NOCASE"
+        self.cursor.execute(sql1, (showTitle, entryID, ))
+        self.conn.commit()
+
+    def update_daily_schedule_entry_with_new_show(self, showTitle, entryID):
+        sql1 = "UPDATE daily_schedule SET showTitle = ? WHERE id LIKE ? COLLATE NOCASE"
+        self.cursor.execute(sql1, (showTitle, entryID, ))
         self.conn.commit()
 
     """Database functions.
@@ -1160,7 +1172,7 @@ class PseudoChannelDatabase():
         return random_episode
 
     ####mutto233 made this one####
-    def get_next_episode(self, series):
+    def get_next_episode(self, series, entry):
         '''
         *
         * As a way of storing a "queue", I am storing the *next episode title in the "shows" table so I can 
@@ -1238,12 +1250,32 @@ class PseudoChannelDatabase():
                 #self.update_shows_table_with_last_episode(series, next_episode[8])
                 return next_episode
             else:
-                print("NOTICE: Not grabbing next episode restarting series, series must be over. Restarting from episode 1.")
+                print("NOTICE: Series must be over.")
                 first_episode = self.get_first_episode(series)
-                #self.update_shows_table_with_last_episode(series, first_episode[8])
+                if 22 <= int(entry[2]) <= 24:
+                    print("INFO: MediaID = " + str(entry[2]))
+                    print("ACTION: Checking for Similar Show")
+                    showData = self.get_shows(series)
+                    similar = self.get_similar(series,showData[4])
+                    if similar != None:
+                        first_episode = self.get_first_episode(similar)
+                        self.update_schedule_entry_with_new_show(similar, entry[0])
+                    else:
+                        if int(entry[2]) == 24 or int(entry[2]) == 23:
+                            sameRating = self.get_by_rating(series,showData[4],showData[9])
+                            if sameRating != None:
+                                first_episode = self.get_first_episode(sameRating)
+                                self.update_schedule_entry_with_new_show(sameRating, entry[0])
+                            else:
+                                if int(entry[2]) == 24:
+                                    newShow = self.get_any(series,showData[4])
+                                    first_episode = self.get_first_episode(newShow)
+                                    self.update_schedule_entry_with_new_show(newShow, entry[0])
+                        else:
+                            print("ACTION: Restarting from First Episode")
                 return first_episode
 
-    def get_next_episode_alt(self, series, ID):
+    def get_next_episode_alt(self, series, ID, entry):
         '''
         *
         * As a way of storing a "queue", I am storing the *next episode title in the "shows" table so I can 
@@ -1309,11 +1341,123 @@ class PseudoChannelDatabase():
                 #self.update_shows_table_with_last_episode(series, next_episode[8])
                 return next_episode
             else:
-                print("NOTICE: Not grabbing next episode restarting series, series must be over. Restarting from episode 1.")
+                print("NOTICE: Series must be over.")
                 first_episode = self.get_first_episode(series)
-                #self.update_shows_table_with_last_episode(series, first_episode[8])
+                if 22 <= int(entry[2]) <= 24:
+                    print("INFO: MediaID = " + str(entry[2]))
+                    print("ACTION: Checking for Similar Show")
+                    showData = self.get_shows(series)
+                    similar = self.get_similar(series,showData[4])
+                    if similar != None:
+                        first_episode = self.get_first_episode(similar)
+                        self.update_schedule_entry_with_new_show(similar, entry[0])
+                    else:
+                        if int(entry[2]) == 24 or int(entry[2]) == 23:
+                            sameRating = self.get_by_rating(series,showData[4],showData[9])
+                            if sameRating != None:
+                                first_episode = self.get_first_episode(sameRating)
+                                self.update_schedule_entry_with_new_show(sameRating, entry[0])
+                            else:
+                                if int(entry[2]) == 24:
+                                    newShow = self.get_any(series,showData[4])
+                                    first_episode = self.get_first_episode(newShow)
+                                    self.update_schedule_entry_with_new_show(newShow, entry[0])
+                        else:
+                            print("ACTION: Restarting from First Episode")
                 return first_episode
 
+    def get_any(self,series,duration):
+        print("ACTION: Checking for New Show")
+        showsList = []
+        showsTitles = self.get_shows_titles()
+        for show_title in showsTitles:
+            show_scheduled = self.check_if_show_scheduled(show_title[0])
+            if show_scheduled == False:
+                newShowData = self.get_shows(show_title[0])
+                if duration-300000 < newShowData[4] < duration+300000:
+                    showsList.append(show_title[0])
+        if len(showsList) > 0:
+            new_show = random.choice(showsList)
+            print("INFO: New show is",new_show)
+        else:
+            print("ERROR: SIMILAR SHOW WITHIN LIMITATIONS NOT FOUND")
+            print("ACTION: Restarting from First Episode")
+        return new_show
+
+    def get_by_rating(self,series,duration,rating):
+        print("ACTION: Checking for Show with Rating: "+showData[9])
+        showsList = []
+        shows = self.get_shows_table()
+        seriesData = self.get_shows(series)
+        for show in shows:
+            if show[9] == seriesData[9] and duration-300000 < show[4] < duration+300000:
+                show_scheduled = self.check_if_show_scheduled(show[3])
+                if show_scheduled == False:
+                    newShowData = self.get_shows(show[3])
+                    showsList.append(show[3])
+        if len(showsList) > 0:
+            new_show = random.choice(showsList)
+            print("INFO: New show is",new_show)
+        else:
+            new_show = None
+            print("ERROR: SHOW WITHIN RATINGS LIMITATIONS NOT FOUND")
+            print("ACTION: Restarting from First Episode")
+        return new_show
+                                
+    def get_similar(self,series,duration):
+        #get similar show from database and return if not already scheduled
+        print("NOTICE: Getting similar show to "+series.upper()+ " by series name")
+        sql = ("SELECT similar FROM shows WHERE title LIKE ? ORDER BY id LIMIT 1 COLLATE NOCASE")
+        durationMin = int(duration) - 300000
+        durationMax = int(duration) + 300000
+        self.cursor.execute(sql, (series, ))
+        result = self.cursor.fetchone()
+        #print(result[0])
+        similar_shows = ast.literal_eval(result[0])
+        similar_unscheduled = []
+        for similarShow in similar_shows:
+            show_in_db = self.check_if_show_in_db(similarShow)
+            if show_in_db == True:
+                showScheduled = self.check_if_show_scheduled(similarShow)
+            else:
+                showScheduled = False
+            if showScheduled == False and show_in_db == True:
+                showData = self.get_shows(similarShow)
+                if durationMin < showData[4] < durationMax:
+                    similar_unscheduled.append(similarShow)
+        if len(similar_unscheduled) > 0:
+            new_show = random.choice(similar_unscheduled)
+            print("INFO: New show is",new_show)
+        else:
+            new_show = None
+            print("ERROR: SIMILAR SHOW WITHIN LIMITATIONS NOT FOUND")
+        return new_show
+        
+    def check_if_show_scheduled(self,series):
+        #check if a show is already in the schedule
+        print("ACTION: CHECKING IF "+series.upper()+" EXISTS IN CHANNEL SCHEDULE")
+        show_in_schedule = False
+        schedule = self.get_schedule()
+        for s in schedule:
+            if s[9] == "TV Shows" and s[3] == series:
+                show_in_schedule = True
+                print("INFO: "+series+" found in schedule!")
+        if show_in_schedule == False:
+            print("INFO: "+series+" NOT found in schedule!")
+        return show_in_schedule
+        
+    def check_if_show_in_db(self,series):
+        #check if a show is in the database
+        print("ACTION: CHECKING IF "+series.upper()+" EXISTS IN LOCAL DATABASE")
+        show_exists = False
+        showsTitles = self.get_shows_titles()
+        for show_title in showsTitles:
+            if show_title[0] == series:
+                show_exists = True
+                print("INFO: "+series+" found in database!")
+        if show_exists == False:
+            print("INFO: "+series+" not found in database!")
+        return show_exists
 
     def get_last_episode(self, series):
         '''
@@ -1379,7 +1523,7 @@ class PseudoChannelDatabase():
             if next_episode != None:
                 return next_episode
             else:
-                print("NOTICE: Not grabbing next episode restarting series, series must be over. Restarting from episode 1.")
+                print("ACTION: Restarting from episode 1.")
                 first_episode = self.get_first_episode_by_id(series)
                 return first_episode
 
@@ -1445,11 +1589,20 @@ class PseudoChannelDatabase():
             self.cursor.execute(sql, (series, ))
             next_episode = self.cursor.fetchone()
             if next_episode != None:
+                #self.update_shows_table_with_last_episode(series, next_episode[8])
                 return next_episode
             else:
-                print("NOTICE: Not grabbing next episode restarting series, series must be over. Restarting from episode 1.")
-                first_episode = self.get_first_episode_by_id(series)
-                return first_episode
+                print("NOTICE: Series must be over.")
+                first_episode = self.get_first_episode(series)
+                if str(entry[2]) == "22":
+                    print("INFO: MediaID = " + str(entry[2]))
+                    print("ACTION: Checking for Similar Show")
+                    showData = self.get_shows(series)
+                    similar = self.get_similar(series,showData[4])
+                    if similar != None:
+                        print("ACTION: Restarting from Episode 1")
+                        first_episode = self.get_first_episode(similar)
+                        self.update_schedule_entry_with_new_show(similar, entry[0])
 
     def get_commercial(self, title):
 
