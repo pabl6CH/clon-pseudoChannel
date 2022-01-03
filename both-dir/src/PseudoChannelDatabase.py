@@ -1385,7 +1385,7 @@ class PseudoChannelDatabase():
         return new_show
 
     def get_by_rating(self,series,duration,rating):
-        print("ACTION: Checking for Show with Rating: "+showData[9])
+        print("ACTION: Checking for Show with Rating: "+series)
         showsList = []
         shows = self.get_shows_table()
         seriesData = self.get_shows(series)
