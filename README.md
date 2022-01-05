@@ -17,22 +17,16 @@
 % sudo apt install python-pip git -y
 ```
 
-2. Create "/channels" dir, change to that directory, and download the install.sh script to the new directory:
+2. Create download the setup.py script to the root directory of where you would like Pseudo Channel installed
 
-```bash
-% mkdir ./channels && cd ./channels && wget https://raw.githubusercontent.com/FakeTV/pseudo-channel/master/main-dir/install.sh .
+```wget https://raw.githubusercontent.com/FakeTV/pseudo-channel/master/setup.py .
 ```
 
-3. Make the "install.sh" executable:
+3. Run the setup and follow the prompts:
 
-```bash
-% chmod +x ./install.sh
+```python3 setup.py
 ```
 
-4. Run the install and follow the prompts:
-
-```bash
-% ./install.sh
-```
-
+NOTE: it is recommended to have python3 set up as the default when python is run https://www.geeksforgeeks.org/setting-python3-as-default-in-linux/
+  
 You need to have your Plex server IP and [Plex Token](https://bit.ly/2p7RtOu) handy as the install script will ask for them. If you run into issues or want to know more about customizing/configuring PseudoChannel, check out the wiki for details. If you need further help, have some ideas or just want to chat all things FakeTV, visit our FakeTV Discord chat here: https://discord.gg/7equn68
