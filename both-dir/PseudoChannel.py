@@ -1613,7 +1613,7 @@ class PseudoChannel():
             episodeData = self.db.get_episode_from_plexMediaID('/library/metadata/'+plexID)
             if episodeData != None:
                 print("Setting "+episodeData[7]+" - "+episodeData[3]+" S"+str(episodeData[6])+"E"+str(episodeData[5])+" as the Last Episode in the Shows Database for "+showName)
-                self.db.update_shows_table_with_last_episode(episodeData[7], episodeData[8])
+                self.db.update_shows_table_with_last_episode(showName, episodeData[8])
             else:
                 print("Enter the season and episode numbers for the 'last episode' (episode previous to the episode you wish to be scheduled on next -g run")
                 sNo = input("Season Number: ")
@@ -1621,7 +1621,7 @@ class PseudoChannel():
                 episodeData = self.db.get_episode_from_season_episode(showName,sNo,eNo)
                 if(episodeData is not None):
                     print("Setting "+episodeData[7]+" - "+episodeData[3]+" S"+str(episodeData[6])+"E"+str(episodeData[5])+" as the Last Episode in the Shows Database for "+showName)
-                    self.db.update_shows_table_with_last_episode(episodeData[7], episodeData[8])
+                    self.db.update_shows_table_with_last_episode(showName, episodeData[8])
                 else:
                     print("ERROR: EPISODE NOT FOUND IN PSEUDO CHANNEL DATABASE")
                     sys.exit(1)
