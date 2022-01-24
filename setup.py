@@ -87,7 +87,7 @@ def randomize_episodes(channelsList):
         os.chdir('../')
 
 def ps_install():
-    branchList = ['master','develop','python3']
+    branchList = ['main','develop']
     b = 1
     print("Select Pseudo Channel Repository Branch (default: master)")
     for branch in branchList:
