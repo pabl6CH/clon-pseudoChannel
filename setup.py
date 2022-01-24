@@ -416,7 +416,7 @@ def copy_tv(clientList, installDir, path):
 
 def ps_update():
     print("Updating Pseudo Channel") #download and copy updates from git to all branches and boxes
-    branchList = ['master','develop','python3']
+    branchList = ['main','develop']
     b = 1
     print("Select Pseudo Channel Repository Branch (default: master)")
     for branch in branchList:
