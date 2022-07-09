@@ -20,7 +20,7 @@ $ sudo apt install python-pip git -y
 2. Create download the setup.py script to the root directory of where you would like Pseudo Channel installed
 
 ```bash
-$ wget https://raw.githubusercontent.com/FakeTV/pseudo-channel/master/setup.py .
+$ wget https://raw.githubusercontent.com/FakeTV/pseudo-channel/main/setup.py .
 ```
 
 3. Run the setup and follow the prompts:
