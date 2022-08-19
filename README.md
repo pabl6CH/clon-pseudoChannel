@@ -8,23 +8,25 @@
 0. Update:
 
 ```bash
-% sudo apt update
+$ sudo apt update
 ```
 
 1. Install python-pip & Git:
 
 ```bash
-% sudo apt install python-pip git -y
+$ sudo apt install python-pip git -y
 ```
 
 2. Create download the setup.py script to the root directory of where you would like Pseudo Channel installed
 
-```wget https://raw.githubusercontent.com/FakeTV/pseudo-channel/master/setup.py .
+```bash
+$ wget https://raw.githubusercontent.com/FakeTV/pseudo-channel/main/setup.py .
 ```
 
 3. Run the setup and follow the prompts:
 
-```python3 setup.py
+```bash
+$ python3 setup.py --install
 ```
 
 NOTE: it is recommended to have python3 set up as the default when python is run https://www.geeksforgeeks.org/setting-python3-as-default-in-linux/
