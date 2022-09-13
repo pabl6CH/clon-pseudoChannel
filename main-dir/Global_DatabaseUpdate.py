@@ -128,8 +128,8 @@ for channel_dir in channel_dirs:
         entryList = {}
         entryList['id'] = "1"
         entryList['unix'] = str(time.time())
-        entryList['mediaID'] = "0"
-        rndsql = "SELECT * FROM shows WHERE (customSectionName NOT LIKE 'playlist' AND duration BETWEEN 6000 and 999000) ORDER BY RANDOM() LIMIT 1"
+        entryList['mediaID'] = "23"
+        rndsql = "SELECT * FROM shows WHERE (customSectionName NOT LIKE 'playlist' AND duration BETWEEN 6000 and 999000000) ORDER BY RANDOM() LIMIT 1"
         table.execute(rndsql)
         the_show = table.fetchone()
         entryList['duration'] = str("1,"+str(int(the_show[4] / 60000)))
@@ -164,7 +164,10 @@ for channel_dir in channel_dirs:
         while timediff.seconds > 900 and endloop == 0:
             entryList['id'] = str(int(entryList['id']) + 1)
             entryList['unix'] = str(time.time())
-            prevEndTimeUnix = float(entryList['startTimeUnix']) + the_show[4]/1000
+            try:
+                prevEndTimeUnix = float(entryList['startTimeUnix']) + the_show[4]/1000
+            except:
+                prevEndTimeUnix = float(entryList['startTimeUnix'])
             prevEndTime = datetime.datetime.fromtimestamp(prevEndTimeUnix)
             entryList['startTime'] = prevEndTime + (datetime.datetime.min - prevEndTime) % datetime.timedelta(minutes=entryList['timeShift'])
             entryList['startTime'] = entryList['startTime'].strftime("%H:%M:%S")
@@ -182,16 +185,19 @@ for channel_dir in channel_dirs:
             rndsql = "SELECT * FROM shows WHERE (customSectionName NOT LIKE 'playlist' AND duration BETWEEN ? and ?) ORDER BY RANDOM() LIMIT 1"
             table.execute(rndsql, ("60000", str(maxMS)))
             the_show = table.fetchone()
-            entryList['duration'] = str("1,"+str(int(the_show[4] / 60000)))
-            entryList['endTime'] = datetime.datetime.fromtimestamp(float(entryList['startTimeUnix']) + the_show[4]/1000).strftime("%H:%M:%S")
-            entryList['title'] = the_show[3]
-            entryList['overlapMax'] = round(float(entryList['duration'].split(',')[1]) * 0.5)
-            print("INFO: Adding "+entryList['startTime']+" - "+entryList['title']+"\033[K",end='\n')
-            sql = "INSERT INTO schedule(id,unix,mediaID,title,duration,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra,rerun,year,genres,actors,collections,rating,studio,seasonEpisode)  \
-                VALUES(:id,:unix,:mediaID,:title,:duration,:startTime,:endTime,:dayOfWeek,:startTimeUnix,:section,:strictTime,:timeShift,:overlapMax,:xtra,:rerun,:year,:genres,:actors,:collections,:rating,:studio,:seasonEpisode)"
+            try:
+                entryList['duration'] = str("1,"+str(int(the_show[4] / 60000)))
+                entryList['endTime'] = datetime.datetime.fromtimestamp(float(entryList['startTimeUnix']) + the_show[4]/1000).strftime("%H:%M:%S")
+                entryList['title'] = the_show[3]
+                entryList['overlapMax'] = round(float(entryList['duration'].split(',')[1]) * 0.5)
+                print("INFO: Adding "+entryList['startTime']+" - "+entryList['title']+"\033[K",end='\n')
+                sql = "INSERT INTO schedule(id,unix,mediaID,title,duration,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra,rerun,year,genres,actors,collections,rating,studio,seasonEpisode)  \
+                    VALUES(:id,:unix,:mediaID,:title,:duration,:startTime,:endTime,:dayOfWeek,:startTimeUnix,:section,:strictTime,:timeShift,:overlapMax,:xtra,:rerun,:year,:genres,:actors,:collections,:rating,:studio,:seasonEpisode)"
+            except:
+                timediff = timediff + datetime.timedelta(0,900)
             if entryList['startTime'] != "00:00:00":
                 table.execute(sql,entryList)
-                print("INFO: "+str(timediff.seconds)+" to midnight\033[K",end='\n') 
+                print("INFO: "+str(timediff.seconds)+" to midnight\033[K",end='\n')
             else:
                 endloop = 1
     else:
@@ -221,11 +227,14 @@ for channel_dir in channel_dirs:
     # Step FIVE: Remove any media not in the directories set of commerical archives
     print("NOTICE: Trimming database at " + db_path)
     os.system('python report_MediaFolders.py')
-    local_commercials = open('Commercial_Libraries.txt').read().splitlines()
+    try:
+        local_commercials = open('Commercial_Libraries.txt').read().splitlines()
+        commercial_removal = [x for x in global_commercials["Commercials"] if x not in local_commercials]
+    except:
+        print("ERROR: Commercials Not Found")
     local_movies = open('Movie_Libraries.txt').read().splitlines()
     local_tvs = open('TV_Libraries.txt').read().splitlines()
     
-    commercial_removal = [x for x in global_commercials["Commercials"] if x not in local_commercials]
     movie_removal = [x for x in global_commercials["Movies"] if x not in local_movies]
     tv_removal = [x for x in global_commercials["TV Shows"] if x not in local_tvs]
     
