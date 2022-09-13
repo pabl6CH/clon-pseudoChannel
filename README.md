@@ -26,7 +26,7 @@ $ wget https://raw.githubusercontent.com/FakeTV/pseudo-channel/main/setup.py .
 3. Run the setup and follow the prompts:
 
 ```bash
-$ python3 setup.py
+$ python3 setup.py --install
 ```
 
 NOTE: it is recommended to have python3 set up as the default when python is run https://www.geeksforgeeks.org/setting-python3-as-default-in-linux/
