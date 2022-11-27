@@ -112,193 +112,224 @@ class PseudoChannel():
                     if correct_lib_name == "Movies":
                         sectionMedia = self.PLEX.library.section(section.title).all()
                         for i, media in enumerate(sectionMedia):
-                            fetchMedia = self.PLEX.fetchItem(media.key)
-                            try:
-                                genres = [genre.tag for genre in fetchMedia.genres]
-                            except:
-                                genres = ''
-                            try:
-                                actors = [actor.tag for actor in fetchMedia.actors]
-                            except:
-                                actors = ''
-                            try:
-                                collections = [collection.tag for collection in fetchMedia.collections]
-                            except:
-                                collections = ''
-                            #actors = {}
-                            #for actor in fetchMedia.actors:
-                            #    actors[actor.tag] = str(actor.id)
-                            self.db.add_movies_to_db(media.ratingKey, media.title, media.duration, media.key, section.title, media.contentRating, media.summary, media.originallyAvailableAt, str(genres), str(actors), str(collections), media.studio)
-                            self.print_progress(
-                                    i + 1, 
-                                    len(sectionMedia), 
-                                    prefix = section.title+" "+str(i+1)+' of '+str(len(sectionMedia))+": ", 
-                                    suffix = 'Complete ['+media.title+']', 
-                                    bar_length = 40
-                                )
+                            while True:
+                                try:
+                                    fetchMedia = self.PLEX.fetchItem(media.key)
+                                    try:
+                                        genres = [genre.tag for genre in fetchMedia.genres]
+                                    except:
+                                        genres = ''
+                                    try:
+                                        actors = [actor.tag for actor in fetchMedia.actors]
+                                    except:
+                                        actors = ''
+                                    try:
+                                        collections = [collection.tag for collection in fetchMedia.collections]
+                                    except:
+                                        collections = ''
+                                    #actors = {}
+                                    #for actor in fetchMedia.actors:
+                                    #    actors[actor.tag] = str(actor.id)
+                                    self.db.add_movies_to_db(media.ratingKey, media.title, media.duration, media.key, section.title, media.contentRating, media.summary, media.originallyAvailableAt, str(genres), str(actors), str(collections), media.studio)
+                                    self.print_progress(
+                                            i + 1, 
+                                            len(sectionMedia), 
+                                            prefix = section.title+" "+str(i+1)+' of '+str(len(sectionMedia))+": ", 
+                                            suffix = 'Complete ['+media.title+']', 
+                                            bar_length = 40
+                                        )
+                                except:
+                                    continue
+                                break
                         #print('')
                     elif correct_lib_name == "TV Shows":
                         sectionMedia = self.PLEX.library.section(section.title).all()
                         for i, media in enumerate(sectionMedia):
-                            fetchMedia = self.PLEX.fetchItem(media.key)
-                            try:
-                                genres = [genre.tag for genre in fetchMedia.genres]
-                            except:
-                                genres = ''
-                            try:
-                                actors = [actor.tag for actor in fetchMedia.actors]
-                            except:
-                                actors = ''
-                            try:
-                                similars = [similar.tag for similar in fetchMedia.similar]
-                            except:
-                                similars = ''
+                            while True:
+                                try:
+                                    fetchMedia = self.PLEX.fetchItem(media.key)
+                                    try:
+                                        genres = [genre.tag for genre in fetchMedia.genres]
+                                    except:
+                                        genres = ''
+                                    try:
+                                        actors = [actor.tag for actor in fetchMedia.actors]
+                                    except:
+                                        actors = ''
+                                    try:
+                                        similars = [similar.tag for similar in fetchMedia.similar]
+                                    except:
+                                        similars = ''
 
-                            self.db.add_shows_to_db(
-                                media.ratingKey, 
-                                media.title, 
-                                media.duration if media.duration else 1, 
-                                '', 
-                                media.originallyAvailableAt, 
-                                media.key, 
-                                section.title,
-                                media.contentRating,
-                                str(genres),
-                                str(actors),
-                                str(similars),
-                                media.studio
-                            )
-                            self.print_progress(
-                                    i + 1,
-                                    len(sectionMedia),
-                                    prefix = 'TV Show '+str(i+1)+' of '+str(len(sectionMedia))+': ',
-                                    suffix = 'Complete ['+media.title[0:40]+']',
-                                    bar_length = 40
-                                )
+                                    self.db.add_shows_to_db(
+                                        media.ratingKey, 
+                                        media.title, 
+                                        media.duration if media.duration else 1, 
+                                        '', 
+                                        media.originallyAvailableAt, 
+                                        media.key, 
+                                        section.title,
+                                        media.contentRating,
+                                        str(genres),
+                                        str(actors),
+                                        str(similars),
+                                        media.studio
+                                    )
+                                    self.print_progress(
+                                            i + 1,
+                                            len(sectionMedia),
+                                            prefix = 'TV Show '+str(i+1)+' of '+str(len(sectionMedia))+': ',
+                                            suffix = 'Complete ['+media.title[0:40]+']',
+                                            bar_length = 40
+                                        )
+                                except:
+                                    continue
+                                break
                         #add all episodes of each tv show to episodes table
                         for i, media in enumerate(sectionMedia):
                             episodes = self.PLEX.library.section(section.title).get(media.title).episodes()
                             for j, episode in enumerate(episodes):
-                                duration = episode.duration
-                                if duration:
-                                    self.db.add_episodes_to_db(
-                                            media.ratingKey, 
-                                            episode.title, 
-                                            duration, 
-                                            episode.index, 
-                                            episode.parentIndex, 
-                                            media.title,
-                                            episode.key,
-                                            section.title,
-                                            episode.contentRating,
-                                            episode.originallyAvailableAt,
-                                            episode.summary
-                                        )
-                                else:
-                                    self.db.add_episodes_to_db(
-                                            episode.ratingKey, 
-                                            episode.title, 
-                                            0, 
-                                            episode.index, 
-                                            episode.parentIndex, 
-                                            media.title,
-                                            episode.key,
-                                            section.title,
-                                            episode.contentRating,
-                                            episode.originallyAvailableAt,
-                                            episode.summary
-                                        )
-                                self.print_progress(
-                                        j + 1,
-                                        len(episodes),
-                                        prefix = str(i+1)+' of '+str(len(sectionMedia))+" "+media.title+': ',
-                                        suffix = 'Complete ['+episode.title[0:40]+']',
-                                        bar_length = 40
-                                    )
+                                while True:
+                                    try:
+                                        duration = episode.duration
+                                        if duration:
+                                            self.db.add_episodes_to_db(
+                                                    media.ratingKey, 
+                                                    episode.title, 
+                                                    duration, 
+                                                    episode.index, 
+                                                    episode.parentIndex, 
+                                                    media.title,
+                                                    episode.key,
+                                                    section.title,
+                                                    episode.contentRating,
+                                                    episode.originallyAvailableAt,
+                                                    episode.summary
+                                                )
+                                        else:
+                                            self.db.add_episodes_to_db(
+                                                    episode.ratingKey, 
+                                                    episode.title, 
+                                                    0, 
+                                                    episode.index, 
+                                                    episode.parentIndex, 
+                                                    media.title,
+                                                    episode.key,
+                                                    section.title,
+                                                    episode.contentRating,
+                                                    episode.originallyAvailableAt,
+                                                    episode.summary
+                                                )
+                                        self.print_progress(
+                                                j + 1,
+                                                len(episodes),
+                                                prefix = str(i+1)+' of '+str(len(sectionMedia))+" "+media.title+': ',
+                                                suffix = 'Complete ['+episode.title[0:40]+']',
+                                                bar_length = 40
+                                            )
+                                    except:
+                                        continue
+                                    break
                         #print('')
                     elif correct_lib_name == "Commercials":
                         sectionMedia = self.PLEX.library.section(section.title).all()
                         media_length = len(sectionMedia)
                         for i, media in enumerate(sectionMedia):
-                            self.db.add_commercials_to_db(3, media.title, media.duration, media.key, section.title)
-                            self.print_progress(
-                                i + 1, 
-                                media_length, 
-                                prefix = section.title+" "+str(i+1)+' of '+str(len(sectionMedia))+":", 
-                                suffix = 'Complete['+media.title[0:40]+']', 
-                                bar_length = 40
-                            )
+                            while True:
+                                try:
+                                    self.db.add_commercials_to_db(3, media.title, media.duration, media.key, section.title)
+                                    self.print_progress(
+                                        i + 1, 
+                                        media_length, 
+                                        prefix = section.title+" "+str(i+1)+' of '+str(len(sectionMedia))+":", 
+                                        suffix = 'Complete['+media.title[0:40]+']', 
+                                        bar_length = 40
+                                    )
+                                except:
+                                    continue
+                                break
                         #print('')
         dothething = "yes"
         if dothething == "yes":
             playlists = self.PLEX.playlists()
             for i, playlist in enumerate(playlists):
-                duration_average = playlist.duration / playlist.leafCount
-                playlist_added = playlist.addedAt.strftime("%Y-%m-%d %H:%M:%S")
-                self.db.add_shows_to_db(
-                    playlist.ratingKey,
-                    playlist.title,
-                    duration_average,
-                    '',
-                    playlist_added,
-                    playlist.key,
-                    playlist.type,
-                    '',
-                    '',
-                    '',
-                    '',
-                    ''
-                )
+                while True:
+                    try:
+                        duration_average = playlist.duration / playlist.leafCount
+                        playlist_added = playlist.addedAt.strftime("%Y-%m-%d %H:%M:%S")
+                        self.db.add_shows_to_db(
+                            playlist.ratingKey,
+                            playlist.title,
+                            duration_average,
+                            '',
+                            playlist_added,
+                            playlist.key,
+                            playlist.type,
+                            '',
+                            '',
+                            '',
+                            '',
+                            ''
+                        )
+                    except:
+                        continue
+                    break
                 # add all entries of playlist to episodes table
                 episodes = self.PLEX.playlist(playlist.title).items()
                 for j, episode in enumerate(episodes):
-                    duration = episode.duration
-                    sectionTitle = "Playlists"
-                    itemID = str(episode.playlistItemID)
-                    itemData = self.PLEX.fetchItem(episode.key)
-                    if itemData.type == "episode":
-                        sNo = str(itemData.parentIndex)
-                        eNo = str(itemData.index)
-                        plTitle = episode.grandparentTitle +" - "+ episode.title + " (S" + sNo + "E" + eNo + ")"
-                    else:
-                        sNo = "0"
-                        eNo = "0"
-                        plTitle = episode.title + " ("+str(episode.year)+")"
-                    if duration:
-                        self.db.add_playlist_entries_to_db(
-                            episode.ratingKey,
-                            plTitle,
-                            duration,
-                            eNo,
-                            sNo,
-                            playlist.title,
-                            episode.key,
-                            sectionTitle,
-                            episode.contentRating,
-                            episode.originallyAvailableAt,
-                            episode.summary
-                        )
-                    else:
-                        self.db.add_playlist_entries_to_db(
-                            episode.ratingKey,
-                            episode.title,
-                            0,
-                            eNo,
-                            sNo,
-                            playlist.title,
-                            episode.key,
-                            sectionTitle,
-                            episode.contentRating,
-                            episode.originallyAvailableAt,
-                            episode.summary
-                        )
-                    self.print_progress(
-                        j + 1,
-                        len(episodes),
-                        prefix = 'Playlist '+str(i+1)+' of '+str(len(playlists))+': ',
-                        suffix = 'Complete ['+playlist.title[0:40]+']',
-                        bar_length = 40
-                    )
+                    while True:
+                        try:
+                            duration = episode.duration
+                            sectionTitle = "Playlists"
+                            itemID = str(episode.playlistItemID)
+                            itemData = self.PLEX.fetchItem(episode.key)
+                            if itemData.type == "episode":
+                                sNo = str(itemData.parentIndex)
+                                eNo = str(itemData.index)
+                                plTitle = episode.grandparentTitle +" - "+ episode.title + " (S" + sNo + "E" + eNo + ")"
+                            else:
+                                sNo = "0"
+                                eNo = "0"
+                                plTitle = episode.title + " ("+str(episode.year)+")"
+                            if duration:
+                                self.db.add_playlist_entries_to_db(
+                                    episode.ratingKey,
+                                    plTitle,
+                                    duration,
+                                    eNo,
+                                    sNo,
+                                    playlist.title,
+                                    episode.key,
+                                    sectionTitle,
+                                    episode.contentRating,
+                                    episode.originallyAvailableAt,
+                                    episode.summary
+                                )
+                            else:
+                                self.db.add_playlist_entries_to_db(
+                                    episode.ratingKey,
+                                    episode.title,
+                                    0,
+                                    eNo,
+                                    sNo,
+                                    playlist.title,
+                                    episode.key,
+                                    sectionTitle,
+                                    episode.contentRating,
+                                    episode.originallyAvailableAt,
+                                    episode.summary
+                                )
+                            self.print_progress(
+                                j + 1,
+                                len(episodes),
+                                prefix = 'Playlist '+str(i+1)+' of '+str(len(playlists))+': ',
+                                suffix = 'Complete ['+playlist.title[0:40]+']',
+                                bar_length = 40
+                            )
+                        except:
+                            continue
+                        break
+
                 #print('', end='\r')
             sys.stdout.write("\033[K")
             sys.stdout.write('\rNOTICE: Database Update Complete!')
