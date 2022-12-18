@@ -87,15 +87,15 @@ def randomize_episodes(channelsList):
         os.chdir('../')
 
 def ps_install():
-    branchList = ['main','develop']
+    branchList = ['main','python2_dev','python2']
     b = 1
-    print("Select Pseudo Channel Repository Branch (default: master)")
+    print("Select Pseudo Channel Repository Branch (default: main)")
     for branch in branchList:
         print(str(b)+": "+branch)
         b = b+1
     branchSelect = input('>: ')
     if branchSelect == "":
-        ps_branch = 'master'
+        ps_branch = 'main'
     else:
         try:
             branchSelect = int(branchSelect)
@@ -416,15 +416,15 @@ def copy_tv(clientList, installDir, path):
 
 def ps_update():
     print("Updating Pseudo Channel") #download and copy updates from git to all branches and boxes
-    branchList = ['main','develop']
+    branchList = ['main','python2_dev','python2']
     b = 1
-    print("Select Pseudo Channel Repository Branch (default: master)")
+    print("Select Pseudo Channel Repository Branch (default: main)")
     for branch in branchList:
         print(str(b)+": "+branch)
         b = b+1
     branchSelect = input('>: ')
     if branchSelect == "":
-        ps_branch = 'master'
+        ps_branch = 'main'
     else:
         try:
             branchSelect = int(branchSelect)
