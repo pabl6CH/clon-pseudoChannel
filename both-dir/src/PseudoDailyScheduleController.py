@@ -555,6 +555,7 @@ class PseudoDailyScheduleController():
                     item = self.PLEX.fetchItem(mediaID)
                     for client in self.PLEX_CLIENTS:
                         clientItem = self.PLEX.client(client)
+                        clientItem.proxyThroughServer()
                         clientItem.playMedia(item, offset=offset)
                 except:
                     print("ERROR: MEDIA ID FETCH FAILED - Falling Back")
@@ -565,6 +566,7 @@ class PseudoDailyScheduleController():
                             print("NOTICE: MATCH ID FOUND IN %s" % item)
                             for client in self.PLEX_CLIENTS:
                                 clientItem = self.PLEX.client(client)
+                                clientItem.proxyThroughServer()
                                 clientItem.playMedia(item, offset=offset)
                             break
             elif mediaType == "TV Shows" and customSectionName != "Playlists":
@@ -574,6 +576,7 @@ class PseudoDailyScheduleController():
                     item = self.PLEX.fetchItem(mediaID)
                     for client in self.PLEX_CLIENTS:
                         clientItem = self.PLEX.client(client)
+                        clientItem.proxyThroughServer()
                         clientItem.playMedia(item, offset=offset)
                 except:
                     print("ERROR: MEDIA ID FETCH FAILED - Falling Back")
@@ -585,11 +588,14 @@ class PseudoDailyScheduleController():
                             for client in self.PLEX_CLIENTS:
                                 clientItem = self.PLEX.client(client)
                                 clientItem.playMedia(item, offset=offset)
+                                clientItem.proxyThroughServer()
                             break
                         elif item.key == mediaID:
                             print("NOTICE: MATCHID FOUND IN %s" % item)
                             for client in self.PLEX_CLIENTS:
                                 clientItem = self.PLEX.client(client)
+                                clientItem.proxyThroughServer()
+                                
                                 clientItem.playMedia(item, offset=offset)
                             break
             elif mediaType == "Movies":
@@ -610,6 +616,7 @@ class PseudoDailyScheduleController():
                             break
                 for client in self.PLEX_CLIENTS:
                         clientItem = self.PLEX.client(client)
+                        clientItem.proxyThroughServer()
                         print("INFO: Playing "+movie.title.upper())
                         clientItem.playMedia(movie, offset=offset)
             elif mediaType == "Commercials":
@@ -643,13 +650,17 @@ class PseudoDailyScheduleController():
                     
                 for client in self.PLEX_CLIENTS:
                         clientItem = self.PLEX.client(client)
+                        clientItem.proxyThroughServer()
                         clientItem.playMedia(movie, offset=offset)
             else:
                 print("NOTICE: Not sure how to play {}".format(customSectionName))
             print("NOTICE: Done.")
         except Exception as e:
             print(e.__doc__)
-            print(e.message)
+            try:
+                print(e.message)
+            except:
+                print(e)
             print("ERROR: There was an error trying to play the media.")
             pass
         
