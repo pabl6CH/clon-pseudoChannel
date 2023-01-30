@@ -227,11 +227,11 @@ def ps_install():
         sys.stdout.write("\rScanning Libraries...")
         for section in sections:
             sys.stdout.write(".")
-            if section.scanner == "Plex Series Scanner":
+            if section.scanner == "Plex TV Series":
                 showsSections.append(section.title)
-            elif section.scanner == "Plex Movie Scanner":
+            elif section.scanner == "Plex Movie":
                 moviesSections.append(section.title)
-            elif section.scanner == "Plex Video Files Scanner":
+            elif section.scanner == "Plex Video Files":
                 commercialsSections.append(section.title)
         print("\nSelect TV Show Libraries (separate multiple entries with a comma or enter 'all')")
         ps_showslibraries = select_libs(showsSections)
