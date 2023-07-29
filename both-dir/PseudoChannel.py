@@ -809,7 +809,7 @@ class PseudoChannel():
                                                 if (the_show == None):
                                                     print("NOTICE: Failed to get shows with data filters, trying with less")
                                                     the_show = self.db.get_random_show_data("TV Shows",int(min),int(max),entry[15],None,None,None,entry[19],None)
-                                                    the_show = self.db.get_shows(random.choice(shows_list).title)
+                                                    #the_show = self.db.get_shows(random.choice(shows_list).title)
                                                     try:
                                                         print("INFO: "+str(the_show[3]))
                                                     except:
