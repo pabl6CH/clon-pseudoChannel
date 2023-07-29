@@ -13,7 +13,7 @@ import getpass
 from git import RemoteProgress
 from datetime import datetime
 from plexapi.server import PlexServer
-from python-crontab import CronTab
+from crontab import CronTab
 from pathlib import Path
 
 class CloneProgress(RemoteProgress):
