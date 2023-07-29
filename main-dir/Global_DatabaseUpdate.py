@@ -139,7 +139,7 @@ if halt != True:
             rndsql = "SELECT * FROM shows WHERE (customSectionName NOT LIKE 'playlist' AND duration BETWEEN 6000 and 999000) ORDER BY RANDOM() LIMIT 1"
             table.execute(rndsql)
             the_show = table.fetchone()
-            entryList['duration'] = str("1,"+str(int(the_show[4] / 60000)))
+            entryList['duration'] = str("1,"+str(int(the_show[4] / 6000)))
             entryList['title'] = the_show[3]
             entryList['startTime'] = "00:00:00"
             entryList['dayOfWeek'] = "everyday"
