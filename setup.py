@@ -133,7 +133,7 @@ def ps_install():
         os.chdir(path)
         os.mkdir('temp') #create temp directory to download files into
         try:
-            git.Repo.clone_from('https://github.com/FakeTV/pseudo-channel', './temp', branch=ps_branch)
+            git.Repo.clone_from('https://github.com/pabl6CH/clon-pseudoChannel.git', './temp', branch=ps_branch)
         except Exception as e:
             print("ERROR GETTING DOWNLOADING FROM GIT")
             print("e")
@@ -439,7 +439,7 @@ def ps_update():
             ps_branch = branchSelect
     os.mkdir('../temp') #create temp directory to download files into
     try:
-        git.Repo.clone_from('https://github.com/FakeTV/pseudo-channel', '../temp', branch=ps_branch)
+        git.Repo.clone_from('https://github.com/pabl6CH/clon-pseudoChannel.git', '../temp', branch=ps_branch)
     except Exception as e:
         print("ERROR GETTING DOWNLOADING FROM GIT")
         print(e)
