@@ -130,7 +130,7 @@ if halt != True:
             sql = "UPDATE movies SET lastPlayedDate=? WHERE title=?"
             table.execute(sql,lastMovie_export[i])
         if len(schedule) == 0:
-            #db = PseudoChannelDatabase("./pseudo-channel.db")
+            db = PseudoChannelDatabase("./pseudo-channel.db")
             print("NOTICE: Schedule Not Found, Creating Default Schedule")
             entryList = {}
             entryList['id'] = "1"
@@ -139,7 +139,7 @@ if halt != True:
             rndsql = "SELECT * FROM shows WHERE (customSectionName NOT LIKE 'playlist' AND duration BETWEEN 6000 and 999000) ORDER BY RANDOM() LIMIT 1"
             table.execute(rndsql)
             the_show = table.fetchone()
-            entryList['duration'] = str("1,"+str(int(the_show[4] / 20000)))
+            entryList['duration'] = str("1,"+str(int(the_show[4] / 60000)))
             entryList['title'] = the_show[3]
             entryList['startTime'] = "00:00:00"
             entryList['dayOfWeek'] = "everyday"
