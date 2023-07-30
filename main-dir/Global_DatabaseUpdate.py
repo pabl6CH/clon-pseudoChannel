@@ -149,7 +149,7 @@ if halt != True:
                 entryList['strictTime'] = "true"
             else:
                 entryList['strictTime'] = "secondary"
-            entryList['endTime'] = datetime.datetime.fromtimestamp(float(entryList['startTimeUnix'])/1000).strftime("%H:%M:%S")
+            entryList['endTime'] = datetime.datetime.fromtimestamp(float(entryList['startTimeUnix']) + /1000).strftime("%H:%M:%S")
             entryList['timeShift'] = 15
             entryList['overlapMax'] = 15
             entryList['xtra'] = None
