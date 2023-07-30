@@ -187,10 +187,9 @@ if halt != True:
                 if 0 < int(entryList['endTime'].split(':')[1]) <= 15 or 30 < int(entryList['endTime'].split(':')[1]) <= 45:
                     maxMS = 15*60*1000
                 rndsql = "SELECT * FROM shows WHERE (customSectionName NOT LIKE 'playlist' AND duration BETWEEN ? and ?) ORDER BY RANDOM() LIMIT 1"
-                table.execute(rndsql, ("60000", str(maxMS)))
+                table.execute(rndsql, ("999000", str(maxMS)))
                 the_show = table.fetchone()
-                entryList['duration'] = str("1,"+str(int(the_show[4]/60000)))
-                entryList['duration'] = str("1,"+str(int(the_show[4]/60000)))
+                entryList['duration'] = str("1,"+str(int(the_show[4]/999000)))
                 entryList['endTime'] = datetime.datetime.fromtimestamp(float(entryList['startTimeUnix']) + the_show[4]/1000).strftime("%H:%M:%S")
                 entryList['title'] = the_show[3]
                 entryList['overlapMax'] = round(float(entryList['duration'].split(',')[1]) * 0.5)
