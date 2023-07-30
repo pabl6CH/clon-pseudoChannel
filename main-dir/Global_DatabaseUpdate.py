@@ -146,13 +146,13 @@ if halt != True:
             
             
             the_show = table.fetchone()
-if the_show is not None:
-    entryList['duration'] = str("1," + str(int(the_show[4] / 60000)))
-else:
-    # Aquí puedes definir un valor predeterminado para 'duration' o tomar alguna otra acción.
-    entryList['duration'] = "1,0"  # Por ejemplo, duración predeterminada de 1 minuto.
+            if the_show is not None:
+                entryList['duration'] = str("1," + str(int(the_show[4] / 60000)))
+            else:
+            # Aquí puedes definir un valor predeterminado para 'duration' o tomar alguna otra acción.
+                entryList['duration'] = "1,0"  # Por ejemplo, duración predeterminada de 1 minuto.
 
-# Continúa con el resto de tu código...
+            # Continúa con el resto de tu código...
 
             
             
