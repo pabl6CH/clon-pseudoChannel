@@ -139,7 +139,7 @@ if halt != True:
             rndsql = "SELECT * FROM shows WHERE (customSectionName NOT LIKE 'playlist' AND duration BETWEEN 6000 and 999000) ORDER BY RANDOM() LIMIT 1"
             table.execute(rndsql)
             the_show = table.fetchone()
-            entryList['duration'] = str("1,"+str(int(the_show[4]/999000)))
+            entryList['duration'] = (1+(int(the_show[4]/60000)))
             entryList['title'] = the_show[3]
             entryList['startTime'] = "00:00:00"
             entryList['dayOfWeek'] = "everyday"
@@ -162,8 +162,8 @@ if halt != True:
             entryList['studio'] = None
             entryList['seasonEpisode'] = None
             print("INFO: Adding "+entryList['startTime']+" - "+entryList['title']+"\033[K",end='\n')
-            sql = "INSERT INTO schedule(id,unix,mediaID,title,duration,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra,rerun,year,genres,actors,collections,rating,studio,seasonEpisode)  \
-                VALUES(:id,:unix,:mediaID,:title,:duration,:startTime,:endTime,:dayOfWeek,:startTimeUnix,:section,:strictTime,:timeShift,:overlapMax,:xtra,:rerun,:year,:genres,:actors,:collections,:rating,:studio,:seasonEpisode)"
+            sql = "INSERT INTO schedule(id,unix,mediaID,title,,startTime,endTime,dayOfWeek,startTimeUnix,section,strictTime,timeShift,overlapMax,xtra,rerun,year,genres,actors,collections,rating,studio,seasonEpisode)  \
+                VALUES(:id,:unix,:mediaID,:title,:,:startTime,:endTime,:dayOfWeek,:startTimeUnix,:section,:strictTime,:timeShift,:overlapMax,:xtra,:rerun,:year,:genres,:actors,:collections,:rating,:studio,:seasonEpisode)"
             table.execute(sql,entryList)
             timediff = datetime.datetime.strptime("23:59:59", "%H:%M:%S") - datetime.datetime.strptime(entryList['startTime'], "%H:%M:%S")
             print("INFO: "+str(timediff.seconds)+" to midnight\033[K",end='\n')
@@ -189,7 +189,7 @@ if halt != True:
                 rndsql = "SELECT * FROM shows WHERE (customSectionName NOT LIKE 'playlist' AND duration BETWEEN ? and ?) ORDER BY RANDOM() LIMIT 1"
                 table.execute(rndsql, ("999000", str(maxMS)))
                 the_show = table.fetchone()
-                entryList['duration'] = str("1,"+str(int(the_show[4]/999000)))
+                entryList['duration'] = (1+(int(the_show[4]/60000)))
                 entryList['endTime'] = datetime.datetime.fromtimestamp(float(entryList['startTimeUnix']) + the_show[4]/1000).strftime("%H:%M:%S")
                 entryList['title'] = the_show[3]
                 entryList['overlapMax'] = round(float(entryList['duration'].split(',')[1]) * 0.5)
