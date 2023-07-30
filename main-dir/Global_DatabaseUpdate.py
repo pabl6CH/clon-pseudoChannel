@@ -149,7 +149,7 @@ if halt != True:
                 entryList['strictTime'] = "true"
             else:
                 entryList['strictTime'] = "secondary"
-            entryList['endTime'] = datetime.datetime.fromtimestamp(float(entryList['startTimeUnix']) + /1000).strftime("%H:%M:%S")
+            entryList['endTime'] = datetime.datetime.fromtimestamp(float(entryList['startTimeUnix'])+1000).strftime("%H:%M:%S")
             entryList['timeShift'] = 15
             entryList['overlapMax'] = 15
             entryList['xtra'] = None
@@ -189,6 +189,7 @@ if halt != True:
                 rndsql = "SELECT * FROM shows WHERE (customSectionName NOT LIKE 'playlist' AND duration BETWEEN ? and ?) ORDER BY RANDOM() LIMIT 1"
                 table.execute(rndsql, ("60000", str(maxMS)))
                 the_show = table.fetchone()
+                entryList['duration'] = str("1,"+str(int(the_show[4]/60000)))
                 entryList['duration'] = str("1,"+str(int(the_show[4]/60000)))
                 entryList['endTime'] = datetime.datetime.fromtimestamp(float(entryList['startTimeUnix']) + the_show[4]/1000).strftime("%H:%M:%S")
                 entryList['title'] = the_show[3]
